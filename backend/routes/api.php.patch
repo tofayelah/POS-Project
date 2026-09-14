@@ -1,0 +1,26 @@
+--- backend/routes/api.php
++++ backend/routes/api.php
+@@ -194,6 +194,22 @@
+         Route::post('barcodes', [\App\Http\Controllers\Api\V1\BarcodeController::class, 'store'])->middleware(['permission:barcodes.create', 'scope:company']);
+         Route::post('barcodes/{barcode}/set-primary', [\App\Http\Controllers\Api\V1\BarcodeController::class, 'setPrimary'])->middleware(['permission:barcodes.update', 'scope:company']);
+         Route::delete('barcodes/{barcode}', [\App\Http\Controllers\Api\V1\BarcodeController::class, 'destroy'])->middleware(['permission:barcodes.delete', 'scope:company']);
++        
++        // SPRINT 03 — Inventory Routes
++        Route::get('inventory', [\App\Http\Controllers\Api\V1\InventoryController::class, 'index'])->middleware('permission:inventory.view');
++        Route::get('inventory/low-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'lowStock'])->middleware('permission:inventory.view');
++        Route::get('inventory/movements', [\App\Http\Controllers\Api\V1\InventoryController::class, 'movements'])->middleware('permission:inventory.movement.view');
++        
++        Route::post('inventory/opening-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'openingStock'])->middleware(['permission:inventory.create', 'scope:company']);
++        Route::post('inventory/adjustments', [\App\Http\Controllers\Api\V1\InventoryController::class, 'adjustStock'])->middleware(['permission:inventory.adjust', 'scope:company']);
++        Route::post('inventory/damage-loss', [\App\Http\Controllers\Api\V1\InventoryController::class, 'recordDamageLoss'])->middleware(['permission:inventory.adjust', 'scope:company']);
++        
++        Route::get('inventory/transfers', [\App\Http\Controllers\Api\V1\TransferController::class, 'index'])->middleware('permission:inventory.transfer.view');
++        Route::get('inventory/transfers/{transfer}', [\App\Http\Controllers\Api\V1\TransferController::class, 'show'])->middleware('permission:inventory.transfer.view');
++        Route::post('inventory/transfers', [\App\Http\Controllers\Api\V1\TransferController::class, 'store'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
++        Route::post('inventory/transfers/{transfer}/submit', [\App\Http\Controllers\Api\V1\TransferController::class, 'submit'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
++        Route::post('inventory/transfers/{transfer}/approve', [\App\Http\Controllers\Api\V1\TransferController::class, 'approve'])->middleware(['permission:inventory.transfer.approve', 'scope:company']);
++        Route::post('inventory/transfers/{transfer}/ship', [\App\Http\Controllers\Api\V1\TransferController::class, 'ship'])->middleware(['permission:inventory.transfer.ship', 'scope:company']);
++        Route::post('inventory/transfers/{transfer}/receive', [\App\Http\Controllers\Api\V1\TransferController::class, 'receive'])->middleware(['permission:inventory.transfer.receive', 'scope:company']);
++        Route::post('inventory/transfers/{transfer}/cancel', [\App\Http\Controllers\Api\V1\TransferController::class, 'cancel'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
+     });
+ });
