@@ -11,21 +11,25 @@ class PosProductController extends Controller
     public function search(Request $request)
     {
         $companyId = $request->attributes->get('company_id');
-        $query = $request->get('q');
+        $query = $request->get('q') ?? $request->get('query');
         
-        $variants = ProductVariant::with('product')
-            ->whereHas('product', function($q) use ($companyId, $query) {
+        $variants = ProductVariant::with(['product', 'barcodes'])
+            ->whereHas('product', function($q) use ($companyId) {
                 $q->where('company_id', $companyId)
-                  ->where('status', 'ACTIVE');
+                  ->whereRaw('LOWER(status) = ?', ['active']);
             })
-            ->where('status', 'ACTIVE')
-            ->where(function($q) use ($query) {
-                $q->where('sku', 'like', "%{$query}%")
-                  ->orWhere('barcode', 'like', "%{$query}%")
-                  ->orWhere('name', 'like', "%{$query}%")
-                  ->orWhereHas('product', function($q2) use ($query) {
-                      $q2->where('name', 'like', "%{$query}%");
-                  });
+            ->whereRaw('LOWER(status) = ?', ['active'])
+            ->when($query, function($q) use ($query) {
+                $q->where(function($sub) use ($query) {
+                    $sub->where('sku', 'ilike', "%{$query}%")
+                        ->orWhere('variant_name', 'ilike', "%{$query}%")
+                        ->orWhereHas('barcodes', function($bq) use ($query) {
+                            $bq->where('barcode', 'ilike', "%{$query}%");
+                        })
+                        ->orWhereHas('product', function($pq) use ($query) {
+                            $pq->where('name', 'ilike', "%{$query}%");
+                        });
+                });
             })
             ->limit(20)
             ->get();
@@ -37,13 +41,15 @@ class PosProductController extends Controller
     {
         $companyId = $request->attributes->get('company_id');
         
-        $variant = ProductVariant::with('product')
+        $variant = ProductVariant::with(['product', 'barcodes'])
             ->whereHas('product', function($q) use ($companyId) {
                 $q->where('company_id', $companyId)
-                  ->where('status', 'ACTIVE');
+                  ->whereRaw('LOWER(status) = ?', ['active']);
             })
-            ->where('status', 'ACTIVE')
-            ->where('barcode', $barcode)
+            ->whereRaw('LOWER(status) = ?', ['active'])
+            ->whereHas('barcodes', function($bq) use ($barcode) {
+                $bq->where('barcode', $barcode);
+            })
             ->first();
             
         if (!$variant) {

@@ -41,14 +41,7 @@ class PurchasePermissionsSeeder extends Seeder
         $superAdmin = Role::where('name', 'Super Admin')->first();
         
         foreach ($permissions as $perm) {
-            $permission = Permission::firstOrCreate(
-                ['name' => $perm],
-                [
-                    'uuid' => (string) Str::uuid(),
-                    'guard_name' => 'api',
-                    'description' => 'Permission for ' . str_replace('_', ' ', $perm)
-                ]
-            );
+            $permission = Permission::firstOrCreate(['name' => $perm]);
             
             if ($superAdmin && !$superAdmin->permissions()->where('permission_id', $permission->id)->exists()) {
                 $superAdmin->permissions()->attach($permission->id);

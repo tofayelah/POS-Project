@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ], append: [
+            \App\Http\Middleware\SetCurrentCompanyScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

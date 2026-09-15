@@ -214,6 +214,11 @@ class ProductMasterSeeder extends Seeder
             foreach ($targetSizes as $sizeName) {
                 $sku = "BRA-CC-{$colorName[0]}-{$sizeName}";
                 $variantName = "{$colorName} / {$sizeName}";
+                $colorValId = $colorValues[$colorName]->id;
+                $sizeValId = $sizeValues[$sizeName]->id;
+                $attrIds = [$colorValId, $sizeValId];
+                sort($attrIds);
+                $sig = implode('-', $attrIds);
 
                 $variant = ProductVariant::firstOrCreate(
                     ['sku' => $sku],
@@ -221,6 +226,7 @@ class ProductMasterSeeder extends Seeder
                         'uuid' => (string) Str::uuid(),
                         'product_id' => $variableProduct->id,
                         'variant_name' => $variantName,
+                        'attribute_signature' => $sig,
                         'cost_price' => 220.0000,
                         'selling_price' => 450.0000,
                         'wholesale_price' => 360.0000,
@@ -251,5 +257,61 @@ class ProductMasterSeeder extends Seeder
                 $counter++;
             }
         }
+
+        // C. Simple Product: Facial Razzer box-S
+        $catPersonalCare = Category::firstOrCreate(
+            ['company_id' => $companyId, 'name' => 'Personal Care'],
+            ['uuid' => (string) Str::uuid(), 'slug' => 'personal-care', 'sort_order' => 3, 'status' => 'active']
+        );
+
+        $unitBox = Unit::firstOrCreate(
+            ['company_id' => $companyId, 'short_code' => 'box'],
+            ['uuid' => (string) Str::uuid(), 'name' => 'Box', 'decimal_allowed' => false, 'status' => 'active']
+        );
+
+        $facialRazor = Product::firstOrCreate(
+            ['company_id' => $companyId, 'slug' => 'facial-razzer-box-s'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'category_id' => $catPersonalCare->id,
+                'brand_id' => $brandComfort->id,
+                'unit_id' => $unitBox->id,
+                'name' => 'Facial Razzer box-S',
+                'product_code' => 'RAZ-FAC-S',
+                'description' => 'Facial Razzer Box (Size S) - Precision grooming & dermaplaning razors.',
+                'product_type' => 'simple',
+                'has_variants' => false,
+                'tax_rate' => 5.00,
+                'tax_type' => 'inclusive',
+                'reorder_level' => 20,
+                'status' => 'active',
+            ]
+        );
+
+        $facialVariant = ProductVariant::firstOrCreate(
+            ['sku' => 'RAZ-FAC-BOX-S'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'product_id' => $facialRazor->id,
+                'variant_name' => 'Box-S',
+                'attribute_signature' => '',
+                'cost_price' => 80.0000,
+                'selling_price' => 150.0000,
+                'wholesale_price' => 120.0000,
+                'mrp' => 180.0000,
+                'status' => 'active',
+            ]
+        );
+
+        Barcode::firstOrCreate(
+            ['barcode' => '8901234599001'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'product_variant_id' => $facialVariant->id,
+                'barcode_type' => 'CODE128',
+                'is_primary' => true,
+                'status' => 'active',
+            ]
+        );
     }
 }

@@ -136,23 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('inventory/transfers/{transfer}/ship', [\App\Http\Controllers\Api\V1\TransferController::class, 'ship'])->middleware(['permission:inventory.transfer.ship', 'scope:company']);
         Route::post('inventory/transfers/{transfer}/receive', [\App\Http\Controllers\Api\V1\TransferController::class, 'receive'])->middleware(['permission:inventory.transfer.receive', 'scope:company']);
         Route::post('inventory/transfers/{transfer}/cancel', [\App\Http\Controllers\Api\V1\TransferController::class, 'cancel'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
-        // SPRINT 07 — Sales Return & Exchange
-        Route::get('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'index'])->middleware('permission:sales_return.view');
-        Route::get('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'show'])->middleware('permission:sales_return.view');
-        Route::post('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'store'])->middleware('permission:sales_return.create');
-        Route::get('sales/{id}/returnable-items', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'returnableItems'])->middleware('permission:sales_return.create');
-        Route::put('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'update']);
-        Route::post('sales-returns/{id}/approve', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'approve']);
-        Route::post('sales-returns/{id}/complete', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'complete']);
-        Route::post('sales-returns/{id}/cancel', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'cancel']);
-        Route::post('sales-returns/{id}/refund', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'refund']);
-        Route::post('sales-returns/{id}/exchange', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'exchange']);
-    });
-
-
-// SPRINT 04 — Suppliers & Purchase Routes
-Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
-    Route::middleware(['scope:company'])->group(function () {
+        // SPRINT 04 — Suppliers & Purchase Routes
         // Suppliers
         Route::get('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'index'])->middleware('permission:suppliers.view');
         Route::post('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'store'])->middleware('permission:suppliers.create');
@@ -221,8 +205,6 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('sales-returns/{id}/cancel', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'cancel']);
         Route::post('sales-returns/{id}/refund', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'refund']);
         Route::post('sales-returns/{id}/exchange', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'exchange']);
-    });
-
 
         // SPRINT 08 — Expenses
         Route::get('expense-categories', [\App\Http\Controllers\Api\V1\ExpenseCategoryController::class, 'index'])->middleware('permission:expense_category.view');
@@ -242,8 +224,6 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('expenses/{id}/complete', [\App\Http\Controllers\Api\V1\ExpenseController::class, 'complete'])->middleware('permission:expense.complete');
         Route::post('expenses/{id}/cancel', [\App\Http\Controllers\Api\V1\ExpenseController::class, 'cancel'])->middleware('permission:expense.cancel');
         Route::post('expenses/{id}/payments', [\App\Http\Controllers\Api\V1\ExpenseController::class, 'addPayment'])->middleware('permission:expense.payment.create');
-    });
-
 
         // SPRINT 11 — Reports & Dashboard
         Route::get('dashboard/summary', [\App\Http\Controllers\Api\V1\Reports\DashboardReportController::class, 'summary'])->middleware('permission:reports.dashboard');
