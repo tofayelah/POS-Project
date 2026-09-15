@@ -81,12 +81,6 @@ export function Login() {
     }
   };
 
-  const handleFillDemoCredentials = () => {
-    setValue('email', 'admin@retailcore.test', { shouldValidate: true });
-    setValue('password', 'password123', { shouldValidate: true });
-    setErrorMessage(null);
-  };
-
   return (
     <div 
       id="login-page-container" 
@@ -150,7 +144,7 @@ export function Login() {
                   id="email-input"
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@retailcore.test"
+                  placeholder="name@company.com"
                   disabled={isLoading}
                   {...register('email')}
                   className={`block w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all disabled:opacity-60 ${
@@ -253,18 +247,6 @@ export function Login() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Fill Helper */}
-          <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col items-center gap-2">
-            <button
-              id="fill-demo-credentials-btn"
-              type="button"
-              onClick={handleFillDemoCredentials}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer transition-colors"
-            >
-              Use demo credentials (admin@retailcore.test)
-            </button>
-          </div>
         </div>
 
         {/* System Footer Note */}

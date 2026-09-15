@@ -220,67 +220,16 @@ export function useProvideAuth(): AuthContextType {
       let errMsg = 'Authentication failed. Please check your credentials.';
       let validationErrors: Record<string, string[]> | undefined;
 
-      const isAxios = typeof err === 'object' && err !== null && 'response' in err;
+      const isAxios = typeof err === 'object' && err !== null && ('isAxiosError' in err || 'response' in err);
       const axiosErr = isAxios ? (err as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } }) : undefined;
       const status = axiosErr?.response?.status;
-
-      // In client-only / preview sandbox environments where backend HTTP server is offline (404 / network error)
-      const isOfflineOrNotFound = !axiosErr || status === 404 || status === 502 || status === 503;
-      if (isOfflineOrNotFound) {
-        if (emailNormalized === 'admin@retailcore.test' && credentials.password === 'password123') {
-          const previewUser: User = {
-            id: 1,
-            uuid: 'usr_admin_001',
-            name: 'Super Admin',
-            email: 'admin@retailcore.test',
-            status: 'active',
-            roles: [
-              { id: 1, name: 'Super Admin', description: 'System Administrator with full enterprise access' },
-            ],
-            permissions: [
-              'users.view', 'users.create', 'users.update', 'users.delete', 'users.activate', 'users.deactivate',
-              'roles.view', 'roles.create', 'roles.update', 'roles.delete', 'roles.assign',
-              'business_units.view', 'business_units.create', 'business_units.update', 'business_units.delete',
-              'branches.view', 'branches.create', 'branches.update', 'branches.delete',
-              'warehouses.view', 'warehouses.create', 'warehouses.update', 'warehouses.delete',
-              'settings.view', 'settings.update',
-              'audit_logs.view',
-              'view-users', 'manage-users', 'manage-settings',
-            ],
-            company_ids: [1],
-            business_unit_ids: [1],
-            branch_ids: [1],
-            warehouse_ids: [1],
-          };
-          const previewToken = 'sanctum_token_admin_preview_2026';
-          localStorage.setItem(TOKEN_KEY, previewToken);
-          localStorage.setItem(USER_KEY, JSON.stringify(previewUser));
-          setToken(previewToken);
-          setUserState(previewUser);
-          setError(null);
-          return {
-            success: true,
-            message: 'Login successful',
-            user: previewUser,
-            token: previewToken,
-          };
-        } else if (emailNormalized === 'inactive@retailcore.test') {
-          const inactiveMsg = 'Your account is inactive. Please contact an administrator.';
-          setError(inactiveMsg);
-          return { success: false, message: inactiveMsg };
-        } else {
-          const invalidMsg = 'Invalid credentials. Please check your email and password.';
-          setError(invalidMsg);
-          return { success: false, message: invalidMsg };
-        }
-      }
 
       if (axiosErr?.response?.data?.errors) {
         validationErrors = axiosErr.response.data.errors;
         const firstValErr = Object.values(validationErrors).flat()[0];
         errMsg = firstValErr || 'Validation error occurred.';
       } else if (status === 401) {
-        errMsg = 'Invalid credentials. Please check your email and password.';
+        errMsg = axiosErr?.response?.data?.message || 'The email address or password you entered is incorrect. Please verify your credentials and try again.';
       } else if (status === 403) {
         errMsg = 'Your account is inactive. Please contact an administrator.';
       } else if (status === 429) {
@@ -290,7 +239,7 @@ export function useProvideAuth(): AuthContextType {
       } else if (axiosErr?.response?.data?.message) {
         errMsg = axiosErr.response.data.message;
       } else {
-        errMsg = 'Unable to connect to authentication server. Please check your network connection.';
+        errMsg = 'Unable to connect to authentication server. Please check your network connection (CORS or server offline).';
       }
 
       setError(errMsg);
