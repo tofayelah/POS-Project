@@ -38,7 +38,7 @@ class DashboardReportController extends Controller
 
         $purchaseQuery = Purchase::where('company_id', $companyId)
             ->where('status', 'POSTED')
-            ->whereBetween('purchase_date', [$start->toDateString(), $end->toDateString()]);
+            ->whereBetween('invoice_date', [$start->toDateString(), $end->toDateString()]);
 
         $expenseQuery = Expense::where('company_id', $companyId)
             ->where('status', 'COMPLETED')

@@ -17,10 +17,10 @@ class PurchaseReportController extends Controller
             
         // Apply filters
         if ($request->filled('date_from')) {
-            $query->whereDate('purchase_date', '>=', $request->date_from);
+            $query->whereDate('invoice_date', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->whereDate('purchase_date', '<=', $request->date_to);
+            $query->whereDate('invoice_date', '<=', $request->date_to);
         }
         if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
@@ -38,10 +38,10 @@ class PurchaseReportController extends Controller
             $query->where('payment_status', $request->payment_status);
         }
 
-        $sortBy = $request->query('sort_by', 'purchase_date');
+        $sortBy = $request->query('sort_by', 'invoice_date');
         $sortDirection = $request->query('sort_direction', 'desc');
         
-        if (in_array($sortBy, ['purchase_date', 'grand_total', 'paid_amount', 'due_amount', 'purchase_number'])) {
+        if (in_array($sortBy, ['invoice_date', 'grand_total', 'paid_amount', 'due_amount', 'purchase_number'])) {
             $query->orderBy($sortBy, $sortDirection === 'asc' ? 'asc' : 'desc');
         }
 
