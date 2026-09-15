@@ -34,14 +34,11 @@ class PurchaseReportController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        if ($request->filled('payment_status')) {
-            $query->where('payment_status', $request->payment_status);
-        }
 
         $sortBy = $request->query('sort_by', 'invoice_date');
         $sortDirection = $request->query('sort_direction', 'desc');
         
-        if (in_array($sortBy, ['invoice_date', 'grand_total', 'paid_amount', 'due_amount', 'purchase_number'])) {
+        if (in_array($sortBy, ['invoice_date', 'grand_total', 'subtotal', 'tax_total', 'discount_total', 'supplier_invoice_number'])) {
             $query->orderBy($sortBy, $sortDirection === 'asc' ? 'asc' : 'desc');
         }
 
@@ -51,11 +48,13 @@ class PurchaseReportController extends Controller
         $totalsQuery = clone $query;
         $totals = [
             'total_purchases' => $totalsQuery->count(),
-            'total_gross_purchases' => $totalsQuery->sum('grand_total'),
-            'total_tax' => $totalsQuery->sum('tax'),
-            'total_discount' => $totalsQuery->sum('discount'),
-            'total_paid' => $totalsQuery->sum('paid_amount'),
-            'total_due' => $totalsQuery->sum('due_amount'),
+            'total_gross_purchases' => (float) $totalsQuery->sum('grand_total'),
+            'total_subtotal' => (float) $totalsQuery->sum('subtotal'),
+            'total_tax' => (float) $totalsQuery->sum('tax_total'),
+            'total_discount' => (float) $totalsQuery->sum('discount_total'),
+            'total_shipping' => (float) $totalsQuery->sum('shipping_cost'),
+            'total_paid' => 0.0,
+            'total_due' => 0.0,
         ];
         
         return response()->json([
