@@ -20,6 +20,7 @@ class DashboardReportController extends Controller
     {
         $companyId = $request->attributes->get('company_id');
         $branchId = $request->query('branch_id');
+        $warehouseId = $request->query('warehouse_id');
         
         $startDate = $request->query('date_from', Carbon::today()->toDateString());
         $endDate = $request->query('date_to', Carbon::today()->toDateString());
@@ -50,6 +51,12 @@ class DashboardReportController extends Controller
             $purchaseQuery->where('branch_id', $branchId);
             $expenseQuery->where('branch_id', $branchId);
         }
+        if ($warehouseId) {
+            $saleQuery->where('warehouse_id', $warehouseId);
+            $salesReturnQuery->where('warehouse_id', $warehouseId);
+            $purchaseQuery->where('warehouse_id', $warehouseId);
+            $expenseQuery->where('warehouse_id', $warehouseId);
+        }
 
         // Today's Sales
         $grossSales = (float) $saleQuery->sum('grand_total');
@@ -72,6 +79,9 @@ class DashboardReportController extends Controller
             
         if ($branchId) {
             $saleItemsQuery->where('sales.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $saleItemsQuery->where('sales.warehouse_id', $warehouseId);
         }
         
         $cogs = (float) $saleItemsQuery->sum('total_cost_snapshot');
@@ -98,6 +108,9 @@ class DashboardReportController extends Controller
             $inventoryQuery->whereHas('warehouse', function($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
             });
+        }
+        if ($warehouseId) {
+            $inventoryQuery->where('warehouse_id', $warehouseId);
         }
         $inventoryValue = (float) $inventoryQuery->sum('total_value');
         
@@ -136,7 +149,231 @@ class DashboardReportController extends Controller
             ->limit(5)
             ->get();
 
-        return response()->json([
+        
+        // --------------------------------------------------------------------
+        // SPRINT 12.9 - COMMERCIAL DASHBOARD EXPANSION
+        // --------------------------------------------------------------------
+
+        // Total Products (Active)
+        $totalProducts = \App\Models\Product::where('company_id', $companyId)
+            ->where('status', 'active')
+            ->count();
+
+        // Low Stock
+        // For accurate low stock, we join products and inventory
+        $lowStockQuery = DB::table('inventories')
+            ->join('products', 'inventories.product_id', '=', 'products.id')
+            ->where('inventories.company_id', $companyId)
+            ->whereColumn('inventories.available_quantity', '<=', 'products.reorder_level');
+            
+        if ($branchId) {
+            $lowStockQuery->join('warehouses', 'inventories.warehouse_id', '=', 'warehouses.id')
+                          ->where('warehouses.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $lowStockQuery->where('inventories.warehouse_id', $warehouseId);
+        }
+        
+        $lowStock = $lowStockQuery->count();
+
+        // Low Stock Details
+        $lowStockDetailsQuery = DB::table('inventories')
+            ->join('products', 'inventories.product_id', '=', 'products.id')
+            ->join('product_variants', 'inventories.product_variant_id', '=', 'product_variants.id')
+            ->join('warehouses', 'inventories.warehouse_id', '=', 'warehouses.id')
+            ->where('inventories.company_id', $companyId)
+            ->whereColumn('inventories.available_quantity', '<=', 'products.reorder_level')
+            ->select(
+                'products.name as product',
+                'product_variants.sku',
+                'warehouses.name as warehouse',
+                'inventories.available_quantity',
+                'products.reorder_level'
+            )
+            ->orderBy('inventories.available_quantity', 'asc')
+            ->limit(5);
+
+        if ($branchId) {
+            $lowStockDetailsQuery->where('warehouses.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $lowStockDetailsQuery->where('inventories.warehouse_id', $warehouseId);
+        }
+
+        $lowStockDetails = $lowStockDetailsQuery->get();
+
+        // Accounting Health
+        $postedJournalsQuery = DB::table('journal_entries')
+            ->where('company_id', $companyId)
+            ->where('status', 'POSTED');
+            
+        if ($branchId) {
+            $postedJournalsQuery->where('branch_id', $branchId);
+        }
+        $postedJournals = $postedJournalsQuery->count();
+            
+        // Unbalanced journals (where sum debit != sum credit)
+        $unbalancedJournalsQuery = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->where('journal_entries.company_id', $companyId)
+            ->where('journal_entries.status', 'POSTED');
+            
+        if ($branchId) {
+            $unbalancedJournalsQuery->where('journal_entries.branch_id', $branchId);
+        }
+        
+        $unbalancedJournals = $unbalancedJournalsQuery->groupBy('journal_entries.id')
+            ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.001')
+            ->count();
+
+        $accountingHealth = [
+            'posted_journals' => $postedJournals,
+            'unbalanced_journals' => $unbalancedJournals,
+            'status' => $unbalancedJournals > 0 ? 'Issues Detected' : 'Healthy'
+        ];
+
+        // P&L (Net Profit) - Bounded by date range
+        $pnlBalancesQuery = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('accounts', 'journal_entry_lines.account_id', '=', 'accounts.id')
+            ->where('journal_entries.company_id', $companyId)
+            ->where('journal_entries.status', 'POSTED')
+            ->whereBetween('journal_entries.journal_date', [$start->toDateString(), $end->toDateString()])
+            ->whereIn('accounts.account_type', ['REVENUE', 'EXPENSE']);
+            
+        if ($branchId) {
+            $pnlBalancesQuery->where('journal_entries.branch_id', $branchId);
+        }
+        
+        $pnlBalances = $pnlBalancesQuery->select(
+                'accounts.account_type',
+                DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
+                DB::raw('SUM(journal_entry_lines.credit) as total_credit')
+            )
+            ->groupBy('accounts.account_type')
+            ->get();
+
+        $revenueAccounting = 0;
+        $expenseAccounting = 0;
+
+        foreach ($pnlBalances as $row) {
+            if ($row->account_type === 'REVENUE') {
+                $revenueAccounting += ($row->total_credit - $row->total_debit);
+            } elseif ($row->account_type === 'EXPENSE') {
+                $expenseAccounting += ($row->total_debit - $row->total_credit);
+            }
+        }
+        $netProfit = $revenueAccounting - $expenseAccounting;
+
+        // Balance Sheet (Cash and Bank) - Unbounded (Running Balance)
+        $assetBalancesQuery = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('accounts', 'journal_entry_lines.account_id', '=', 'accounts.id')
+            ->where('journal_entries.company_id', $companyId)
+            ->where('journal_entries.status', 'POSTED')
+            ->where('accounts.account_type', 'ASSET')
+            ->where(function ($query) {
+                $query->where('accounts.account_name', 'ilike', '%Cash%')
+                      ->orWhere('accounts.account_name', 'ilike', '%Bank%');
+            });
+            
+        if ($branchId) {
+            $assetBalancesQuery->where('journal_entries.branch_id', $branchId);
+        }
+        
+        $assetBalances = $assetBalancesQuery->select(
+                'accounts.account_name',
+                DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
+                DB::raw('SUM(journal_entry_lines.credit) as total_credit')
+            )
+            ->groupBy('accounts.account_name')
+            ->get();
+
+        $cashBalance = 0;
+        $bankBalance = 0;
+
+        foreach ($assetBalances as $row) {
+            if (stripos($row->account_name, 'Cash') !== false) {
+                $cashBalance += ($row->total_debit - $row->total_credit);
+            } elseif (stripos($row->account_name, 'Bank') !== false) {
+                $bankBalance += ($row->total_debit - $row->total_credit);
+            }
+        }
+
+        // Payment Methods Analysis
+        $paymentMethodsQuery = DB::table('sale_payments')
+            ->join('sales', 'sale_payments.sale_id', '=', 'sales.id')
+            ->where('sales.company_id', $companyId)
+            ->where('sales.status', 'COMPLETED')
+            ->whereBetween('sales.sale_date', [$start->toDateString(), $end->toDateString()]);
+
+        if ($branchId) {
+            $paymentMethodsQuery->where('sales.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $paymentMethodsQuery->where('sales.warehouse_id', $warehouseId);
+        }
+
+        $paymentMethods = $paymentMethodsQuery
+            ->select('payment_method', DB::raw('SUM(amount) as total'))
+            ->groupBy('payment_method')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        // Recent Sales
+        $recentSalesQuery = DB::table('sales')
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->leftJoin('branches', 'sales.branch_id', '=', 'branches.id')
+            ->where('sales.company_id', $companyId)
+            ->where('sales.status', 'COMPLETED')
+            ->select(
+                'sales.invoice_number as invoice',
+                'sales.sale_date as date',
+                'customers.name as customer',
+                'branches.name as branch',
+                'sales.grand_total as amount',
+                'sales.paid_amount as paid',
+                'sales.payment_status as status'
+            )
+            ->orderBy('sales.sale_date', 'desc')
+            ->orderBy('sales.id', 'desc')
+            ->limit(5);
+
+        if ($branchId) {
+            $recentSalesQuery->where('sales.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $recentSalesQuery->where('sales.warehouse_id', $warehouseId);
+        }
+        $recentSales = $recentSalesQuery->get();
+
+        // Recent Purchases
+        $recentPurchasesQuery = DB::table('purchases')
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+            ->where('purchases.company_id', $companyId)
+            ->where('purchases.status', 'POSTED')
+            ->select(
+                'purchases.invoice_number as invoice',
+                'purchases.invoice_date as date',
+                'suppliers.name as supplier',
+                'purchases.grand_total as amount',
+                'purchases.paid_amount as paid',
+                'purchases.due_amount as due',
+                'purchases.payment_status as status'
+            )
+            ->orderBy('purchases.invoice_date', 'desc')
+            ->orderBy('purchases.id', 'desc')
+            ->limit(5);
+
+        if ($branchId) {
+            $recentPurchasesQuery->where('purchases.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $recentPurchasesQuery->where('purchases.warehouse_id', $warehouseId);
+        }
+        $recentPurchases = $recentPurchasesQuery->get();
+
+return response()->json([
             'success' => true,
             'data' => [
                 'gross_sales' => $grossSales,
@@ -154,6 +391,17 @@ class DashboardReportController extends Controller
                 'sales_trend' => $salesTrend,
                 'top_products' => $topProducts,
                 'top_customers' => $topCustomers,
+                'total_products' => $totalProducts,
+                'low_stock' => $lowStock,
+                'low_stock_details' => $lowStockDetails,
+                'accounting_health' => $accountingHealth,
+                'net_profit' => $netProfit,
+                'cash_balance' => $cashBalance,
+                'bank_balance' => $bankBalance,
+                'payment_methods' => $paymentMethods,
+                'recent_sales' => $recentSales,
+                'recent_purchases' => $recentPurchases,
+
             ]
         ]);
     }
