@@ -8,4 +8,6 @@ class Warehouse extends Model {
     public function company() { return $this->belongsTo(Company::class); }
     public function businessUnit() { return $this->belongsTo(BusinessUnit::class); }
     public function branch() { return $this->belongsTo(Branch::class); }
+
+    public function storageLocations() { return $this->hasMany(StorageLocation::class); }
 }

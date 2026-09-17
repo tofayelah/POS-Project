@@ -42,4 +42,7 @@ class Sale extends Model
     public function cashier() { return $this->belongsTo(User::class, 'cashier_id'); }
     public function branch() { return $this->belongsTo(Branch::class); }
     public function warehouse() { return $this->belongsTo(Warehouse::class); }
+
+    public function paymentAllocations() { return $this->morphMany(PaymentAllocation::class, 'allocatable'); }
+    public function transactionTaxes() { return $this->morphMany(TransactionTax::class, 'taxable'); }
 }

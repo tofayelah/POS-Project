@@ -50,4 +50,6 @@ class Inventory extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+
+    public function inventoryBatches() { return $this->hasMany(InventoryBatch::class); }
 }

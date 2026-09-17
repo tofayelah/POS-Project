@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             [
                 'uuid' => (string) \Illuminate\Support\Str::uuid(),
                 'name' => 'Super Admin',
-                'password' => bcrypt('password123'),
+                'password' => 'password123',
                 'status' => 'active',
             ]
         );

@@ -66,4 +66,7 @@ class Purchase extends Model
     {
         return $this->hasMany(PurchaseItem::class);
     }
+
+    public function paymentAllocations() { return $this->morphMany(PaymentAllocation::class, 'allocatable'); }
+    public function transactionTaxes() { return $this->morphMany(TransactionTax::class, 'taxable'); }
 }

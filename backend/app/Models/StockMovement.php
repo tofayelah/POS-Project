@@ -55,4 +55,7 @@ class StockMovement extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function stockBatch() { return $this->belongsTo(StockBatch::class); }
+    public function storageLocation() { return $this->belongsTo(StorageLocation::class); }
 }

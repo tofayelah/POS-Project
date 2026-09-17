@@ -56,4 +56,6 @@ class JournalEntry extends Model
     {
         return $this->belongsTo(JournalEntry::class, 'reversal_of_id');
     }
+
+    public function sourceDocument() { return $this->morphTo(); }
 }
