@@ -36,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::get('roles', [\App\Http\Controllers\Api\V1\RoleController::class, 'index'])->middleware('permission:roles.view');
         
+        // Organizational Hierarchy: Company
+        Route::get('company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
+        Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
+        Route::get('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'index']);
+
         // Organizational Hierarchy: Business Units
         Route::get('business-units', [\App\Http\Controllers\Api\V1\BusinessUnitController::class, 'index'])->middleware('permission:business_units.view');
         Route::get('business-units/{businessUnit}', [\App\Http\Controllers\Api\V1\BusinessUnitController::class, 'show'])->middleware(['permission:business_units.view', 'scope:business_unit']);
@@ -120,6 +125,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('barcodes/{barcode}', [\App\Http\Controllers\Api\V1\BarcodeController::class, 'destroy'])->middleware(['permission:barcodes.delete', 'scope:company']);
         
         // SPRINT 03 — Inventory Routes
+        Route::get('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'index'])->middleware('permission:inventory.view');
+        Route::post('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'store'])->middleware(['permission:inventory.manage_locations', 'scope:company']);
+        Route::get('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'index'])->middleware('permission:inventory.view');
+        Route::post('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'store'])->middleware(['permission:inventory.manage_batches', 'scope:company']);
+
         Route::get('inventory', [\App\Http\Controllers\Api\V1\InventoryController::class, 'index'])->middleware('permission:inventory.view');
         Route::get('inventory/low-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'lowStock'])->middleware('permission:inventory.view');
         Route::get('inventory/movements', [\App\Http\Controllers\Api\V1\InventoryController::class, 'movements'])->middleware('permission:inventory.movement.view');

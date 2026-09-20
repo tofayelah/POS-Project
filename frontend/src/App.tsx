@@ -16,6 +16,7 @@ import { InventoryDashboard } from './pages/inventory/InventoryDashboard';
 import { StockMovements } from './pages/inventory/StockMovements';
 import { StockTransfers } from './pages/inventory/StockTransfers';
 import { SupplierList } from './pages/purchase/SupplierList';
+import { SupplierForm } from './pages/purchase/SupplierForm';
 import { PurchaseOrderList } from './pages/purchase/PurchaseOrderList';
 import { PurchaseList } from './pages/purchase/PurchaseList';
 import { CustomerList } from './pages/customers/CustomerList';
@@ -23,6 +24,10 @@ import { CustomerGroupList } from './pages/customers/CustomerGroupList';
 import ExpenseIndex from "./pages/expenses/ExpenseIndex";
 import ExpenseCreate from "./pages/expenses/ExpenseCreate";
 import { PosTerminal } from './pages/pos/PosTerminal';
+import { CompanyPage } from './pages/organization/CompanyPage';
+import { BusinessUnitList } from './pages/organization/BusinessUnitList';
+import { BranchList } from './pages/organization/BranchList';
+import { WarehouseList } from './pages/organization/WarehouseList';
 
 const queryClient = new QueryClient();
 
@@ -125,6 +130,20 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/purchases/suppliers/new" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/suppliers/:id/edit" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/purchases/orders" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -160,6 +179,39 @@ export default function App() {
                 <PosTerminal />
               </ProtectedRoute>
             } />
+            {/* Organization Routes */}
+            <Route path="/company" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CompanyPage />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/company" element={<Navigate to="/company" replace />} />
+            <Route path="/business-units" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BusinessUnitList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/business-units" element={<Navigate to="/business-units" replace />} />
+            <Route path="/branches" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BranchList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/branches" element={<Navigate to="/branches" replace />} />
+            <Route path="/warehouses" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <WarehouseList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/warehouses" element={<Navigate to="/warehouses" replace />} />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

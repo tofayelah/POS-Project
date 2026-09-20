@@ -24,10 +24,19 @@ class StockMovement extends Model
     protected static function boot()
     {
         parent::boot();
+
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = (string) Str::uuid();
             }
+        });
+
+        static::updating(function ($model) {
+            throw new \Exception("StockMovement records are immutable and cannot be updated.");
+        });
+
+        static::deleting(function ($model) {
+            throw new \Exception("StockMovement records are immutable and cannot be deleted.");
         });
     }
 

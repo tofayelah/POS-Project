@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       proxy: {
         '/api': {
-          target: env.BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:8000',
+          target: env.BACKEND_URL || process.env.BACKEND_URL || 'https://pos.sonaribd.com',
           changeOrigin: true,
           secure: false,
         }
