@@ -15,6 +15,16 @@ class User extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
     protected $casts = ['email_verified_at' => 'datetime', 'password' => 'hashed', 'last_login_at' => 'datetime'];
 
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
+
     public function roles() { return $this->belongsToMany(Role::class); }
     public function companies() { return $this->belongsToMany(Company::class, 'user_company_access'); }
     public function businessUnits() { return $this->belongsToMany(BusinessUnit::class, 'user_business_unit_access'); }

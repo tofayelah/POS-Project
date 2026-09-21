@@ -125,8 +125,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('barcodes/{barcode}', [\App\Http\Controllers\Api\V1\BarcodeController::class, 'destroy'])->middleware(['permission:barcodes.delete', 'scope:company']);
         
         // SPRINT 03 — Inventory Routes
-        Route::get('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'index'])->middleware('permission:inventory.view');
-        Route::post('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'store'])->middleware(['permission:inventory.manage_locations', 'scope:company']);
+        Route::get('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'index'])->middleware('permission:storage_locations.view,inventory.view');
+        Route::get('storage-locations/{storageLocation}', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'show'])->middleware('permission:storage_locations.view,inventory.view');
+        Route::post('storage-locations', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'store'])->middleware(['permission:storage_locations.create,inventory.manage_locations', 'scope:company']);
+        Route::match(['put', 'patch'], 'storage-locations/{storageLocation}', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'update'])->middleware(['permission:storage_locations.update,inventory.manage_locations', 'scope:company']);
+        Route::delete('storage-locations/{storageLocation}', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'destroy'])->middleware(['permission:storage_locations.delete,inventory.manage_locations', 'scope:company']);
         Route::get('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'index'])->middleware('permission:inventory.view');
         Route::post('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'store'])->middleware(['permission:inventory.manage_batches', 'scope:company']);
 
@@ -149,6 +152,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // SPRINT 04 — Suppliers & Purchase Routes
         // Suppliers
         Route::get('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'index'])->middleware('permission:suppliers.view');
+        Route::get('suppliers/next-code', [\App\Http\Controllers\Api\V1\SupplierController::class, 'nextCode'])->middleware('permission:suppliers.view');
         Route::post('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'store'])->middleware('permission:suppliers.create');
         Route::get('suppliers/{id}', [\App\Http\Controllers\Api\V1\SupplierController::class, 'show'])->middleware('permission:suppliers.view');
         Route::put('suppliers/{id}', [\App\Http\Controllers\Api\V1\SupplierController::class, 'update'])->middleware('permission:suppliers.update');

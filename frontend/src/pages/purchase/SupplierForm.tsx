@@ -12,10 +12,12 @@ import {
   CreditCard, 
   FileText, 
   Hash, 
-  Sparkles,
-  RotateCcw
+  RotateCcw,
+  RotateCw,
+  Lock,
+  Check
 } from 'lucide-react';
-import { createSupplier, getSupplier, updateSupplier } from '../../api/suppliers';
+import { createSupplier, getSupplier, updateSupplier, getNextSupplierCode } from '../../api/suppliers';
 import { getBusinessUnits } from '../../api/organization';
 import { BusinessUnit } from '../../types/organization';
 import { SupplierPayload } from '../../types/supplier';
@@ -41,7 +43,7 @@ export function SupplierForm() {
   // Form Fields
   const [name, setName] = useState('');
   const [supplierCode, setSupplierCode] = useState('');
-  const [autoCode, setAutoCode] = useState(!isEdit);
+  const [codeLoading, setCodeLoading] = useState(false);
   const [businessUnitId, setBusinessUnitId] = useState<number | ''>('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
@@ -75,6 +77,8 @@ export function SupplierForm() {
     loadBusinessUnits();
     if (isEdit && id) {
       loadSupplierData(Number(id));
+    } else {
+      fetchNextCode();
     }
   }, [id, isEdit]);
 
@@ -87,6 +91,24 @@ export function SupplierForm() {
     }
   };
 
+  const fetchNextCode = async () => {
+    setCodeLoading(true);
+    try {
+      const res = await getNextSupplierCode();
+      if (res?.data?.supplier_code) {
+        setSupplierCode(res.data.supplier_code);
+      } else {
+        // Fallback default format if backend response structure differs
+        setSupplierCode((prev) => prev || 'SUP-0001');
+      }
+    } catch {
+      // Fallback unique candidate on network error
+      setSupplierCode((prev) => prev || `SUP-${Math.floor(1000 + Math.random() * 9000)}`);
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
   const loadSupplierData = async (supplierId: number) => {
     setInitialLoading(true);
     setError(null);
@@ -95,7 +117,6 @@ export function SupplierForm() {
       const s = res.data;
       setName(s.name || '');
       setSupplierCode(s.supplier_code || '');
-      setAutoCode(false);
       setBusinessUnitId(s.business_unit_id || '');
       setStatus(s.status || 'ACTIVE');
       setContactPerson(s.contact_person || '');
@@ -122,17 +143,15 @@ export function SupplierForm() {
     }
   };
 
-  const generateQuickCode = () => {
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const prefix = name ? name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'SUP') : 'SUP';
-    setSupplierCode(`${prefix}-${randomSuffix}`);
-    setAutoCode(false);
-  };
-
   const handleSubmit = async (e: React.FormEvent, stayOnPage = false) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Supplier name is required.');
+      return;
+    }
+
+    if (!supplierCode.trim()) {
+      setError('Supplier code is required. Please click refresh to auto-generate a unique code.');
       return;
     }
 
@@ -141,7 +160,7 @@ export function SupplierForm() {
 
     const payload: SupplierPayload = {
       name: name.trim(),
-      supplier_code: autoCode ? undefined : (supplierCode.trim() || undefined),
+      supplier_code: supplierCode.trim(),
       business_unit_id: businessUnitId ? Number(businessUnitId) : null,
       status,
       contact_person: contactPerson.trim() || null,
@@ -167,12 +186,11 @@ export function SupplierForm() {
         }, 1200);
       } else {
         const res = await createSupplier(payload);
-        setSuccessMessage(`Supplier "${res.data.name}" created successfully with Code ${res.data.supplier_code}.`);
+        const assignedCode = res.data?.supplier_code || supplierCode;
+        setSuccessMessage(`Supplier "${res.data.name}" registered successfully with Code [${assignedCode}].`);
         if (stayOnPage) {
-          // Reset form for next entry
+          // Reset form for next entry and fetch new unique code
           setName('');
-          setSupplierCode('');
-          setAutoCode(true);
           setContactPerson('');
           setMobile('');
           setAlternateMobile('');
@@ -182,6 +200,7 @@ export function SupplierForm() {
           setOpeningBalance(0);
           setCreditLimit(0);
           setNotes('');
+          fetchNextCode();
           setTimeout(() => setSuccessMessage(null), 4000);
         } else {
           setTimeout(() => {
@@ -311,16 +330,24 @@ export function SupplierForm() {
             {/* Supplier Code */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="supplier-code-input" className="text-xs font-semibold text-slate-700">
-                  Supplier Code / Reference ID
+                <label htmlFor="supplier-code-input" className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <span>Supplier Code</span>
+                  <span className="text-rose-500">*</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <Lock className="w-2.5 h-2.5 text-indigo-500" />
+                    Auto by System (Unique)
+                  </span>
                 </label>
                 {!isEdit && (
                   <button
                     type="button"
-                    onClick={() => setAutoCode(!autoCode)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer"
+                    onClick={fetchNextCode}
+                    disabled={codeLoading}
+                    className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer disabled:opacity-50"
+                    title="Generate fresh unique code from system sequence"
                   >
-                    {autoCode ? 'Set Custom Code' : 'Auto Generate'}
+                    <RotateCw className={`w-3 h-3 ${codeLoading ? 'animate-spin' : ''}`} />
+                    <span>{codeLoading ? 'Generating...' : 'Refresh'}</span>
                   </button>
                 )}
               </div>
@@ -331,27 +358,29 @@ export function SupplierForm() {
                 <input
                   id="supplier-code-input"
                   type="text"
-                  disabled={autoCode && !isEdit}
-                  placeholder={autoCode ? 'Auto-generated (e.g. SUP-0001)' : 'e.g. SUP-RT-01'}
-                  value={autoCode && !isEdit ? 'Auto-generated on Save' : supplierCode}
-                  onChange={(e) => setSupplierCode(e.target.value)}
+                  required
+                  readOnly={!isEdit}
+                  placeholder={codeLoading ? 'Generating unique code...' : 'e.g. SUP-0001'}
+                  value={supplierCode}
+                  onChange={(e) => setSupplierCode(e.target.value.toUpperCase())}
                   className={`w-full pl-9 pr-24 py-2 border rounded-lg text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 ${
-                    autoCode && !isEdit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-900 border-slate-300'
+                    !isEdit ? 'bg-slate-50 text-slate-800 font-semibold border-slate-300' : 'bg-white text-slate-900 border-slate-300'
                   }`}
                 />
-                {!autoCode && !isEdit && (
+                {!isEdit && (
                   <button
                     type="button"
-                    onClick={generateQuickCode}
-                    className="absolute inset-y-1 right-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-md flex items-center gap-1 transition-colors cursor-pointer"
+                    onClick={fetchNextCode}
+                    disabled={codeLoading}
+                    className="absolute inset-y-1 right-1 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                   >
-                    <Sparkles className="w-3 h-3 text-indigo-500" />
-                    <span>Suggest</span>
+                    <RotateCw className={`w-3 h-3 text-indigo-500 ${codeLoading ? 'animate-spin' : ''}`} />
+                    <span>Auto</span>
                   </button>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Unique identifier for tracking purchase orders, bills, and payments.
+              <p className="text-[11px] text-slate-500 mt-1">
+                Required unique identifier generated automatically by the system with zero duplicate collision.
               </p>
             </div>
 

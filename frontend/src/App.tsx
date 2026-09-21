@@ -18,6 +18,7 @@ import { StockTransfers } from './pages/inventory/StockTransfers';
 import { SupplierList } from './pages/purchase/SupplierList';
 import { SupplierForm } from './pages/purchase/SupplierForm';
 import { PurchaseOrderList } from './pages/purchase/PurchaseOrderList';
+import { PurchaseOrderForm } from './pages/purchase/PurchaseOrderForm';
 import { PurchaseList } from './pages/purchase/PurchaseList';
 import { CustomerList } from './pages/customers/CustomerList';
 import { CustomerGroupList } from './pages/customers/CustomerGroupList';
@@ -28,6 +29,7 @@ import { CompanyPage } from './pages/organization/CompanyPage';
 import { BusinessUnitList } from './pages/organization/BusinessUnitList';
 import { BranchList } from './pages/organization/BranchList';
 import { WarehouseList } from './pages/organization/WarehouseList';
+import { StorageLocationList } from './pages/organization/StorageLocationList';
 
 const queryClient = new QueryClient();
 
@@ -151,6 +153,20 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/purchases/orders/new" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseOrderForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/orders/:id/edit" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseOrderForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/purchases" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -212,6 +228,14 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/organization/warehouses" element={<Navigate to="/warehouses" replace />} />
+            <Route path="/storage-locations" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StorageLocationList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/storage-locations" element={<Navigate to="/storage-locations" replace />} />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

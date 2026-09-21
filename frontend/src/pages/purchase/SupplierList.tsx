@@ -40,6 +40,7 @@ export function SupplierList() {
   // Delete Confirmation State
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -61,6 +62,7 @@ export function SupplierList() {
 
       setSuppliers(listData);
       setBusinessUnits(buRes.data || []);
+      setIsFallbackMode(Boolean((suppRes as any)?.isFallback));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load suppliers.');
     } finally {
@@ -179,6 +181,16 @@ export function SupplierList() {
         <div id="suppliers-error-alert" className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-800 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {isFallbackMode && !error && (
+        <div id="suppliers-fallback-notice" className="px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+            <span>Local Resilient Storage active &bull; Auto-generated unique codes & full supplier management are enabled.</span>
+          </div>
+          <span className="text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">Offline-Ready</span>
         </div>
       )}
 

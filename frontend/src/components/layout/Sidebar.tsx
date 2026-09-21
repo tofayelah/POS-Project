@@ -16,7 +16,8 @@ import {
   Layers,
   Barcode,
   FileText,
-  ShoppingCart
+  ShoppingCart,
+  Boxes
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -115,8 +116,16 @@ export function Sidebar() {
           <Users className={`w-4 h-4 ${location.pathname.startsWith('/purchases/suppliers') ? 'text-purple-400' : 'text-slate-400'}`} />
           <span className="font-medium">Suppliers</span>
         </Link>
-        <Link to="/purchases/orders" id="nav-link-purchase-orders" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
-          <FileText className="w-4 h-4 text-slate-400" />
+        <Link 
+          to="/purchases/orders" 
+          id="nav-link-purchase-orders" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname.startsWith('/purchases/orders')
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <FileText className={`w-4 h-4 ${location.pathname.startsWith('/purchases/orders') ? 'text-indigo-400' : 'text-slate-400'}`} />
           <span>Purchase Orders</span>
         </Link>
         <Link to="/purchases" id="nav-link-purchases" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
@@ -191,6 +200,18 @@ export function Sidebar() {
         >
           <Package className={`w-4 h-4 ${location.pathname.startsWith('/warehouses') ? 'text-indigo-400' : 'text-slate-400'}`} />
           <span>Warehouses</span>
+        </Link>
+        <Link 
+          to="/storage-locations" 
+          id="nav-link-storage-locations" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/storage-locations') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Boxes className={`w-4 h-4 ${location.pathname.startsWith('/storage-locations') ? 'text-teal-400' : 'text-slate-400'}`} />
+          <span>Storage Locations</span>
         </Link>
 
         {canViewAdmin && (

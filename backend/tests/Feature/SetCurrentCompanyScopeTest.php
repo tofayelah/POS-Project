@@ -25,6 +25,11 @@ class SetCurrentCompanyScopeTest extends TestCase
         $user = User::factory()->create();
         $user->companies()->attach($company->id);
 
+        $perm = \App\Models\Permission::firstOrCreate(['name' => 'business_units.view'], ['group' => 'organization']);
+        $role = \App\Models\Role::firstOrCreate(['name' => 'Admin']);
+        $role->permissions()->syncWithoutDetaching([$perm->id]);
+        $user->roles()->attach($role->id);
+
         $response = $this->actingAs($user)->getJson('/api/v1/business-units', [
             'X-Company-ID' => $company->id
         ]);

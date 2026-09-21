@@ -39,8 +39,8 @@ class InventoryFoundationTest extends TestCase
             'name' => 'Admin',
             'email' => 'admin@test.com',
             'password' => bcrypt('password'),
-            'company_id' => $this->company->id,
         ]);
+        $this->user->companies()->attach($this->company->id);
         
         $this->product = Product::create([
             'company_id' => $this->company->id,

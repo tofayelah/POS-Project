@@ -39,7 +39,8 @@ class InventoryCoreGate1Test extends TestCase
             'code' => 'APEX-' . Str::random(5),
             'country' => 'Bangladesh',
         ]);
-        $this->user = User::factory()->create(['company_id' => $this->company->id]);
+        $this->user = User::factory()->create();
+        $this->user->companies()->attach($this->company->id);
         $this->warehouse = Warehouse::create([
             'company_id' => $this->company->id,
             'name' => 'Main Warehouse',

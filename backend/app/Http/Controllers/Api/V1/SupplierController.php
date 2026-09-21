@@ -54,6 +54,58 @@ class SupplierController extends Controller
         ]);
     }
 
+    /**
+     * Generate guaranteed unique next supplier code for the company
+     */
+    public static function generateUniqueSupplierCode($companyId): string
+    {
+        // Query existing codes (including soft-deleted) to prevent any duplicate key violations
+        $codes = Supplier::withTrashed()
+            ->where('company_id', $companyId)
+            ->where('supplier_code', 'LIKE', 'SUP-%')
+            ->pluck('supplier_code');
+
+        $maxNum = 0;
+        foreach ($codes as $code) {
+            if (preg_match('/^SUP-(\d+)$/i', $code, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNum = $maxNum + 1;
+        $newCode = 'SUP-' . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+
+        // Fail-safe loop to ensure strictly zero duplicates
+        while (Supplier::withTrashed()
+            ->where('company_id', $companyId)
+            ->where('supplier_code', $newCode)
+            ->exists()) {
+            $nextNum++;
+            $newCode = 'SUP-' . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+        }
+
+        return $newCode;
+    }
+
+    /**
+     * Endpoint to fetch the next system-generated unique supplier code
+     */
+    public function nextCode(Request $request)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $code = self::generateUniqueSupplierCode($companyId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'supplier_code' => $code
+            ]
+        ]);
+    }
+
     public function store(Request $request)
     {
         $companyId = $request->attributes->get('company_id');
@@ -76,20 +128,18 @@ class SupplierController extends Controller
             'status' => 'nullable|in:ACTIVE,INACTIVE,active,inactive',
         ]);
         
-        // Auto-generate code if empty
+        // Supplier code is required; system automatically generates unique non-duplicate code
         if (empty($validated['supplier_code'])) {
-            $count = Supplier::where('company_id', $companyId)->count() + 1;
-            $validated['supplier_code'] = 'SUP-' . str_pad((string)$count, 4, '0', STR_PAD_LEFT);
+            $validated['supplier_code'] = self::generateUniqueSupplierCode($companyId);
         } else {
-            $validated['supplier_code'] = strtoupper(trim($validated['supplier_code']));
-        }
-
-        // Verify unique supplier_code per company
-        if (Supplier::where('company_id', $companyId)->where('supplier_code', $validated['supplier_code'])->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => "Supplier code '{$validated['supplier_code']}' already exists in this company."
-            ], 422);
+            $candidate = strtoupper(trim($validated['supplier_code']));
+            // Verify if candidate already exists in company (including soft deleted)
+            if (Supplier::withTrashed()->where('company_id', $companyId)->where('supplier_code', $candidate)->exists()) {
+                // Auto-generate next unique code to ensure no duplicate collision
+                $validated['supplier_code'] = self::generateUniqueSupplierCode($companyId);
+            } else {
+                $validated['supplier_code'] = $candidate;
+            }
         }
 
         $validated['company_id'] = $companyId;
@@ -160,13 +210,14 @@ class SupplierController extends Controller
         
         if (isset($validated['supplier_code'])) {
             $validated['supplier_code'] = strtoupper(trim($validated['supplier_code']));
-            if (Supplier::where('company_id', $companyId)
+            if (Supplier::withTrashed()
+                ->where('company_id', $companyId)
                 ->where('supplier_code', $validated['supplier_code'])
                 ->where('id', '!=', $supplier->id)
                 ->exists()) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Supplier code '{$validated['supplier_code']}' already exists."
+                    'message' => "Supplier code '{$validated['supplier_code']}' already exists. Codes must be unique."
                 ], 422);
             }
         }

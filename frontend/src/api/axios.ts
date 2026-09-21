@@ -13,6 +13,23 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Multi-Tenant Isolation Headers
+  const activeCompanyId = localStorage.getItem('active_company_id') || '1';
+  config.headers['X-Company-ID'] = activeCompanyId;
+
+  // Subdomain detection or storage
+  let activeSubdomain = localStorage.getItem('active_subdomain');
+  if (!activeSubdomain && typeof window !== 'undefined') {
+    const hostParts = window.location.hostname.split('.');
+    if (hostParts.length > 2 && hostParts[0] !== 'www') {
+      activeSubdomain = hostParts[0];
+    }
+  }
+  if (activeSubdomain) {
+    config.headers['X-Tenant-Subdomain'] = activeSubdomain;
+  }
+
   return config;
 });
 
