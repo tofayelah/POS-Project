@@ -10,4 +10,5 @@ class Warehouse extends Model {
     public function branch() { return $this->belongsTo(Branch::class); }
 
     public function storageLocations() { return $this->hasMany(StorageLocation::class); }
+    public function users() { return $this->belongsToMany(User::class, 'user_warehouse_access'); }
 }
