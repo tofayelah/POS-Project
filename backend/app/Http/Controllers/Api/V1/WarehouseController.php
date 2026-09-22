@@ -39,7 +39,7 @@ class WarehouseController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255',
             'address' => 'nullable|string',
-            'warehouse_type' => 'nullable|string|in:CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
+            'warehouse_type' => 'nullable|string|in:MAIN,CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
             'status' => 'nullable|in:active,inactive'
         ]);
 
@@ -59,7 +59,7 @@ class WarehouseController extends Controller
         $validated['company_id'] = $companyId;
         $validated['uuid'] = (string) Str::uuid();
         if (empty($validated['warehouse_type'])) {
-            $validated['warehouse_type'] = 'CENTRAL';
+            $validated['warehouse_type'] = 'MAIN';
         }
 
         $warehouse = Warehouse::create($validated);
@@ -77,7 +77,7 @@ class WarehouseController extends Controller
             'name' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:255',
             'address' => 'nullable|string',
-            'warehouse_type' => 'nullable|string|in:CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
+            'warehouse_type' => 'nullable|string|in:MAIN,CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
             'status' => 'nullable|in:active,inactive'
         ]);
 

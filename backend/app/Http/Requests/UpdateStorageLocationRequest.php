@@ -15,41 +15,56 @@ class UpdateStorageLocationRequest extends FormRequest
 
     public function rules(): array
     {
-        $companyId = $this->attributes->get('company_id')
-            ?? $this->input('company_id')
-            ?? $this->header('X-Company-ID');
+        $companyId = $this->attributes->get('company_id');
 
-        $locationParam = $this->route('storage_location') ?? $this->route('storageLocation');
-        $locationId = is_object($locationParam) ? $locationParam->id : $locationParam;
-
-        $targetWarehouseId = $this->input('warehouse_id');
-        if (!$targetWarehouseId && $locationId) {
-            $existing = StorageLocation::find($locationId);
-            $targetWarehouseId = $existing?->warehouse_id;
-        }
+        $locationParam = $this->route('storageLocation') ?? $this->route('id');
+        $locationId = $locationParam instanceof StorageLocation ? $locationParam->id : $locationParam;
+        
+        $existing = $locationParam instanceof StorageLocation ? $locationParam : StorageLocation::find($locationId);
+        $warehouseId = $this->input('warehouse_id', $existing?->warehouse_id);
 
         return [
             'warehouse_id' => [
-                'nullable',
+                'sometimes',
+                'required',
                 'integer',
                 Rule::exists('warehouses', 'id')->where(function ($query) use ($companyId) {
-                    if ($companyId) {
-                        $query->where('company_id', $companyId);
-                    }
+                    return $query->where('company_id', $companyId ?: 0)->whereNull('deleted_at');
                 }),
             ],
             'code' => [
-                'nullable',
+                'sometimes',
+                'required',
                 'string',
                 'max:50',
-                Rule::unique('storage_locations', 'code')->where(function ($query) use ($targetWarehouseId) {
-                    if ($targetWarehouseId) {
-                        $query->where('warehouse_id', $targetWarehouseId);
-                    }
+                Rule::unique('storage_locations')->where(function ($query) use ($warehouseId) {
+                    return $query->where('warehouse_id', $warehouseId);
                 })->ignore($locationId),
             ],
-            'name' => ['nullable', 'string', 'max:150'],
-            'is_active' => ['nullable', 'boolean'],
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:150',
+            ],
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'is_active' => [
+                'nullable',
+                'boolean',
+            ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (!$this->attributes->get('company_id')) {
+                $validator->errors()->add('company_id', 'Company scope could not be determined.');
+            }
+        });
     }
 }

@@ -1,0 +1,62 @@
+--- backend/app/Services/InventoryService.php
++++ backend/app/Services/InventoryService.php
+@@ -43,6 +43,22 @@
+             $variant = ProductVariant::findOrFail($productVariantId);
+             $productId = $variant->product_id;
+ 
++            // Validate Storage Location
++            if ($storageLocationId) {
++                $location = StorageLocation::find($storageLocationId);
++                if (!$location || $location->warehouse_id !== $warehouseId) {
++                    throw new ConflictHttpException("Storage location does not belong to the specified warehouse.");
++                }
++            }
++
++            // Validate Stock Batch
++            if ($stockBatchId) {
++                $batch = StockBatch::find($stockBatchId);
++                if (!$batch || $batch->variant_id !== $productVariantId) {
++                    throw new ConflictHttpException("Stock batch does not belong to the specified product variant.");
++                }
++            }
++
+             // Determine if movement is incoming or outgoing
+             $isIncoming = in_array($movementType, ['OPENING_STOCK', 'STOCK_IN', 'TRANSFER_IN', 'ADJUSTMENT_IN', 'RETURN_IN', 'RETURN_DAMAGED_IN']);
+ 
+@@ -88,6 +104,26 @@
+             $inventory->total_value = $inventory->quantity * $inventory->average_cost;
+             $inventory->save();
+ 
++            // Handle granular InventoryBatch tracking
++            if ($stockBatchId || $storageLocationId) {
++                if (!$stockBatchId) {
++                    throw new ConflictHttpException("Stock batch is required when granular location tracking is used.");
++                }
++                $invBatch = InventoryBatch::firstOrCreate([
++                    'inventory_id' => $inventory->id,
++                    'stock_batch_id' => $stockBatchId,
++                    'storage_location_id' => $storageLocationId,
++                ], [
++                    'quantity' => 0
++                ]);
++                $invBatch = InventoryBatch::where('id', $invBatch->id)->lockForUpdate()->first();
++                $invQuantityAfter = $isIncoming ? ($invBatch->quantity + $quantity) : ($invBatch->quantity - $quantity);
++                if (!$isIncoming && !$allowNegative && $invQuantityAfter < 0) {
++                    throw new ConflictHttpException("Insufficient stock in the specified batch/location.");
++                }
++                $invBatch->quantity = $invQuantityAfter;
++                $invBatch->save();
++            }
++
+             // Create immutable movement
+             $movement = StockMovement::create([
+                 'company_id' => $companyId,
+@@ -104,6 +140,8 @@
+                 'reason' => $reason,
+                 'notes' => $notes,
+                 'created_by' => $userId,
++                'storage_location_id' => $storageLocationId,
++                'stock_batch_id' => $stockBatchId,
+             ]);
+ 
+             return $movement;

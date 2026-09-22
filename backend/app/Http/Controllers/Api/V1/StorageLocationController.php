@@ -12,36 +12,53 @@ use Illuminate\Http\Request;
 
 class StorageLocationController extends Controller
 {
+    private function resolveCompanyId(Request $request): int
+    {
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->user()?->companies()->first()?->id
+            ?? $request->user()?->company_id;
+
+        if (!$companyId) {
+            abort(403, 'Company scope could not be determined.');
+        }
+
+        return (int) $companyId;
+    }
+
+    private function resolveLocationId($storageLocation): int
+    {
+        return $storageLocation instanceof StorageLocation ? $storageLocation->id : (int) $storageLocation;
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $this->resolveCompanyId($request);
 
-        $query = StorageLocation::where('company_id', $companyId)
-            ->with('warehouse:id,name,code,business_unit_id,branch_id');
+        $query = StorageLocation::with(['warehouse:id,name,code,business_unit_id'])
+            ->where('company_id', $companyId);
 
         if ($request->filled('warehouse_id')) {
             $query->where('warehouse_id', $request->input('warehouse_id'));
         }
 
         if ($request->filled('is_active')) {
-            $query->where('is_active', filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN));
+            $query->where('is_active', $request->boolean('is_active'));
         }
-
-        $locations = $query->get();
 
         return response()->json([
             'success' => true,
-            'data' => $locations,
+            'data' => $query->get(),
         ]);
     }
 
-    public function show(Request $request, $id): JsonResponse
+    public function show(Request $request, $storageLocation): JsonResponse
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $this->resolveCompanyId($request);
+        $locationId = $this->resolveLocationId($storageLocation);
 
-        $location = StorageLocation::where('company_id', $companyId)
-            ->with('warehouse:id,name,code,business_unit_id,branch_id')
-            ->findOrFail($id);
+        $location = StorageLocation::with(['warehouse:id,name,code,business_unit_id'])
+            ->where('company_id', $companyId)
+            ->findOrFail($locationId);
 
         return response()->json([
             'success' => true,
@@ -51,23 +68,14 @@ class StorageLocationController extends Controller
 
     public function store(StoreStorageLocationRequest $request): JsonResponse
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $this->resolveCompanyId($request);
         $validated = $request->validated();
 
-        // Ensure the warehouse belongs to the current company
-        $warehouse = Warehouse::where('company_id', $companyId)
-            ->findOrFail($validated['warehouse_id']);
-
-        // Check unique code within the warehouse (defense in depth)
-        if (StorageLocation::where('warehouse_id', $warehouse->id)->where('code', $validated['code'])->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Code already exists in this warehouse.',
-            ], 422);
-        }
+        // Validate warehouse ownership within current company
+        Warehouse::where('company_id', $companyId)->findOrFail($validated['warehouse_id']);
 
         $validated['company_id'] = $companyId;
-        if (!array_key_exists('is_active', $validated) || $validated['is_active'] === null) {
+        if (!isset($validated['is_active'])) {
             $validated['is_active'] = true;
         }
 
@@ -75,64 +83,59 @@ class StorageLocationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Storage location created.',
-            'data' => $location->load('warehouse:id,name,code'),
+            'message' => 'Storage location created successfully.',
+            'data' => $location->load(['warehouse:id,name,code,business_unit_id']),
         ], 201);
     }
 
-    public function update(UpdateStorageLocationRequest $request, $id): JsonResponse
+    public function update(UpdateStorageLocationRequest $request, $storageLocation): JsonResponse
     {
-        $companyId = $request->attributes->get('company_id');
-        $location = StorageLocation::where('company_id', $companyId)->findOrFail($id);
+        $companyId = $this->resolveCompanyId($request);
+        $locationId = $this->resolveLocationId($storageLocation);
+
+        $location = StorageLocation::where('company_id', $companyId)->findOrFail($locationId);
         $validated = $request->validated();
 
-        // If warehouse_id is provided, verify it belongs to current company
-        if (isset($validated['warehouse_id']) && $validated['warehouse_id'] != $location->warehouse_id) {
-            $warehouse = Warehouse::where('company_id', $companyId)->findOrFail($validated['warehouse_id']);
-            $targetWarehouseId = $warehouse->id;
-        } else {
-            $targetWarehouseId = $location->warehouse_id;
-        }
-
-        // Check unique code within target warehouse
-        $targetCode = $validated['code'] ?? $location->code;
-        if (StorageLocation::where('warehouse_id', $targetWarehouseId)
-            ->where('code', $targetCode)
-            ->where('id', '!=', $location->id)
-            ->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Code already exists in this warehouse.',
-            ], 422);
+        if (isset($validated['warehouse_id'])) {
+            Warehouse::where('company_id', $companyId)->findOrFail($validated['warehouse_id']);
         }
 
         $location->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Storage location updated.',
-            'data' => $location->load('warehouse:id,name,code'),
+            'message' => 'Storage location updated successfully.',
+            'data' => $location->fresh(['warehouse:id,name,code,business_unit_id']),
         ]);
     }
 
-    public function destroy(Request $request, $id): JsonResponse
+    public function destroy(Request $request, $storageLocation): JsonResponse
     {
-        $companyId = $request->attributes->get('company_id');
-        $location = StorageLocation::where('company_id', $companyId)->findOrFail($id);
+        $companyId = $this->resolveCompanyId($request);
+        $locationId = $this->resolveLocationId($storageLocation);
 
-        // Check if any inventory batches exist for this storage location
-        if ($location->inventoryBatches()->where('quantity', '>', 0)->exists()) {
+        $location = StorageLocation::where('company_id', $companyId)->findOrFail($locationId);
+
+        // Delete Safety: Must not be deleted if active inventory batches with quantity > 0 exist
+        $hasActiveInventory = $location->inventoryBatches()
+            ->where('quantity', '>', 0)
+            ->exists();
+
+        if ($hasActiveInventory) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete storage location with active inventory.',
             ], 422);
         }
 
+        // Disassociate zero-quantity batches to allow safe deletion
+        $location->inventoryBatches()->where('quantity', '<=', 0)->update(['storage_location_id' => null]);
+
         $location->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Storage location deleted.',
+            'message' => 'Storage location deleted successfully.',
         ]);
     }
 }

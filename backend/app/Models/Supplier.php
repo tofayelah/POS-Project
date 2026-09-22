@@ -35,6 +35,11 @@ class Supplier extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function businessUnit(): BelongsTo
+    {
+        return $this->belongsTo(BusinessUnit::class);
+    }
     
     public function ledgers(): HasMany
     {

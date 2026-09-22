@@ -33,6 +33,20 @@ class Product extends Model
             if (empty($model->slug)) {
                 $model->slug = Str::slug($model->name);
             }
+            if (empty($model->category_id) && !empty($model->company_id)) {
+                $cat = Category::firstOrCreate(
+                    ['company_id' => $model->company_id, 'name' => 'General'],
+                    ['code' => 'GEN']
+                );
+                $model->category_id = $cat->id;
+            }
+            if (empty($model->unit_id) && !empty($model->company_id)) {
+                $unit = Unit::firstOrCreate(
+                    ['company_id' => $model->company_id, 'short_code' => 'PCS'],
+                    ['name' => 'Pieces']
+                );
+                $model->unit_id = $unit->id;
+            }
         });
     }
 

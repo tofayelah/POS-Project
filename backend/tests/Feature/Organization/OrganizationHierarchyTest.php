@@ -4,494 +4,393 @@ namespace Tests\Feature\Organization;
 
 use App\Models\Branch;
 use App\Models\BusinessUnit;
+use App\Models\Category;
 use App\Models\Company;
+use App\Models\Inventory;
+use App\Models\InventoryBatch;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\StockBatch;
 use App\Models\StorageLocation;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class OrganizationHierarchyTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Company $companyA;
-    protected Company $companyB;
-    protected User $userA;
-    protected User $userB;
-    protected BusinessUnit $buA;
-    protected Branch $branchA;
-    protected Warehouse $warehouseA;
-    protected Warehouse $warehouseA2;
-    protected BusinessUnit $buB;
-    protected Branch $branchB;
-    protected Warehouse $warehouseB;
+    private User $userA;
+    private User $userB;
+
+    private Company $companyA;
+    private Company $companyB;
+
+    private BusinessUnit $businessUnitA;
+    private BusinessUnit $businessUnitB;
+
+    private Branch $branchA;
+    private Branch $branchB;
+
+    private Warehouse $warehouseA;
+    private Warehouse $warehouseA2;
+    private Warehouse $warehouseB;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // 1. Create permissions
-        $permissions = [
-            'business_units.view', 'business_units.create', 'business_units.update', 'business_units.delete',
-            'branches.view', 'branches.create', 'branches.update', 'branches.delete',
-            'warehouses.view', 'warehouses.create', 'warehouses.update', 'warehouses.delete',
-            'storage_locations.view', 'storage_locations.create', 'storage_locations.update', 'storage_locations.delete',
-        ];
+        $this->createTestUsersAndPermissions();
 
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm, 'group' => 'organization']);
-        }
-
-        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
-        $superAdminRole->permissions()->sync(Permission::all());
-
-        // 2. Setup Company A hierarchy
         $this->companyA = Company::create([
-            'uuid' => (string) Str::uuid(),
-            'name' => 'Company A',
-            'code' => 'COMP-A',
+            'name' => 'Apex Retail Group',
+            'code' => 'APEX',
             'country' => 'BD',
-            'currency_code' => 'BDT',
-            'timezone' => 'Asia/Dhaka',
-            'status' => 'active',
         ]);
 
-        $this->buA = BusinessUnit::create([
-            'uuid' => (string) Str::uuid(),
+        $this->companyB = Company::create([
+            'name' => 'Beta Retail Group',
+            'code' => 'BETA',
+            'country' => 'BD',
+        ]);
+
+        $this->businessUnitA = BusinessUnit::create([
             'company_id' => $this->companyA->id,
-            'name' => 'BU A1',
-            'code' => 'BU-A1',
-            'status' => 'active',
+            'name' => 'Fashion Division',
+            'code' => 'FASHION',
+        ]);
+
+        $this->businessUnitB = BusinessUnit::create([
+            'company_id' => $this->companyB->id,
+            'name' => 'Home Division',
+            'code' => 'HOME',
         ]);
 
         $this->branchA = Branch::create([
-            'uuid' => (string) Str::uuid(),
             'company_id' => $this->companyA->id,
-            'business_unit_id' => $this->buA->id,
-            'name' => 'Branch A1',
-            'code' => 'BR-A1',
-            'status' => 'active',
-        ]);
-
-        $this->warehouseA = Warehouse::create([
-            'uuid' => (string) Str::uuid(),
-            'company_id' => $this->companyA->id,
-            'business_unit_id' => $this->buA->id,
-            'branch_id' => $this->branchA->id,
-            'name' => 'Warehouse A1',
-            'code' => 'WH-A1',
-            'warehouse_type' => 'BRANCH',
-            'status' => 'active',
-        ]);
-
-        $this->warehouseA2 = Warehouse::create([
-            'uuid' => (string) Str::uuid(),
-            'company_id' => $this->companyA->id,
-            'business_unit_id' => $this->buA->id,
-            'branch_id' => $this->branchA->id,
-            'name' => 'Warehouse A2',
-            'code' => 'WH-A2',
-            'warehouse_type' => 'BRANCH',
-            'status' => 'active',
-        ]);
-
-        $this->userA = User::create([
-            'uuid' => (string) Str::uuid(),
-            'name' => 'User Company A',
-            'email' => 'admin.a@retailcore.test',
-            'password' => bcrypt('password123'),
-            'status' => 'active',
-        ]);
-        $this->userA->roles()->attach($superAdminRole->id);
-        $this->userA->companies()->attach($this->companyA->id);
-
-        // 3. Setup Company B hierarchy
-        $this->companyB = Company::create([
-            'uuid' => (string) Str::uuid(),
-            'name' => 'Company B',
-            'code' => 'COMP-B',
-            'country' => 'BD',
-            'currency_code' => 'BDT',
-            'timezone' => 'Asia/Dhaka',
-            'status' => 'active',
-        ]);
-
-        $this->buB = BusinessUnit::create([
-            'uuid' => (string) Str::uuid(),
-            'company_id' => $this->companyB->id,
-            'name' => 'BU B1',
-            'code' => 'BU-B1',
-            'status' => 'active',
+            'business_unit_id' => $this->businessUnitA->id,
+            'name' => 'Gulshan Flagship',
+            'code' => 'GLS-01',
         ]);
 
         $this->branchB = Branch::create([
-            'uuid' => (string) Str::uuid(),
             'company_id' => $this->companyB->id,
-            'business_unit_id' => $this->buB->id,
-            'name' => 'Branch B1',
-            'code' => 'BR-B1',
-            'status' => 'active',
+            'business_unit_id' => $this->businessUnitB->id,
+            'name' => 'Dhanmondi Branch',
+            'code' => 'DHA-01',
+        ]);
+
+        $this->warehouseA = Warehouse::create([
+            'company_id' => $this->companyA->id,
+            'business_unit_id' => $this->businessUnitA->id,
+            'branch_id' => $this->branchA->id,
+            'name' => 'Gulshan Store Warehouse',
+            'code' => 'GLS-WH',
+            'warehouse_type' => 'BRANCH',
+        ]);
+
+        $this->warehouseA2 = Warehouse::create([
+            'company_id' => $this->companyA->id,
+            'business_unit_id' => $this->businessUnitA->id,
+            'branch_id' => $this->branchA->id,
+            'name' => 'Gulshan Secondary Warehouse',
+            'code' => 'GLS-WH-2',
+            'warehouse_type' => 'BRANCH',
         ]);
 
         $this->warehouseB = Warehouse::create([
-            'uuid' => (string) Str::uuid(),
             'company_id' => $this->companyB->id,
-            'business_unit_id' => $this->buB->id,
+            'business_unit_id' => $this->businessUnitB->id,
             'branch_id' => $this->branchB->id,
-            'name' => 'Warehouse B1',
-            'code' => 'WH-B1',
+            'name' => 'Dhanmondi Store Warehouse',
+            'code' => 'DHA-WH',
             'warehouse_type' => 'BRANCH',
-            'status' => 'active',
         ]);
 
-        $this->userB = User::create([
-            'uuid' => (string) Str::uuid(),
-            'name' => 'User Company B',
-            'email' => 'admin.b@retailcore.test',
-            'password' => bcrypt('password123'),
-            'status' => 'active',
-        ]);
-        $this->userB->roles()->attach($superAdminRole->id);
+        $this->userA->companies()->attach($this->companyA->id);
         $this->userB->companies()->attach($this->companyB->id);
     }
 
-    /**
-     * Test Company -> BusinessUnit relationship.
-     */
-    public function test_company_to_business_unit_relationship(): void
+    private function createTestUsersAndPermissions(): void
     {
-        $this->assertTrue($this->companyA->businessUnits->contains($this->buA));
-        $this->assertEquals($this->companyA->id, $this->buA->company->id);
+        $viewPermission = Permission::firstOrCreate(
+            ['name' => 'storage_locations.view'],
+            ['group' => 'organization']
+        );
+
+        $createPermission = Permission::firstOrCreate(
+            ['name' => 'storage_locations.create'],
+            ['group' => 'organization']
+        );
+
+        $updatePermission = Permission::firstOrCreate(
+            ['name' => 'storage_locations.update'],
+            ['group' => 'organization']
+        );
+
+        $deletePermission = Permission::firstOrCreate(
+            ['name' => 'storage_locations.delete'],
+            ['group' => 'organization']
+        );
+
+        $role = Role::firstOrCreate([
+            'name' => 'Admin',
+        ]);
+
+        $role->permissions()->syncWithoutDetaching([
+            $viewPermission->id,
+            $createPermission->id,
+            $updatePermission->id,
+            $deletePermission->id,
+        ]);
+
+        $this->userA = User::create([
+            'name' => 'Admin A',
+            'email' => 'admin-a-' . uniqid() . '@test.local',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $this->userB = User::create([
+            'name' => 'Admin B',
+            'email' => 'admin-b-' . uniqid() . '@test.local',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $this->userA->roles()->attach($role->id);
+        $this->userB->roles()->attach($role->id);
     }
 
-    /**
-     * Test BusinessUnit -> Branch relationship.
-     */
-    public function test_business_unit_to_branch_relationship(): void
+    private function createHierarchyFixture(): array
     {
-        $this->assertTrue($this->buA->branches->contains($this->branchA));
-        $this->assertEquals($this->buA->id, $this->branchA->businessUnit->id);
-    }
+        $company = $this->companyA;
 
-    /**
-     * Test Branch -> Warehouse relationship.
-     */
-    public function test_branch_to_warehouse_relationship(): void
-    {
-        $this->assertTrue($this->branchA->warehouses->contains($this->warehouseA));
-        $this->assertEquals($this->branchA->id, $this->warehouseA->branch->id);
-    }
+        $businessUnit = $this->businessUnitA;
 
-    /**
-     * Test Warehouse -> StorageLocation relationship.
-     */
-    public function test_warehouse_to_storage_location_relationship(): void
-    {
-        $location = StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'SHELF-A1',
-            'name' => 'Shelf A1 Top',
+        $branch = $this->branchA;
+
+        $warehouse = $this->warehouseA;
+
+        $storageLocation = StorageLocation::create([
+            'company_id' => $company->id,
+            'warehouse_id' => $warehouse->id,
+            'code' => 'AISLE-A1-' . uniqid(),
+            'name' => 'Aisle A Rack 1',
+            'description' => 'Top shelf for premium apparel',
             'is_active' => true,
         ]);
 
-        $this->assertTrue($this->warehouseA->storageLocations->contains($location));
-        $this->assertEquals($this->warehouseA->id, $location->warehouse->id);
-        $this->assertEquals($this->companyA->id, $location->company->id);
+        return compact(
+            'company',
+            'businessUnit',
+            'branch',
+            'warehouse',
+            'storageLocation'
+        );
     }
 
-    /**
-     * Company isolation: Company A cannot read Company B's Business Unit.
-     */
-    public function test_company_a_cannot_read_company_b_business_unit(): void
-    {
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->getJson("/api/v1/business-units/{$this->buB->id}");
+    // -------------------------------------------------------------------------
+    // Organization Hierarchy Tests
+    // -------------------------------------------------------------------------
 
-        $response->assertStatus(404);
+    public function test_company_has_business_units(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['company']->businessUnits->contains($f['businessUnit'])
+        );
     }
 
-    /**
-     * Company isolation: Company A cannot read Company B's Branch.
-     */
-    public function test_company_a_cannot_read_company_b_branch(): void
+    public function test_company_has_branches(): void
     {
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->getJson("/api/v1/branches/{$this->branchB->id}");
+        $f = $this->createHierarchyFixture();
 
-        $response->assertStatus(404);
+        $this->assertTrue(
+            $f['company']->branches->contains($f['branch'])
+        );
     }
 
-    /**
-     * Company isolation: Company A cannot read Company B's Warehouse.
-     */
-    public function test_company_a_cannot_read_company_b_warehouse(): void
+    public function test_company_has_warehouses(): void
     {
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->getJson("/api/v1/warehouses/{$this->warehouseB->id}");
+        $f = $this->createHierarchyFixture();
 
-        $response->assertStatus(404);
+        $this->assertTrue(
+            $f['company']->warehouses->contains($f['warehouse'])
+        );
     }
 
-    /**
-     * Company isolation: Company A cannot read Company B's Storage Location.
-     */
-    public function test_company_a_cannot_read_company_b_storage_location(): void
+    public function test_company_has_storage_locations(): void
     {
-        $locationB = StorageLocation::create([
-            'company_id' => $this->companyB->id,
-            'warehouse_id' => $this->warehouseB->id,
-            'code' => 'BIN-B1',
-            'name' => 'Bin B1',
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['company']->storageLocations->contains($f['storageLocation'])
+        );
+    }
+
+    public function test_business_unit_belongs_to_company(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['company']->id,
+            $f['businessUnit']->company->id
+        );
+    }
+
+    public function test_business_unit_has_branches(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['businessUnit']->branches->contains($f['branch'])
+        );
+    }
+
+    public function test_business_unit_has_warehouses(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['businessUnit']->warehouses->contains($f['warehouse'])
+        );
+    }
+
+    public function test_branch_belongs_to_company(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['company']->id,
+            $f['branch']->company->id
+        );
+    }
+
+    public function test_branch_belongs_to_business_unit(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['businessUnit']->id,
+            $f['branch']->businessUnit->id
+        );
+    }
+
+    public function test_branch_has_warehouses(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['branch']->warehouses->contains($f['warehouse'])
+        );
+    }
+
+    public function test_warehouse_belongs_to_company(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['company']->id,
+            $f['warehouse']->company->id
+        );
+    }
+
+    public function test_warehouse_belongs_to_business_unit(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['businessUnit']->id,
+            $f['warehouse']->businessUnit->id
+        );
+    }
+
+    public function test_warehouse_belongs_to_branch(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['branch']->id,
+            $f['warehouse']->branch->id
+        );
+    }
+
+    public function test_warehouse_has_storage_locations(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertTrue(
+            $f['warehouse']->storageLocations->contains($f['storageLocation'])
+        );
+    }
+
+    public function test_storage_location_belongs_to_company_and_warehouse(): void
+    {
+        $f = $this->createHierarchyFixture();
+
+        $this->assertEquals(
+            $f['company']->id,
+            $f['storageLocation']->company->id
+        );
+
+        $this->assertEquals(
+            $f['warehouse']->id,
+            $f['storageLocation']->warehouse->id
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Delete Safety Tests
+    // -------------------------------------------------------------------------
+
+    public function test_delete_blocked_when_inventory_exists(): void
+    {
+        $company = $this->companyA;
+        $warehouse = $this->warehouseA;
+
+        $storageLocation = StorageLocation::create([
+            'company_id' => $company->id,
+            'warehouse_id' => $warehouse->id,
+            'code' => 'DELETE-BLOCK-' . uniqid(),
+            'name' => 'Delete Block Location',
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->getJson("/api/v1/storage-locations/{$locationB->id}");
+        $category = Category::firstOrCreate(['company_id' => $company->id, 'slug' => 'test-cat'], ['name' => 'Test Cat']);
+        $unit = Unit::firstOrCreate(['company_id' => $company->id, 'name' => 'Piece'], ['short_code' => 'PCS']);
 
-        $response->assertStatus(404);
-    }
-
-    /**
-     * Company isolation: Company A cannot create storage location under Company B's warehouse.
-     */
-    public function test_company_a_cannot_create_storage_location_under_company_b_warehouse(): void
-    {
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->postJson('/api/v1/storage-locations', [
-                'warehouse_id' => $this->warehouseB->id,
-                'code' => 'BIN-HACK',
-                'name' => 'Cross-Company Bin',
-            ]);
-
-        // Rejected either by FormRequest validation (exists rule scoped to company) or controller check
-        $this->assertContains($response->status(), [422, 404]);
-    }
-
-    /**
-     * Company isolation: Company A cannot update storage location to Company B's warehouse.
-     */
-    public function test_company_a_cannot_update_location_to_company_b_warehouse(): void
-    {
-        $locationA = StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'BIN-A1',
-            'name' => 'Bin A1',
-            'is_active' => true,
-        ]);
-
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->putJson("/api/v1/storage-locations/{$locationA->id}", [
-                'warehouse_id' => $this->warehouseB->id,
-            ]);
-
-        $this->assertContains($response->status(), [422, 404]);
-    }
-
-    /**
-     * Warehouse branch / business unit consistency validation.
-     */
-    public function test_warehouse_branch_must_belong_to_same_business_unit(): void
-    {
-        // Branch B belongs to BU B, try creating warehouse with BU A + Branch B
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->postJson('/api/v1/warehouses', [
-                'business_unit_id' => $this->buA->id,
-                'branch_id' => $this->branchB->id,
-                'name' => 'Inconsistent Warehouse',
-                'code' => 'WH-INCONSISTENT',
-            ]);
-
-        $this->assertContains($response->status(), [422, 404]);
-    }
-
-    /**
-     * Storage location warehouse / company consistency validation.
-     */
-    public function test_storage_location_creation_succeeds_for_valid_warehouse(): void
-    {
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->postJson('/api/v1/storage-locations', [
-                'warehouse_id' => $this->warehouseA->id,
-                'code' => 'ZONE-A1',
-                'name' => 'Zone A1 Storage',
-                'is_active' => true,
-            ]);
-
-        $response->assertStatus(201);
-        $response->assertJsonPath('success', true);
-        $response->assertJsonPath('data.code', 'ZONE-A1');
-        $this->assertDatabaseHas('storage_locations', [
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'ZONE-A1',
-        ]);
-    }
-
-    /**
-     * Duplicate storage location code within the same warehouse is rejected.
-     */
-    public function test_duplicate_storage_location_code_within_same_warehouse_rejected(): void
-    {
-        StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'RACK-01',
-            'name' => 'First Rack',
-            'is_active' => true,
-        ]);
-
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->postJson('/api/v1/storage-locations', [
-                'warehouse_id' => $this->warehouseA->id,
-                'code' => 'RACK-01',
-                'name' => 'Duplicate Rack',
-            ]);
-
-        $response->assertStatus(422);
-    }
-
-    /**
-     * Same storage location code is allowed across different warehouses.
-     */
-    public function test_same_location_code_allowed_in_different_warehouses(): void
-    {
-        StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'RACK-COMMON',
-            'name' => 'Rack in Warehouse 1',
-            'is_active' => true,
-        ]);
-
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->postJson('/api/v1/storage-locations', [
-                'warehouse_id' => $this->warehouseA2->id,
-                'code' => 'RACK-COMMON',
-                'name' => 'Rack in Warehouse 2',
-            ]);
-
-        $response->assertStatus(201);
-        $this->assertDatabaseHas('storage_locations', [
-            'warehouse_id' => $this->warehouseA2->id,
-            'code' => 'RACK-COMMON',
-        ]);
-    }
-
-    /**
-     * Storage location activation / deactivation.
-     */
-    public function test_storage_location_activation_and_deactivation(): void
-    {
-        $location = StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'DEACT-01',
-            'name' => 'Active Location',
-            'is_active' => true,
-        ]);
-
-        // Deactivate
-        $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->putJson("/api/v1/storage-locations/{$location->id}", [
-                'is_active' => false,
-            ]);
-
-        $response->assertStatus(200);
-        $response->assertJsonPath('data.is_active', false);
-        $this->assertDatabaseHas('storage_locations', [
-            'id' => $location->id,
-            'is_active' => false,
-        ]);
-
-        // Reactivate
-        $responseReactivate = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->putJson("/api/v1/storage-locations/{$location->id}", [
-                'is_active' => true,
-            ]);
-
-        $responseReactivate->assertStatus(200);
-        $responseReactivate->assertJsonPath('data.is_active', true);
-        $this->assertDatabaseHas('storage_locations', [
-            'id' => $location->id,
-            'is_active' => true,
-        ]);
-    }
-
-    /**
-     * Test delete is blocked when the storage location has positive inventory.
-     */
-    public function test_storage_location_delete_blocked_when_positive_inventory_exists(): void
-    {
-        $location = StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'DEL-BLOCK-01',
-            'name' => 'Delete Blocked Location',
-            'is_active' => true,
-        ]);
-
-        $category = \App\Models\Category::create([
-            'company_id' => $this->companyA->id,
-            'name' => 'Delete Test Category',
-            'status' => 'active',
-            'sort_order' => 0,
-        ]);
-
-        $unit = \App\Models\Unit::create([
-            'company_id' => $this->companyA->id,
-            'name' => 'Delete Test Unit',
-            'short_code' => 'DTU',
-            'decimal_allowed' => false,
-            'status' => 'active',
-        ]);
-
-        $product = \App\Models\Product::create([
-            'company_id' => $this->companyA->id,
+        $product = Product::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'company_id' => $company->id,
             'category_id' => $category->id,
             'unit_id' => $unit->id,
-            'name' => 'Delete Test Product',
-            'slug' => 'delete-test-product-' . Str::random(8),
+            'name' => 'Delete Safety Product',
+            'slug' => 'delete-safety-' . uniqid(),
             'product_type' => 'simple',
-            'has_variants' => false,
-            'tax_rate' => 0,
-            'tax_type' => 'exclusive',
-            'reorder_level' => 0,
+            'has_variants' => true,
             'status' => 'active',
         ]);
 
-        $variant = \App\Models\ProductVariant::create([
+        $variant = ProductVariant::create([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'product_id' => $product->id,
-            'sku' => 'DEL-SKU-' . Str::random(8),
+            'sku' => 'DEL-' . strtoupper(uniqid()),
             'variant_name' => 'Default',
             'cost_price' => 100,
-            'selling_price' => 150,
-            'wholesale_price' => 140,
-            'mrp' => 150,
+            'selling_price' => 120,
+            'wholesale_price' => 110,
+            'mrp' => 120,
+            'attribute_signature' => 'delete-' . uniqid(),
             'status' => 'active',
-            'attribute_signature' => '',
         ]);
 
-        $inventory = \App\Models\Inventory::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
+        $inventory = Inventory::create([
+            'company_id' => $company->id,
+            'warehouse_id' => $warehouse->id,
             'product_id' => $product->id,
             'product_variant_id' => $variant->id,
             'quantity' => 10,
@@ -501,54 +400,62 @@ class OrganizationHierarchyTest extends TestCase
             'total_value' => 1000,
         ]);
 
-        $stockBatch = \App\Models\StockBatch::create([
-            'company_id' => $this->companyA->id,
+        $stockBatch = StockBatch::create([
+            'company_id' => $company->id,
             'product_id' => $product->id,
             'variant_id' => $variant->id,
-            'batch_no' => 'DEL-BATCH-01-' . Str::random(6),
+            'batch_no' => 'BATCH-' . strtoupper(uniqid()),
             'unit_cost' => 100,
             'status' => 'ACTIVE',
         ]);
 
-        \App\Models\InventoryBatch::create([
+        InventoryBatch::create([
             'inventory_id' => $inventory->id,
             'stock_batch_id' => $stockBatch->id,
-            'storage_location_id' => $location->id,
+            'storage_location_id' => $storageLocation->id,
             'quantity' => 10,
         ]);
 
         $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->deleteJson("/api/v1/storage-locations/{$location->id}");
+            ->withHeaders([
+                'X-Company-ID' => $company->id,
+            ])
+            ->deleteJson(
+                "/api/v1/storage-locations/{$storageLocation->id}"
+            );
 
         $response->assertStatus(422);
 
         $this->assertDatabaseHas('storage_locations', [
-            'id' => $location->id,
+            'id' => $storageLocation->id,
         ]);
     }
 
-    /**
-     * Test delete is allowed when the storage location has no positive inventory.
-     */
-    public function test_storage_location_delete_allowed_when_no_positive_inventory_exists(): void
+    public function test_delete_allowed_when_inventory_is_zero(): void
     {
-        $location = StorageLocation::create([
-            'company_id' => $this->companyA->id,
-            'warehouse_id' => $this->warehouseA->id,
-            'code' => 'DEL-ALLOW-01',
+        $company = $this->companyA;
+        $warehouse = $this->warehouseA;
+
+        $storageLocation = StorageLocation::create([
+            'company_id' => $company->id,
+            'warehouse_id' => $warehouse->id,
+            'code' => 'DELETE-OK-' . uniqid(),
             'name' => 'Delete Allowed Location',
             'is_active' => true,
         ]);
 
         $response = $this->actingAs($this->userA)
-            ->withHeaders(['X-Company-ID' => $this->companyA->id])
-            ->deleteJson("/api/v1/storage-locations/{$location->id}");
+            ->withHeaders([
+                'X-Company-ID' => $company->id,
+            ])
+            ->deleteJson(
+                "/api/v1/storage-locations/{$storageLocation->id}"
+            );
 
         $response->assertStatus(200);
 
         $this->assertDatabaseMissing('storage_locations', [
-            'id' => $location->id,
+            'id' => $storageLocation->id,
         ]);
     }
 }

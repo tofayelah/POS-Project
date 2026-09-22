@@ -32,6 +32,9 @@ class ProductVariant extends Model
             if (empty($model->uuid)) {
                 $model->uuid = (string) Str::uuid();
             }
+            if (empty($model->variant_name)) {
+                $model->variant_name = $model->sku ?? 'Default Variant';
+            }
         });
     }
 

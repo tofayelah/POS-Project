@@ -8,6 +8,7 @@ use App\Models\StockMovement;
 use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InventoryController extends Controller
 {
@@ -48,11 +49,39 @@ class InventoryController extends Controller
     {
         $data = $request->validate([
             'company_id' => 'required|integer|exists:companies,id',
-            'warehouse_id' => 'required|integer|exists:warehouses,id',
-            'product_variant_id' => 'required|integer|exists:product_variants,id',
+            'warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || $variant->product->company_id != $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
             'quantity' => 'required|numeric|min:0.0001',
             'unit_cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            'storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+
         ]);
 
         $movement = $this->inventoryService->addOpeningStock($data, $request->user()?->id);
@@ -68,12 +97,40 @@ class InventoryController extends Controller
     {
         $data = $request->validate([
             'company_id' => 'required|integer|exists:companies,id',
-            'warehouse_id' => 'required|integer|exists:warehouses,id',
-            'product_variant_id' => 'required|integer|exists:product_variants,id',
+            'warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || $variant->product->company_id != $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
             'type' => 'required|in:add,subtract',
             'quantity' => 'required|numeric|min:0.0001',
             'reason' => 'required|string',
             'notes' => 'nullable|string',
+            'storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+
         ]);
 
         $movement = $this->inventoryService->adjustStock($data, $request->user()?->id);
@@ -89,12 +146,40 @@ class InventoryController extends Controller
     {
         $data = $request->validate([
             'company_id' => 'required|integer|exists:companies,id',
-            'warehouse_id' => 'required|integer|exists:warehouses,id',
-            'product_variant_id' => 'required|integer|exists:product_variants,id',
+            'warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || $variant->product->company_id != $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
             'type' => 'required|in:damage,loss',
             'quantity' => 'required|numeric|min:0.0001',
             'reason' => 'required|string',
             'notes' => 'nullable|string',
+            'storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+
         ]);
 
         $movement = $this->inventoryService->recordDamageLoss($data, $request->user()?->id);

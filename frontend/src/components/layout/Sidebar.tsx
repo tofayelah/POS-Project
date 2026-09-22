@@ -16,13 +16,15 @@ import {
   Layers,
   Barcode,
   FileText,
-  ShoppingCart
+  ShoppingCart,
+  Boxes
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, hasRole, hasPermission } = useAuth();
 
   const handleLogout = async () => {
@@ -102,12 +104,28 @@ export function Sidebar() {
         </Link>
         
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Procurement</div>
-        <Link to="/purchases/suppliers" id="nav-link-suppliers" className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer">
-          <Users className="w-4 h-4 text-purple-400" />
+        <Link 
+          to="/purchases/suppliers" 
+          id="nav-link-suppliers" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/purchases/suppliers') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Users className={`w-4 h-4 ${location.pathname.startsWith('/purchases/suppliers') ? 'text-purple-400' : 'text-slate-400'}`} />
           <span className="font-medium">Suppliers</span>
         </Link>
-        <Link to="/purchases/orders" id="nav-link-purchase-orders" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
-          <FileText className="w-4 h-4 text-slate-400" />
+        <Link 
+          to="/purchases/orders" 
+          id="nav-link-purchase-orders" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname.startsWith('/purchases/orders')
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <FileText className={`w-4 h-4 ${location.pathname.startsWith('/purchases/orders') ? 'text-indigo-400' : 'text-slate-400'}`} />
           <span>Purchase Orders</span>
         </Link>
         <Link to="/purchases" id="nav-link-purchases" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
@@ -135,21 +153,65 @@ export function Sidebar() {
           <span className="font-medium">Accounting</span>
         </Link>
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Organization</div>
-        <Link to="/dashboard" id="nav-link-company" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">
-          <Building2 className="w-4 h-4" />
+        <Link 
+          to="/company" 
+          id="nav-link-company" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/company') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Building2 className={`w-4 h-4 ${location.pathname.startsWith('/company') ? 'text-amber-400' : 'text-slate-400'}`} />
           <span>Company</span>
         </Link>
-        <Link to="/dashboard" id="nav-link-business-units" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">
-          <Network className="w-4 h-4" />
+        <Link 
+          to="/business-units" 
+          id="nav-link-business-units" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/business-units') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Network className={`w-4 h-4 ${location.pathname.startsWith('/business-units') ? 'text-sky-400' : 'text-slate-400'}`} />
           <span>Business Units</span>
         </Link>
-        <Link to="/dashboard" id="nav-link-branches" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">
-          <MapPin className="w-4 h-4" />
+        <Link 
+          to="/branches" 
+          id="nav-link-branches" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/branches') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <MapPin className={`w-4 h-4 ${location.pathname.startsWith('/branches') ? 'text-emerald-400' : 'text-slate-400'}`} />
           <span>Branches</span>
         </Link>
-        <Link to="/dashboard" id="nav-link-warehouses" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">
-          <Package className="w-4 h-4" />
+        <Link 
+          to="/warehouses" 
+          id="nav-link-warehouses" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/warehouses') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Package className={`w-4 h-4 ${location.pathname.startsWith('/warehouses') ? 'text-indigo-400' : 'text-slate-400'}`} />
           <span>Warehouses</span>
+        </Link>
+        <Link 
+          to="/storage-locations" 
+          id="nav-link-storage-locations" 
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+            location.pathname.startsWith('/storage-locations') 
+              ? 'bg-slate-800 text-white font-medium' 
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Boxes className={`w-4 h-4 ${location.pathname.startsWith('/storage-locations') ? 'text-teal-400' : 'text-slate-400'}`} />
+          <span>Storage Locations</span>
         </Link>
 
         {canViewAdmin && (
