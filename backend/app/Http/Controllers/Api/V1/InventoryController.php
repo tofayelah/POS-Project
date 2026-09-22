@@ -231,4 +231,212 @@ class InventoryController extends Controller
             'data' => $inventory
         ]);
     }
+
+    public function directTransfer(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'company_id' => 'required|integer|exists:companies,id',
+            'source_warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'destination_warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || (int) $variant->product->company_id !== (int) $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
+            'quantity' => 'required|numeric|min:0.0001',
+            'reference_type' => 'required|string',
+            'reference_id' => 'required|integer',
+            'reference_number' => 'required|string',
+            'source_storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->source_warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'destination_storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->destination_warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'reason' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $result = $this->inventoryService->transferStock(
+            companyId: (int) $data['company_id'],
+            sourceWarehouseId: (int) $data['source_warehouse_id'],
+            destinationWarehouseId: (int) $data['destination_warehouse_id'],
+            productVariantId: (int) $data['product_variant_id'],
+            quantity: (float) $data['quantity'],
+            referenceType: $data['reference_type'],
+            referenceId: (int) $data['reference_id'],
+            referenceNumber: $data['reference_number'],
+            sourceStorageLocationId: isset($data['source_storage_location_id']) ? (int) $data['source_storage_location_id'] : null,
+            destinationStorageLocationId: isset($data['destination_storage_location_id']) ? (int) $data['destination_storage_location_id'] : null,
+            stockBatchId: isset($data['stock_batch_id']) ? (int) $data['stock_batch_id'] : null,
+            reason: $data['reason'] ?? null,
+            notes: $data['notes'] ?? null,
+            userId: $request->user()?->id
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock transferred successfully.',
+            'data' => $result,
+        ], 200);
+    }
+
+    public function adjustmentIn(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'company_id' => 'required|integer|exists:companies,id',
+            'warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || (int) $variant->product->company_id !== (int) $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
+            'quantity' => 'required|numeric|min:0.0001',
+            'unit_cost' => 'required|numeric|min:0',
+            'reference_type' => 'required|string',
+            'reference_id' => 'required|integer',
+            'reference_number' => 'required|string',
+            'reason' => 'required|string',
+            'notes' => 'nullable|string',
+            'storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'batch_number' => 'nullable|string|max:100',
+        ]);
+
+        $movement = $this->inventoryService->adjustmentIn(
+            companyId: (int) $data['company_id'],
+            warehouseId: (int) $data['warehouse_id'],
+            productVariantId: (int) $data['product_variant_id'],
+            quantity: (float) $data['quantity'],
+            unitCost: (float) $data['unit_cost'],
+            referenceType: $data['reference_type'],
+            referenceId: (int) $data['reference_id'],
+            referenceNumber: $data['reference_number'],
+            reason: $data['reason'],
+            notes: $data['notes'] ?? null,
+            userId: $request->user()?->id,
+            stockBatchId: isset($data['stock_batch_id']) ? (int) $data['stock_batch_id'] : null,
+            batchNumber: $data['batch_number'] ?? null,
+            storageLocationId: isset($data['storage_location_id']) ? (int) $data['storage_location_id'] : null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock adjusted in successfully.',
+            'data' => $movement,
+        ], 201);
+    }
+
+    public function adjustmentOut(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'company_id' => 'required|integer|exists:companies,id',
+            'warehouse_id' => [
+                'required', 'integer',
+                Rule::exists('warehouses', 'id')->where(function ($query) use ($request) {
+                    return $query->where('company_id', $request->company_id);
+                }),
+            ],
+            'product_variant_id' => [
+                'required', 'integer',
+                function ($attribute, $value, $fail) use ($request) {
+                    $variant = \App\Models\ProductVariant::with('product')->find($value);
+                    if (!$variant || (int) $variant->product->company_id !== (int) $request->company_id) {
+                        $fail('The selected product variant is invalid.');
+                    }
+                }
+            ],
+            'quantity' => 'required|numeric|min:0.0001',
+            'reference_type' => 'required|string',
+            'reference_id' => 'required|integer',
+            'reference_number' => 'required|string',
+            'reason' => 'required|string',
+            'notes' => 'nullable|string',
+            'storage_location_id' => [
+                'nullable', 'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) use ($request) {
+                    return $query->where('warehouse_id', $request->warehouse_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+            'stock_batch_id' => [
+                'nullable', 'integer',
+                Rule::exists('stock_batches', 'id')->where(function ($query) use ($request) {
+                    return $query->where('variant_id', $request->product_variant_id)
+                                 ->where('company_id', $request->company_id);
+                }),
+            ],
+        ]);
+
+        $movement = $this->inventoryService->adjustmentOut(
+            companyId: (int) $data['company_id'],
+            warehouseId: (int) $data['warehouse_id'],
+            productVariantId: (int) $data['product_variant_id'],
+            quantity: (float) $data['quantity'],
+            referenceType: $data['reference_type'],
+            referenceId: (int) $data['reference_id'],
+            referenceNumber: $data['reference_number'],
+            reason: $data['reason'],
+            notes: $data['notes'] ?? null,
+            userId: $request->user()?->id,
+            stockBatchId: isset($data['stock_batch_id']) ? (int) $data['stock_batch_id'] : null,
+            storageLocationId: isset($data['storage_location_id']) ? (int) $data['storage_location_id'] : null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock adjusted out successfully.',
+            'data' => $movement,
+        ], 201);
+    }
 }

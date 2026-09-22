@@ -139,7 +139,10 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::post('inventory/opening-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'openingStock'])->middleware(['permission:inventory.create', 'scope:company']);
         Route::post('inventory/adjustments', [\App\Http\Controllers\Api\V1\InventoryController::class, 'adjustStock'])->middleware(['permission:inventory.adjust', 'scope:company']);
+        Route::post('inventory/adjustments/in', [\App\Http\Controllers\Api\V1\InventoryController::class, 'adjustmentIn'])->middleware(['permission:inventory.adjust', 'scope:company']);
+        Route::post('inventory/adjustments/out', [\App\Http\Controllers\Api\V1\InventoryController::class, 'adjustmentOut'])->middleware(['permission:inventory.adjust', 'scope:company']);
         Route::post('inventory/damage-loss', [\App\Http\Controllers\Api\V1\InventoryController::class, 'recordDamageLoss'])->middleware(['permission:inventory.adjust', 'scope:company']);
+        Route::post('inventory/transfers/direct', [\App\Http\Controllers\Api\V1\InventoryController::class, 'directTransfer'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
         
         Route::get('inventory/transfers', [\App\Http\Controllers\Api\V1\TransferController::class, 'index'])->middleware('permission:inventory.transfer.view');
         Route::get('inventory/transfers/{transfer}', [\App\Http\Controllers\Api\V1\TransferController::class, 'show'])->middleware('permission:inventory.transfer.view');
