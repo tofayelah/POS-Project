@@ -2,15 +2,19 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Models\BusinessUnit;
+use App\Models\Category;
 use App\Models\Company;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class InventoryFoundationTest extends TestCase
@@ -28,34 +32,66 @@ class InventoryFoundationTest extends TestCase
     {
         parent::setUp();
         
-        $this->company = Company::create(['name' => 'Test Company']);
-        $this->warehouse = Warehouse::create([
+        $this->company = Company::create([
+            'uuid' => (string) Str::uuid(),
+            'name' => 'Test Company',
+            'code' => 'COMP-INV-001',
+            'country' => 'Bangladesh',
+        ]);
+
+        $businessUnit = BusinessUnit::create([
+            'uuid' => (string) Str::uuid(),
             'company_id' => $this->company->id,
+            'name' => 'Test Business Unit',
+            'code' => 'BU-INV-001',
+        ]);
+
+        $this->warehouse = Warehouse::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $this->company->id,
+            'business_unit_id' => $businessUnit->id,
             'name' => 'Main Warehouse',
             'code' => 'MAIN',
         ]);
         
         $this->user = User::create([
+            'uuid' => (string) Str::uuid(),
             'name' => 'Admin',
             'email' => 'admin@test.com',
             'password' => bcrypt('password'),
             'company_id' => $this->company->id,
         ]);
+
+        $category = Category::create([
+            'company_id' => $this->company->id,
+            'name' => 'Test Category',
+            'slug' => 'test-category',
+        ]);
+
+        $unit = Unit::create([
+            'company_id' => $this->company->id,
+            'name' => 'Piece',
+            'short_code' => 'PCS',
+        ]);
         
         $this->product = Product::create([
             'company_id' => $this->company->id,
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
             'name' => 'Test Product',
             'product_type' => 'simple',
             'status' => 'active',
-            'base_price' => 100
         ]);
         
         $this->variant = ProductVariant::create([
             'product_id' => $this->product->id,
-            'sku' => 'TEST-001',
-            'price' => 100,
-            'cost' => 50,
-            'attribute_signature' => 'default'
+            'sku' => 'SKU-INV-001',
+            'variant_name' => 'Default',
+            'cost_price' => 50,
+            'selling_price' => 100,
+            'wholesale_price' => 90,
+            'mrp' => 100,
+            'status' => 'active',
         ]);
 
         $this->service = app(InventoryService::class);

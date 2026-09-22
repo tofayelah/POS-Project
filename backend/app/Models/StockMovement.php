@@ -29,6 +29,14 @@ class StockMovement extends Model
                 $model->uuid = (string) Str::uuid();
             }
         });
+
+        static::updating(function ($model) {
+            throw new \RuntimeException('StockMovement records are immutable and cannot be updated.');
+        });
+
+        static::deleting(function ($model) {
+            throw new \RuntimeException('StockMovement records are immutable and cannot be deleted.');
+        });
     }
 
     public function company(): BelongsTo
