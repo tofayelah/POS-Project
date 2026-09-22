@@ -103,6 +103,9 @@ class PurchaseService
                 'new_values' => ['status' => 'POSTED'],
             ]);
             
+            // Inventory Accounting Integration (Gate 1.4)
+            app(InventoryAccountingService::class)->postPurchaseReceipt($receipt, $userId);
+
             return $receipt;
         });
     }

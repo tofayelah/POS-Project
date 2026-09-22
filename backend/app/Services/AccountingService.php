@@ -270,4 +270,126 @@ class AccountingService
             return $reversalJournal->load('lines');
         });
     }
+
+    /**
+     * Create and directly post an automated journal entry (for inventory / payment events).
+     * Validates open accounting period and fiscal year, line balancing, active accounts,
+     * and guarantees idempotency with race condition handling.
+     */
+    public function postAutomatedJournal(int $companyId, array $data, ?int $userId = null): JournalEntry
+    {
+        if (isset($data['idempotency_key']) && !empty($data['idempotency_key'])) {
+            $existing = JournalEntry::where('company_id', $companyId)
+                ->where('idempotency_key', $data['idempotency_key'])
+                ->first();
+            if ($existing) {
+                return $existing->load('lines');
+            }
+        }
+
+        $journalDate = $data['journal_date'] ?? date('Y-m-d');
+        $period = $this->determinePeriod($companyId, $journalDate);
+
+        if ($period->status !== 'OPEN') {
+            throw new ConflictHttpException("Cannot post automated journal to a {$period->status} period.");
+        }
+
+        $fy = FiscalYear::where('company_id', $companyId)->find($period->fiscal_year_id);
+        if (!$fy || $fy->status !== 'OPEN') {
+            throw new ConflictHttpException("Cannot post automated journal to a closed fiscal year.");
+        }
+
+        if (!isset($data['lines']) || count($data['lines']) < 2) {
+            throw new ConflictHttpException("An automated journal entry must have at least 2 lines.");
+        }
+
+        $totalDebit = 0;
+        $totalCredit = 0;
+
+        foreach ($data['lines'] as $line) {
+            $debit = $line['debit'] ?? 0;
+            $credit = $line['credit'] ?? 0;
+
+            if ($debit < 0 || $credit < 0) {
+                throw new ConflictHttpException("Debit and Credit amounts cannot be negative.");
+            }
+            if ($debit > 0 && $credit > 0) {
+                throw new ConflictHttpException("A journal line cannot have both debit and credit values.");
+            }
+            if ($debit == 0 && $credit == 0) {
+                throw new ConflictHttpException("A journal line must have either a debit or credit value.");
+            }
+
+            $account = Account::where('company_id', $companyId)->find($line['account_id']);
+            if (!$account) {
+                throw new ConflictHttpException("Account ID {$line['account_id']} is invalid or does not belong to company ID {$companyId}.");
+            }
+            if (!$account->is_active) {
+                throw new ConflictHttpException("Account {$account->account_code} is inactive.");
+            }
+
+            $totalDebit += $debit;
+            $totalCredit += $credit;
+        }
+
+        $totalDebit = round($totalDebit, 4);
+        $totalCredit = round($totalCredit, 4);
+
+        if (abs($totalDebit - $totalCredit) > 0.0001) {
+            throw new ConflictHttpException("Journal entry is unbalanced. Total Debit: {$totalDebit}, Total Credit: {$totalCredit}");
+        }
+
+        if ($totalDebit <= 0) {
+            throw new ConflictHttpException("Journal entry total amount must be greater than zero.");
+        }
+
+        try {
+            $journalNumber = $this->generateJournalNumber($companyId);
+
+            $journal = JournalEntry::create([
+                'company_id' => $companyId,
+                'fiscal_year_id' => $period->fiscal_year_id,
+                'accounting_period_id' => $period->id,
+                'journal_number' => $journalNumber,
+                'journal_date' => $journalDate,
+                'reference_type' => $data['reference_type'] ?? null,
+                'reference_id' => $data['reference_id'] ?? null,
+                'description' => $data['description'],
+                'status' => 'POSTED',
+                'source' => $data['source'] ?? 'SYSTEM',
+                'idempotency_key' => $data['idempotency_key'] ?? null,
+                'created_by' => $userId,
+                'posted_by' => $userId,
+                'posted_at' => Carbon::now(),
+            ]);
+
+            foreach ($data['lines'] as $line) {
+                $journal->lines()->create([
+                    'account_id' => $line['account_id'],
+                    'description' => $line['description'] ?? null,
+                    'debit' => $line['debit'] ?? 0,
+                    'credit' => $line['credit'] ?? 0,
+                    'business_unit_id' => $line['business_unit_id'] ?? null,
+                    'branch_id' => $line['branch_id'] ?? null,
+                    'warehouse_id' => $line['warehouse_id'] ?? null,
+                    'reference' => $line['reference'] ?? null,
+                ]);
+            }
+
+            AuditLog::log($companyId, $userId, 'JOURNAL_POSTED', $journal->id, 'JournalEntry', "Posted Automated Journal {$journal->journal_number}");
+
+            return $journal->load('lines');
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (isset($data['idempotency_key']) && ($e->getCode() == '23505' || $e->getCode() == '23000')) {
+                $existing = JournalEntry::where('company_id', $companyId)
+                    ->where('idempotency_key', $data['idempotency_key'])
+                    ->first();
+                if ($existing) {
+                    return $existing->load('lines');
+                }
+            }
+            throw $e;
+        }
+    }
 }
+

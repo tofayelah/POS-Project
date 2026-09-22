@@ -1418,6 +1418,9 @@ class InventoryService
                 ],
             ]);
 
+            // Inventory Accounting Integration (Gate 1.4)
+            app(InventoryAccountingService::class)->postAdjustmentIn($movement, $userId);
+
             return $movement;
         });
     }
@@ -1613,6 +1616,9 @@ class InventoryService
                     'reference_number' => $referenceNumber,
                 ],
             ]);
+
+            // Inventory Accounting Integration (Gate 1.4)
+            app(InventoryAccountingService::class)->postAdjustmentOut($movement, $userId);
 
             return $movement;
         });

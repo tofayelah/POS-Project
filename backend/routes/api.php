@@ -289,5 +289,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::get('general-ledger', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'generalLedger'])->middleware('permission:general_ledger.view');
         Route::get('trial-balance', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'trialBalance'])->middleware('permission:trial_balance.view');
+
+        // GATE 1.4 — Payments & Allocations
+        Route::get('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index']);
+        Route::post('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'store']);
+        Route::get('payments/{id}', [\App\Http\Controllers\Api\V1\PaymentController::class, 'show']);
+        Route::post('payments/{id}/allocate', [\App\Http\Controllers\Api\V1\PaymentController::class, 'allocate']);
     });
 });
