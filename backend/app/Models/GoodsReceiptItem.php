@@ -16,6 +16,7 @@ class GoodsReceiptItem extends Model
         'received_quantity' => 'decimal:4',
         'unit_cost' => 'decimal:4',
         'total_cost' => 'decimal:4',
+        'expiry_date' => 'date',
     ];
 
     public function goodsReceipt(): BelongsTo
@@ -36,5 +37,15 @@ class GoodsReceiptItem extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function storageLocation(): BelongsTo
+    {
+        return $this->belongsTo(StorageLocation::class);
+    }
+
+    public function stockBatch(): BelongsTo
+    {
+        return $this->belongsTo(StockBatch::class);
     }
 }

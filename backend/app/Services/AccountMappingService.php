@@ -14,6 +14,7 @@ class AccountMappingService
     public const ROLE_ACCOUNTS_PAYABLE = 'accounts_payable';
     public const ROLE_ACCOUNTS_RECEIVABLE = 'accounts_receivable';
     public const ROLE_CASH_BANK = 'cash_bank';
+    public const ROLE_AP_CLEARING = 'ap_clearing';
 
     public const VALID_ROLES = [
         self::ROLE_INVENTORY_ASSET,
@@ -21,6 +22,7 @@ class AccountMappingService
         self::ROLE_ACCOUNTS_PAYABLE,
         self::ROLE_ACCOUNTS_RECEIVABLE,
         self::ROLE_CASH_BANK,
+        self::ROLE_AP_CLEARING,
     ];
 
     /**

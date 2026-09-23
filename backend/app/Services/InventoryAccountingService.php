@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\GoodsReceipt;
 use App\Models\JournalEntry;
+use App\Models\Purchase;
 use App\Models\StockMovement;
 
 class InventoryAccountingService
@@ -116,7 +117,7 @@ class InventoryAccountingService
     /**
      * Post automated journal entry for Goods Receipt from purchase order.
      * Debit: Inventory Asset
-     * Credit: Accounts Payable
+     * Credit: AP Clearing / GRNI
      */
     public function postPurchaseReceipt(GoodsReceipt $receipt, ?int $userId = null): ?JournalEntry
     {
@@ -126,7 +127,7 @@ class InventoryAccountingService
         }
 
         $assetAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_INVENTORY_ASSET);
-        $apAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE);
+        $apClearingAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_AP_CLEARING);
 
         $totalCost = 0;
         foreach ($receipt->items as $item) {
@@ -158,11 +159,63 @@ class InventoryAccountingService
                     'description' => "Goods receipt inventory asset for GR {$receipt->receipt_number}",
                 ],
                 [
-                    'account_id' => $apAccount->id,
+                    'account_id' => $apClearingAccount->id,
                     'debit' => 0,
                     'credit' => $totalCost,
                     'warehouse_id' => $receipt->warehouse_id,
-                    'description' => "Accounts payable liability for GR {$receipt->receipt_number}",
+                    'description' => "AP clearing accrual for GR {$receipt->receipt_number}",
+                ],
+            ],
+        ];
+
+        return $this->accountingService->postAutomatedJournal($companyId, $data, $userId);
+    }
+
+    /**
+     * Post automated journal entry for Purchase Invoice (Supplier Bill).
+     * Debit: AP Clearing / GRNI
+     * Credit: Accounts Payable
+     */
+    public function postPurchaseInvoice(Purchase $purchase, ?int $userId = null): ?JournalEntry
+    {
+        $companyId = $purchase->company_id;
+        if (!$this->accountMappingService->isAccountingEnabled($companyId)) {
+            return null;
+        }
+
+        $apClearingAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_AP_CLEARING);
+        $apAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE);
+
+        $amount = round((float) $purchase->grand_total, 4);
+        if ($amount <= 0) {
+            return null;
+        }
+
+        $journalDate = $purchase->invoice_date ? $purchase->invoice_date->format('Y-m-d') : date('Y-m-d');
+
+        $data = [
+            'journal_date' => $journalDate,
+            'reference_type' => 'Purchase',
+            'reference_id' => $purchase->id,
+            'description' => "Purchase Invoice: {$purchase->supplier_invoice_number}",
+            'source' => 'PURCHASE',
+            'idempotency_key' => "PURCHASE-INV-{$purchase->id}",
+            'lines' => [
+                [
+                    'account_id' => $apClearingAccount->id,
+                    'debit' => $amount,
+                    'credit' => 0,
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'branch_id' => $purchase->branch_id,
+                    'description' => "AP clearing offset for Purchase #{$purchase->supplier_invoice_number}",
+                ],
+                [
+                    'account_id' => $apAccount->id,
+                    'debit' => 0,
+                    'credit' => $amount,
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'branch_id' => $purchase->branch_id,
+                    'description' => "Accounts payable liability for Purchase #{$purchase->supplier_invoice_number}",
                 ],
             ],
         ];

@@ -256,6 +256,7 @@ class Gate14FinancialIntegrationTest extends TestCase
         $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_INVENTORY_ASSET, $this->inventoryAssetAccount->id);
         $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_INVENTORY_ADJUSTMENT, $this->inventoryAdjustmentAccount->id);
         $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_ACCOUNTS_PAYABLE, $this->accountsPayableAccount->id);
+        $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_AP_CLEARING, $this->accountsPayableAccount->id);
         $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_ACCOUNTS_RECEIVABLE, $this->accountsReceivableAccount->id);
         $this->mappingService->setMapping($this->company->id, AccountMappingService::ROLE_CASH_BANK, $this->cashBankAccount->id);
 

@@ -69,4 +69,25 @@ class Purchase extends Model
 
     public function paymentAllocations() { return $this->morphMany(PaymentAllocation::class, 'allocatable'); }
     public function transactionTaxes() { return $this->morphMany(TransactionTax::class, 'taxable'); }
+
+    public function getPaidAmountAttribute(): float
+    {
+        return round((float) $this->paymentAllocations()->sum('amount'), 4);
+    }
+
+    public function getDueAmountAttribute(): float
+    {
+        return max(0, round((float) $this->grand_total - $this->paid_amount, 4));
+    }
+
+    public function getPaymentStatusAttribute(): string
+    {
+        if ($this->paid_amount <= 0) {
+            return 'DUE';
+        }
+        if ($this->due_amount <= 0.0001) {
+            return 'PAID';
+        }
+        return 'PARTIAL';
+    }
 }
