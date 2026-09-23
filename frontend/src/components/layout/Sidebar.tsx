@@ -17,7 +17,8 @@ import {
   Barcode,
   FileText,
   ShoppingCart,
-  Boxes
+  Boxes,
+  CreditCard
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -107,14 +108,14 @@ export function Sidebar() {
         <Link 
           to="/purchases/suppliers" 
           id="nav-link-suppliers" 
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
             location.pathname.startsWith('/purchases/suppliers') 
               ? 'bg-slate-800 text-white font-medium' 
-              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
           <Users className={`w-4 h-4 ${location.pathname.startsWith('/purchases/suppliers') ? 'text-purple-400' : 'text-slate-400'}`} />
-          <span className="font-medium">Suppliers</span>
+          <span>Suppliers</span>
         </Link>
         <Link 
           to="/purchases/orders" 
@@ -128,9 +129,41 @@ export function Sidebar() {
           <FileText className={`w-4 h-4 ${location.pathname.startsWith('/purchases/orders') ? 'text-indigo-400' : 'text-slate-400'}`} />
           <span>Purchase Orders</span>
         </Link>
-        <Link to="/purchases" id="nav-link-purchases" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
-          <ShoppingCart className="w-4 h-4 text-slate-400" />
+        <Link 
+          to="/purchases/goods-receipts" 
+          id="nav-link-goods-receipts" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname.startsWith('/purchases/goods-receipts')
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <Package className={`w-4 h-4 ${location.pathname.startsWith('/purchases/goods-receipts') ? 'text-teal-400' : 'text-slate-400'}`} />
+          <span>Goods Receipts</span>
+        </Link>
+        <Link 
+          to="/purchases" 
+          id="nav-link-purchases" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname === '/purchases'
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <ShoppingCart className={`w-4 h-4 ${location.pathname === '/purchases' ? 'text-blue-400' : 'text-slate-400'}`} />
           <span>Purchase Invoices</span>
+        </Link>
+        <Link 
+          to="/purchases/payables" 
+          id="nav-link-payables" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname.startsWith('/purchases/payables')
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <CreditCard className={`w-4 h-4 ${location.pathname.startsWith('/purchases/payables') ? 'text-rose-400' : 'text-slate-400'}`} />
+          <span>Supplier Payables</span>
         </Link>
         
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Inventory Management</div>

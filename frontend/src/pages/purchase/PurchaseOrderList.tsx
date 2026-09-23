@@ -17,7 +17,8 @@ import {
   DollarSign,
   AlertCircle,
   X,
-  Calendar
+  Calendar,
+  Package
 } from 'lucide-react';
 import { PurchaseOrder, PurchaseOrderStatus } from '../../types/purchase';
 import { 
@@ -342,6 +343,16 @@ export function PurchaseOrderList() {
                           <CheckCircle2 className="w-3.5 h-3.5" />
                         </button>
                       )}
+
+                      {(po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED') && (
+                        <Link
+                          to={`/purchases/goods-receipts/create?po_id=${po.id}`}
+                          title="Receive Goods"
+                          className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer inline-flex items-center"
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -512,6 +523,14 @@ export function PurchaseOrderList() {
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" /> Approve PO
                   </button>
+                )}
+                {(selectedPo.status === 'APPROVED' || selectedPo.status === 'PARTIALLY_RECEIVED') && (
+                  <Link
+                    to={`/purchases/goods-receipts/create?po_id=${selectedPo.id}`}
+                    className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Package className="w-3.5 h-3.5" /> Receive Goods
+                  </Link>
                 )}
                 {selectedPo.status !== 'CANCELLED' && (
                   <button

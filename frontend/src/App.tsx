@@ -20,6 +20,11 @@ import { SupplierForm } from './pages/purchase/SupplierForm';
 import { PurchaseOrderList } from './pages/purchase/PurchaseOrderList';
 import { PurchaseOrderForm } from './pages/purchase/PurchaseOrderForm';
 import { PurchaseList } from './pages/purchase/PurchaseList';
+import { GoodsReceiptList } from './pages/purchase/GoodsReceiptList';
+import { GoodsReceiptForm } from './pages/purchase/GoodsReceiptForm';
+import { GoodsReceiptDetail } from './pages/purchase/GoodsReceiptDetail';
+import { SupplierPayables } from './pages/purchase/SupplierPayables';
+import { SupplierLedgerView } from './pages/purchase/SupplierLedgerView';
 import { CustomerList } from './pages/customers/CustomerList';
 import { CustomerGroupList } from './pages/customers/CustomerGroupList';
 import ExpenseIndex from "./pages/expenses/ExpenseIndex";
@@ -174,6 +179,42 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/purchases/goods-receipts" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <GoodsReceiptList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/goods-receipts/create" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <GoodsReceiptForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/goods-receipts/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <GoodsReceiptDetail />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/payables" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierPayables />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/suppliers/:id/ledger" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierLedgerView />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/suppliers/:id/ledger" element={<Navigate to="/purchases/suppliers/:id/ledger" replace />} />
             <Route path="/expenses" element={<ProtectedRoute><AdminLayout><ExpenseIndex /></AdminLayout></ProtectedRoute>} />
 <Route path="/expenses/create" element={<ProtectedRoute><AdminLayout><ExpenseCreate /></AdminLayout></ProtectedRoute>} />
 <Route path="/customers" element={
