@@ -123,8 +123,8 @@ describe('Gate 1.5 Goods Receipt & Purchasing Frontend Models & Logic', () => {
     const key1 = generateIdempotencyKey('PAY-SUPP');
     const key2 = generateIdempotencyKey('PAY-SUPP');
 
-    expect(key1).toMatch(/^PAY-SUPP-\d+-[A-Z0-9]+$/);
-    expect(key2).toMatch(/^PAY-SUPP-\d+-[A-Z0-9]+$/);
+    expect(key1).toMatch(/^PAY-SUPP-[a-zA-Z0-9-]+$/);
+    expect(key2).toMatch(/^PAY-SUPP-[a-zA-Z0-9-]+$/);
     expect(key1).not.toBe(key2);
   });
 

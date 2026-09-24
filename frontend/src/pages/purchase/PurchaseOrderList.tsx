@@ -444,7 +444,7 @@ export function PurchaseOrderList() {
                             <td className="py-2.5 px-3">
                               <div className="font-medium text-slate-900">{it.product?.name || `Product #${it.product_id}`}</div>
                               <div className="text-[10px] text-slate-400 font-mono">
-                                SKU: {it.variant?.sku || it.product?.sku || 'N/A'} {it.variant?.variant_name && `• ${it.variant.variant_name}`}
+                                SKU: {it.variant?.sku || it.product?.product_code || 'N/A'} {it.variant?.variant_name && `• ${it.variant.variant_name}`}
                               </div>
                             </td>
                             <td className="py-2.5 px-3 text-center font-mono font-semibold">{it.quantity}</td>

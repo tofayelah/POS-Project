@@ -20,6 +20,7 @@ import { StorageLocation, Warehouse } from '../../types/organization';
 import { getPurchaseOrders, getPurchaseOrder } from '../../api/purchaseOrders';
 import { createGoodsReceipt, postGoodsReceipt, generateNextGrNumber } from '../../api/goodsReceipts';
 import { getWarehouses, getStorageLocations } from '../../api/organization';
+import { getProducts } from '../../api/products';
 import { formatCurrency } from '../../utils/currency';
 
 interface ReceivingLineItem {
@@ -62,6 +63,7 @@ export function GoodsReceiptForm() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [productsList, setProductsList] = useState<any[]>([]);
 
   // Load available approved/partially received POs & warehouses
   useEffect(() => {
@@ -70,9 +72,10 @@ export function GoodsReceiptForm() {
 
   const loadInitialData = async () => {
     try {
-      const [poRes, whRes] = await Promise.all([
+      const [poRes, whRes, prodRes] = await Promise.all([
         getPurchaseOrders(),
-        getWarehouses()
+        getWarehouses(),
+        getProducts({ per_page: 250 }).catch(() => ({ data: [] })),
       ]);
 
       const validPos = (poRes.data || []).filter(
@@ -80,9 +83,11 @@ export function GoodsReceiptForm() {
       );
       setAvailablePos(validPos);
       setWarehouses(whRes.data || []);
+      const prods = Array.isArray(prodRes?.data) ? prodRes.data : (prodRes?.data?.data || []);
+      setProductsList(prods);
 
       if (initialPoId) {
-        handlePoSelect(Number(initialPoId));
+        handlePoSelect(Number(initialPoId), prods);
       }
     } catch (err) {
       console.error('Failed to load initial form data:', err);
@@ -90,7 +95,7 @@ export function GoodsReceiptForm() {
   };
 
   // When PO is selected
-  const handlePoSelect = async (poId: number) => {
+  const handlePoSelect = async (poId: number, fallbackProds?: any[]) => {
     setSelectedPoId(poId);
     setLoading(true);
     setErrorMessage(null);
@@ -106,14 +111,18 @@ export function GoodsReceiptForm() {
         loadLocations(po.warehouse_id);
       }
 
+      const activeProds = fallbackProds || productsList;
+
       // Map line items
       const mappedItems: ReceivingLineItem[] = (po.items || []).map((it) => {
         const pending = Number(it.pending_quantity ?? (Number(it.quantity) - Number(it.received_quantity || 0)));
+        const resolvedProd = activeProds.find((p: any) => p.id === it.product_id);
+        const resolvedVariant = resolvedProd?.variants?.find((v: any) => v.id === it.product_variant_id);
         return {
           purchase_order_item_id: it.id || 0,
           product_id: it.product_id,
-          product_name: it.product?.name || `Product #${it.product_id}`,
-          sku: it.variant?.sku || it.product?.sku || 'N/A',
+          product_name: it.product?.name || resolvedProd?.name || `Product #${it.product_id}`,
+          sku: it.variant?.sku || resolvedVariant?.sku || resolvedProd?.product_code || it.product?.product_code || 'N/A',
           ordered_quantity: Number(it.quantity),
           already_received: Number(it.received_quantity || 0),
           pending_quantity: pending,

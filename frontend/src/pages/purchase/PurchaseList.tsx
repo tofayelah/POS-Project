@@ -149,7 +149,11 @@ export function PurchaseList() {
   // KPIs
   const totalInvoices = invoices.length;
   const totalAmount = invoices.reduce((sum, inv) => sum + (Number(inv.grand_total) || 0), 0);
-  const totalDue = invoices.reduce((sum, inv) => sum + (Number(inv.due_amount ?? inv.grand_total) || 0), 0);
+  const totalDue = invoices.reduce((sum, inv) => {
+    const paid = Number(inv.paid_amount ?? 0);
+    const due = Number(inv.due_amount ?? Math.max(0, Number(inv.grand_total) - paid));
+    return sum + due;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -284,6 +288,7 @@ export function PurchaseList() {
                 invoices.map((inv) => {
                   const paid = Number(inv.paid_amount ?? 0);
                   const due = Number(inv.due_amount ?? Math.max(0, Number(inv.grand_total) - paid));
+                  const paymentStatus: PurchasePaymentStatus = inv.payment_status || (paid <= 0 ? 'DUE' : (due <= 0.0001 ? 'PAID' : 'PARTIAL'));
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
                       {/* Invoice # */}
@@ -335,7 +340,7 @@ export function PurchaseList() {
 
                       {/* Payment Status */}
                       <td className="py-3 px-4">
-                        {getPaymentBadge(inv.payment_status)}
+                        {getPaymentBadge(paymentStatus)}
                       </td>
 
                       {/* Status */}
