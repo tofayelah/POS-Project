@@ -208,7 +208,12 @@ class DashboardReportController extends Controller
             ->where('status', 'POSTED');
             
         if ($branchId) {
-            $postedJournalsQuery->where('branch_id', $branchId);
+            $postedJournalsQuery->whereExists(function ($query) use ($branchId) {
+                $query->select(DB::raw(1))
+                    ->from('journal_entry_lines')
+                    ->whereColumn('journal_entry_lines.journal_entry_id', 'journal_entries.id')
+                    ->where('journal_entry_lines.branch_id', $branchId);
+            });
         }
         $postedJournals = $postedJournalsQuery->count();
             
@@ -219,11 +224,16 @@ class DashboardReportController extends Controller
             ->where('journal_entries.status', 'POSTED');
             
         if ($branchId) {
-            $unbalancedJournalsQuery->where('journal_entries.branch_id', $branchId);
+            $unbalancedJournalsQuery->where('journal_entry_lines.branch_id', $branchId);
         }
         
-        $unbalancedJournals = $unbalancedJournalsQuery->groupBy('journal_entries.id')
-            ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.001')
+        $unbalancedJournals = $unbalancedJournalsQuery
+            ->select('journal_entries.id')
+            ->groupBy('journal_entries.id')
+            ->havingRaw(
+                'ABS(SUM(journal_entry_lines.debit) - SUM(journal_entry_lines.credit)) > 0.001'
+            )
+            ->get()
             ->count();
 
         $accountingHealth = [
@@ -242,7 +252,7 @@ class DashboardReportController extends Controller
             ->whereIn('accounts.account_type', ['REVENUE', 'EXPENSE']);
             
         if ($branchId) {
-            $pnlBalancesQuery->where('journal_entries.branch_id', $branchId);
+            $pnlBalancesQuery->where('journal_entry_lines.branch_id', $branchId);
         }
         
         $pnlBalances = $pnlBalancesQuery->select(
@@ -278,7 +288,7 @@ class DashboardReportController extends Controller
             });
             
         if ($branchId) {
-            $assetBalancesQuery->where('journal_entries.branch_id', $branchId);
+            $assetBalancesQuery->where('journal_entry_lines.branch_id', $branchId);
         }
         
         $assetBalances = $assetBalancesQuery->select(
@@ -348,18 +358,24 @@ class DashboardReportController extends Controller
         $recentSales = $recentSalesQuery->get();
 
         // Recent Purchases
+        $paidSubquery = "(SELECT COALESCE(SUM(pa.amount), 0) FROM payment_allocations pa WHERE pa.allocatable_id = purchases.id AND (pa.allocatable_type = 'Purchase' OR pa.allocatable_type = 'App\\\\Models\\\\Purchase' OR pa.allocatable_type LIKE '%Purchase'))";
+
         $recentPurchasesQuery = DB::table('purchases')
             ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
             ->where('purchases.company_id', $companyId)
             ->where('purchases.status', 'POSTED')
             ->select(
-                'purchases.invoice_number as invoice',
+                DB::raw("COALESCE(purchases.supplier_invoice_number, CONCAT('PO-', purchases.id)) as invoice"),
                 'purchases.invoice_date as date',
                 'suppliers.name as supplier',
                 'purchases.grand_total as amount',
-                'purchases.paid_amount as paid',
-                'purchases.due_amount as due',
-                'purchases.payment_status as status'
+                DB::raw("{$paidSubquery} as paid"),
+                DB::raw("GREATEST(0, purchases.grand_total - {$paidSubquery}) as due"),
+                DB::raw("CASE 
+                    WHEN (purchases.grand_total - {$paidSubquery}) <= 0.0001 THEN 'PAID'
+                    WHEN {$paidSubquery} > 0 AND (purchases.grand_total - {$paidSubquery}) > 0.0001 THEN 'PARTIAL'
+                    ELSE 'DUE'
+                END as status")
             )
             ->orderBy('purchases.invoice_date', 'desc')
             ->orderBy('purchases.id', 'desc')
