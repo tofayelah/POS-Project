@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Building2, 
   Edit3, 
@@ -52,6 +53,7 @@ import {
 import { useCompany } from '../../contexts/CompanyContext';
 
 export function CompanyPage() {
+  const queryClient = useQueryClient();
   const { switchCompany, updateCompanyProfile } = useCompany();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
@@ -255,6 +257,7 @@ export function CompanyPage() {
       setSuccessMessage(res.message || `Tenant "${newTenant.name}" registered successfully.`);
       setIsRegisterModalOpen(false);
       await loadAllData();
+      await queryClient.invalidateQueries({ queryKey: ['available-companies'] });
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       setModalError(err.message || err.response?.data?.message || 'Failed to register company.');

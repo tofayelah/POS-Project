@@ -379,73 +379,60 @@ export async function getCompany(id?: number): Promise<{ success: boolean; data:
 export async function createCompany(
   payload: CreateCompanyPayload
 ): Promise<{ success: boolean; message: string; data: Company }> {
-  const tenants = getLocalTenantCompanies();
-  
   // Format & clean subdomain
-  const cleanSubdomain = payload.subdomain.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-  if (!cleanSubdomain) {
-    throw new Error('Subdomain is required and must contain only lowercase letters, numbers, or dashes.');
-  }
-
-  // Check unique subdomain
-  const duplicate = tenants.find(
-    (t) => t.subdomain?.toLowerCase() === cleanSubdomain
-  );
-  if (duplicate) {
-    throw new Error(`Subdomain "${cleanSubdomain}" is already assigned to ${duplicate.name}. Please pick another unique subdomain.`);
-  }
+  const cleanSubdomain = payload.subdomain?.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || '';
 
   // Auto-generate code if empty
   let code = payload.code?.trim().toUpperCase();
-  if (!code) {
+  if (!code && cleanSubdomain) {
     const prefix = cleanSubdomain.slice(0, 3).toUpperCase();
-    code = `${prefix}-${String(tenants.length + 1).padStart(2, '0')}`;
+    code = `${prefix}-01`;
   }
 
-  // Generate unique ID
-  const newId = Math.max(...tenants.map((t) => t.id), 0) + 1;
-  const config = BUSINESS_TYPE_CONFIG[payload.business_type];
-
-  const newCompany: Company = {
-    id: newId,
-    uuid: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tenant-${cleanSubdomain}-${Date.now()}`,
+  const backendPayload = {
     name: payload.name.trim(),
     legal_name: payload.legal_name?.trim() || `${payload.name.trim()} Ltd.`,
-    code,
-    subdomain: cleanSubdomain,
-    custom_domain: payload.custom_domain?.trim() || null,
-    business_type: payload.business_type,
-    business_type_label: config?.label || 'General Retail',
-    owner_name: payload.owner_name.trim(),
-    owner_email: payload.owner_email.trim(),
-    owner_phone: payload.owner_phone?.trim() || null,
-    plan: payload.plan || 'pro',
-    tenant_isolated: true,
-    data_isolation_key: `iso_${cleanSubdomain}_${Date.now()}`,
-    features_enabled: {
-      ...(config?.defaultFeatures || {}),
-      ...(payload.features_enabled || {}),
-    },
+    code: code || undefined,
     phone: payload.owner_phone?.trim() || null,
-    email: payload.owner_email.trim(),
+    email: payload.owner_email?.trim() || null,
     address: payload.address?.trim() || null,
     country: payload.country?.trim() || 'Bangladesh',
     currency_code: payload.currency_code?.trim() || 'BDT',
     timezone: payload.timezone?.trim() || 'Asia/Dhaka',
     tax_number: payload.tax_number?.trim() || null,
     status: payload.status || 'active',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
   };
 
-  const updatedList = [...tenants, newCompany];
-  saveLocalTenantCompanies(updatedList);
+  try {
+    const res = await api.post('/companies', backendPayload);
+    if (res.data?.success && res.data.data) {
+      const createdCompany: Company = {
+        ...res.data.data,
+        subdomain: cleanSubdomain,
+        custom_domain: payload.custom_domain?.trim() || null,
+        business_type: payload.business_type,
+        business_type_label: BUSINESS_TYPE_CONFIG[payload.business_type]?.label || 'General Retail',
+        owner_name: payload.owner_name?.trim() || null,
+        owner_email: payload.owner_email?.trim() || null,
+        owner_phone: payload.owner_phone?.trim() || null,
+        plan: payload.plan || 'pro',
+        features_enabled: {
+          ...(BUSINESS_TYPE_CONFIG[payload.business_type]?.defaultFeatures || {}),
+          ...(payload.features_enabled || {}),
+        },
+      };
 
-  return {
-    success: true,
-    message: `Tenant Company "${newCompany.name}" onboarded successfully with subdomain "${cleanSubdomain}.sonaribd.com". Data isolation guard is ACTIVE.`,
-    data: newCompany,
-  };
+      return {
+        success: true,
+        message: res.data.message || `Tenant Company "${createdCompany.name}" onboarded successfully.`,
+        data: createdCompany,
+      };
+    }
+    throw new Error(res.data?.message || 'Failed to create company.');
+  } catch (err: any) {
+    const message = err.response?.data?.message || err.message || 'Failed to create company.';
+    throw new Error(message);
+  }
 }
 
 export async function updateCompany(

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // In-memory mock storage for Node test environment
 const storage = new Map<string, string>();
@@ -13,11 +13,13 @@ const mockLocalStorage = {
 
 (globalThis as unknown as { localStorage: typeof mockLocalStorage }).localStorage = mockLocalStorage;
 
-import { Company } from '../types/organization';
+import api from '../api/axios';
+import { Company, CreateCompanyPayload } from '../types/organization';
 import { 
   getActiveTenantId, 
   setActiveTenantCompany, 
-  getActiveCompanyFromStorage 
+  getActiveCompanyFromStorage,
+  createCompany 
 } from '../api/organization';
 
 describe('Global Multi-Tenant Company Identity Tests', () => {
@@ -147,5 +149,77 @@ describe('Global Multi-Tenant Company Identity Tests', () => {
     const sanitizeSubdomain = (val: string) => val.toLowerCase().replace(/[^a-z0-9-]/g, '');
     expect(sanitizeSubdomain('Trust Bond!')).toBe('trustbond');
     expect(sanitizeSubdomain('ABC-Fashion_123')).toBe('abc-fashion123');
+  });
+
+  it('calls POST /companies and returns created company with auto-generated code', async () => {
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: 'Tenant Company "Tofayel Telecom" created successfully.',
+        data: {
+          id: 10,
+          name: 'Tofayel Telecom',
+          code: 'TOF-01',
+          country: 'Bangladesh',
+          currency_code: 'BDT',
+          timezone: 'Asia/Dhaka',
+          status: 'active',
+        },
+      },
+    } as any);
+
+    const payload: CreateCompanyPayload = {
+      name: 'Tofayel Telecom',
+      subdomain: 'tofayel',
+      business_type: 'MOBILE_ELECTRONICS',
+      owner_name: 'Tofayel Ahmed',
+      owner_email: 'tofayel@retailcore.test',
+      owner_phone: '+8801711111111',
+      plan: 'pro',
+    };
+
+    const result = await createCompany(payload);
+
+    expect(postSpy).toHaveBeenCalledWith('/companies', expect.objectContaining({
+      name: 'Tofayel Telecom',
+      code: 'TOF-01',
+      phone: '+8801711111111',
+      email: 'tofayel@retailcore.test',
+      country: 'Bangladesh',
+      currency_code: 'BDT',
+      status: 'active',
+    }));
+
+    expect(result.success).toBe(true);
+    expect(result.data.id).toBe(10);
+    expect(result.data.name).toBe('Tofayel Telecom');
+    expect(result.data.subdomain).toBe('tofayel');
+    expect(result.data.business_type).toBe('MOBILE_ELECTRONICS');
+
+    postSpy.mockRestore();
+  });
+
+  it('handles backend error properly on createCompany failure', async () => {
+    const postSpy = vi.spyOn(api, 'post').mockRejectedValueOnce({
+      response: {
+        data: {
+          success: false,
+          message: 'The code has already been taken.',
+        },
+      },
+    });
+
+    const payload: CreateCompanyPayload = {
+      name: 'Duplicate Company',
+      code: 'DUP-01',
+      subdomain: 'duplicate',
+      business_type: 'GENERAL_RETAIL',
+      owner_name: 'Owner',
+      owner_email: 'owner@test.com',
+    };
+
+    await expect(createCompany(payload)).rejects.toThrow('The code has already been taken.');
+
+    postSpy.mockRestore();
   });
 });

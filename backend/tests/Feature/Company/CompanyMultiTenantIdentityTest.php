@@ -195,4 +195,150 @@ class CompanyMultiTenantIdentityTest extends TestCase
         $this->assertTrue($companies->contains('id', $this->companyA->id));
         $this->assertFalse($companies->contains('id', $this->companyB->id));
     }
+
+    /**
+     * T07 - Super Admin can create a new tenant company and is automatically attached
+     */
+    public function test_super_admin_can_create_tenant_company(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superAdmin = User::factory()->create(['name' => 'Super Admin User']);
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $payload = [
+            'name' => 'Global Retailers Ltd',
+            'legal_name' => 'Global Retailers Limited',
+            'code' => 'GRL-01',
+            'phone' => '+880 1700-000000',
+            'email' => 'contact@globalretailers.test',
+            'website' => 'https://globalretailers.test',
+            'address' => 'House 10, Road 1, Dhanmondi, Dhaka',
+            'country' => 'Bangladesh',
+            'currency_code' => 'BDT',
+            'timezone' => 'Asia/Dhaka',
+            'vat_registration' => 'BIN-99988877766',
+            'status' => 'active',
+        ];
+
+        $response = $this->actingAs($superAdmin)
+            ->postJson('/api/v1/companies', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'name' => 'Global Retailers Ltd',
+                    'legal_name' => 'Global Retailers Limited',
+                    'code' => 'GRL-01',
+                    'email' => 'contact@globalretailers.test',
+                    'vat_registration' => 'BIN-99988877766',
+                    'tax_number' => 'BIN-99988877766',
+                    'status' => 'active',
+                ]
+            ]);
+
+        $newCompanyId = $response->json('data.id');
+        $this->assertNotNull($newCompanyId);
+
+        // Verify company exists in database
+        $this->assertDatabaseHas('companies', [
+            'id' => $newCompanyId,
+            'name' => 'Global Retailers Ltd',
+            'code' => 'GRL-01',
+        ]);
+
+        // Verify creator attached to user_company_access
+        $this->assertDatabaseHas('user_company_access', [
+            'user_id' => $superAdmin->id,
+            'company_id' => $newCompanyId,
+        ]);
+
+        // Verify new company appears in GET /api/v1/companies
+        $indexResponse = $this->actingAs($superAdmin)
+            ->getJson('/api/v1/companies');
+
+        $indexResponse->assertStatus(200);
+        $companies = collect($indexResponse->json('data'));
+        $this->assertTrue($companies->contains('id', $newCompanyId));
+    }
+
+    /**
+     * T08 - Unauthorized non-Super Admin user cannot create a tenant company (403 Forbidden)
+     */
+    public function test_non_super_admin_cannot_create_tenant_company(): void
+    {
+        $payload = [
+            'name' => 'Unauthorized Retailer',
+            'code' => 'UNAUTH-01',
+        ];
+
+        $response = $this->actingAs($this->userA)
+            ->postJson('/api/v1/companies', $payload);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Forbidden: Only administrators can create tenant companies.'
+            ]);
+
+        $this->assertDatabaseMissing('companies', [
+            'name' => 'Unauthorized Retailer',
+            'code' => 'UNAUTH-01',
+        ]);
+    }
+
+    /**
+     * T09 - Duplicate company code validation returns 422 Unprocessable Entity
+     */
+    public function test_company_creation_rejects_duplicate_code(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superAdmin = User::factory()->create(['name' => 'Super Admin User']);
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $payload = [
+            'name' => 'Duplicate Code Ltd',
+            'code' => 'TBT-01', // already used by companyA
+        ];
+
+        $response = $this->actingAs($superAdmin)
+            ->postJson('/api/v1/companies', $payload);
+
+        $response->assertStatus(422);
+    }
+
+    /**
+     * T10 - Missing or empty company name returns 422 Unprocessable Entity
+     */
+    public function test_company_creation_requires_non_empty_name(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superAdmin = User::factory()->create(['name' => 'Super Admin User']);
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $response = $this->actingAs($superAdmin)
+            ->postJson('/api/v1/companies', ['name' => '   ']);
+
+        $response->assertStatus(422);
+    }
+
+    /**
+     * T11 - Company creation auto-generates unique code if omitted
+     */
+    public function test_company_creation_auto_generates_code_if_omitted(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superAdmin = User::factory()->create(['name' => 'Super Admin User']);
+        $superAdmin->roles()->attach($superAdminRole->id);
+
+        $response = $this->actingAs($superAdmin)
+            ->postJson('/api/v1/companies', [
+                'name' => 'Auto Code Enterprises',
+            ]);
+
+        $response->assertStatus(201);
+        $code = $response->json('data.code');
+        $this->assertNotEmpty($code);
+        $this->assertStringStartsWith('AUTO-CODE', $code);
+    }
 }

@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
         Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
         Route::get('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'index']);
+        Route::post('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'store']);
 
         // Organizational Hierarchy: Business Units
         Route::get('business-units', [\App\Http\Controllers\Api\V1\BusinessUnitController::class, 'index'])->middleware('permission:business_units.view');
