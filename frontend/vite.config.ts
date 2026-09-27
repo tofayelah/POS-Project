@@ -21,6 +21,19 @@ export default defineConfig(({ mode }) => {
           target: env.BACKEND_URL || process.env.BACKEND_URL || 'https://pos.sonaribd.com',
           changeOrigin: true,
           secure: false,
+          configure: (proxy) => {
+            proxy.on('error', (err, _req, res) => {
+              console.warn('[vite] http proxy error:', err.message);
+              if (res && !res.headersSent) {
+                res.writeHead(502, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                  success: false,
+                  message: 'Backend connection unavailable',
+                  error: err.message
+                }));
+              }
+            });
+          }
         }
       }
     },
