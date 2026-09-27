@@ -21,6 +21,7 @@ import {
   Package
 } from 'lucide-react';
 import { PurchaseOrder, PurchaseOrderStatus } from '../../types/purchase';
+import { DocumentHeader } from '../../components/common/DocumentHeader';
 import { 
   getPurchaseOrders, 
   approvePurchaseOrder, 
@@ -402,6 +403,12 @@ export function PurchaseOrderList() {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-xs">
+              <DocumentHeader 
+                title="PURCHASE ORDER" 
+                docNumber={selectedPo.po_number} 
+                docDate={selectedPo.order_date} 
+              />
+
               {/* Supplier & Delivery Info Grid */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
                 <div>

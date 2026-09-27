@@ -18,6 +18,7 @@ import {
 import { GoodsReceipt } from '../../types/purchase';
 import { getGoodsReceipt, postGoodsReceipt } from '../../api/goodsReceipts';
 import { formatCurrency } from '../../utils/currency';
+import { DocumentHeader } from '../../components/common/DocumentHeader';
 
 export function GoodsReceiptDetail() {
   const { id } = useParams<{ id: string }>();
@@ -149,6 +150,13 @@ export function GoodsReceiptDetail() {
           )}
         </div>
       </div>
+
+      {/* Authoritative Multi-Tenant Company Master Header */}
+      <DocumentHeader 
+        title="GOODS RECEIPT NOTE (GRN)" 
+        docNumber={receipt.receipt_number} 
+        docDate={receipt.receipt_date} 
+      />
 
       {/* Alerts */}
       {successMessage && (

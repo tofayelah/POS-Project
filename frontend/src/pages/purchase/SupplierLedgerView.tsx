@@ -14,6 +14,7 @@ import {
 import { SupplierLedgerRecord } from '../../types/purchase';
 import { getSupplierLedger } from '../../api/purchases';
 import { formatCurrency } from '../../utils/currency';
+import { DocumentHeader } from '../../components/common/DocumentHeader';
 
 export function SupplierLedgerView() {
   const { id } = useParams<{ id: string }>();
@@ -97,6 +98,13 @@ export function SupplierLedgerView() {
           <Printer className="w-3.5 h-3.5" /> Print Statement
         </button>
       </div>
+
+      {/* Authoritative Multi-Tenant Company Master Header */}
+      <DocumentHeader 
+        title="SUPPLIER STATEMENT & LEDGER" 
+        subtitle="Accounts Payable Statement" 
+        docNumber={supplier?.supplier_code} 
+      />
 
       {errorMessage && (
         <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">

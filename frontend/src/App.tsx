@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/useAuth';
+import { CompanyProvider } from './contexts/CompanyContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import Accounting from "./pages/Accounting";
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -42,7 +43,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <CompanyProvider>
+          <Router>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
@@ -281,6 +283,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
+        </CompanyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

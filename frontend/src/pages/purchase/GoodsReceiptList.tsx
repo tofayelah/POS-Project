@@ -23,6 +23,7 @@ import {
 import { GoodsReceipt, GoodsReceiptStatus } from '../../types/purchase';
 import { getGoodsReceipts, postGoodsReceipt } from '../../api/goodsReceipts';
 import { formatCurrency } from '../../utils/currency';
+import { DocumentHeader } from '../../components/common/DocumentHeader';
 
 export function GoodsReceiptList() {
   const location = useLocation();
@@ -372,6 +373,12 @@ export function GoodsReceiptList() {
 
             {/* Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-xs">
+              <DocumentHeader 
+                title="GOODS RECEIPT NOTE (GRN)" 
+                docNumber={selectedReceipt.receipt_number} 
+                docDate={selectedReceipt.receipt_date} 
+              />
+
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
                 <div>

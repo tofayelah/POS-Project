@@ -318,75 +318,62 @@ export function setActiveTenantCompany(company: Company): void {
   }
 }
 
+export function getActiveCompanyFromStorage(): Company | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_COMPANY_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {}
+  return null;
+}
+
 // ======================= MULTI-TENANT COMPANIES API =======================
 
 export async function getCompanies(): Promise<{ success: boolean; data: Company[] }> {
-  const localTenants = getLocalTenantCompanies();
-  
   try {
     const res = await api.get('/companies');
     if (res.data?.success && Array.isArray(res.data.data)) {
-      // Merge remote data with our multi-tenant profiles
-      const remoteList: Company[] = res.data.data;
-      const mergedMap = new Map<number, Company>();
-      
-      // Seed with local multi-tenants first
-      localTenants.forEach((t) => mergedMap.set(t.id, t));
-      
-      // Update or add remote records
-      remoteList.forEach((r) => {
-        const existing = mergedMap.get(r.id);
-        if (existing) {
-          mergedMap.set(r.id, {
-            ...existing,
-            name: r.name || existing.name,
-            legal_name: r.legal_name || existing.legal_name,
-            code: r.code || existing.code,
-            country: r.country || existing.country,
-            currency_code: r.currency_code || existing.currency_code,
-            timezone: r.timezone || existing.timezone,
-          });
-        } else {
-          mergedMap.set(r.id, {
-            ...r,
-            subdomain: r.code ? r.code.toLowerCase().replace(/[^a-z0-9]/g, '') : `tenant-${r.id}`,
-            business_type: 'GENERAL_RETAIL',
-            tenant_isolated: true,
-            data_isolation_key: `iso_tenant_${r.id}`,
-          });
-        }
-      });
-
-      const combined = Array.from(mergedMap.values());
-      saveLocalTenantCompanies(combined);
-      return { success: true, data: combined };
+      return res.data;
     }
-  } catch {
-    // Fallback if remote backend route fails or 500s
+  } catch (err) {
+    console.warn('Failed to load companies from backend:', err);
   }
-
-  return { success: true, data: localTenants };
+  return { success: true, data: [] };
 }
 
 export async function getCompany(id?: number): Promise<{ success: boolean; data: Company }> {
   const targetId = id || getActiveTenantId();
-  const tenants = getLocalTenantCompanies();
-  const matched = tenants.find((t) => t.id === targetId);
-
-  if (matched) {
-    return { success: true, data: matched };
+  const headers: Record<string, string> = {};
+  if (targetId) {
+    headers['X-Company-ID'] = String(targetId);
   }
 
   try {
-    const res = await api.get('/company');
-    if (res.data?.data) {
+    const res = await api.get('/company', { headers });
+    if (res.data?.success && res.data.data) {
+      if (targetId === getActiveTenantId()) {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_COMPANY_KEY, JSON.stringify(res.data.data));
+        } catch {}
+      }
       return res.data;
     }
-  } catch {
-    // ignore
+  } catch (err: any) {
+    // If local cache exists, fallback for offline/development
+    const cached = getActiveCompanyFromStorage();
+    if (cached && (cached.id === targetId || !targetId)) {
+      return { success: true, data: cached };
+    }
+    throw err;
   }
 
-  return { success: true, data: tenants[0] || DEFAULT_TENANT_COMPANIES[0] };
+  const cached = getActiveCompanyFromStorage();
+  if (cached) {
+    return { success: true, data: cached };
+  }
+
+  throw new Error('Failed to load company profile.');
 }
 
 export async function createCompany(
@@ -464,45 +451,26 @@ export async function createCompany(
 export async function updateCompany(
   data: Partial<Company> & { id?: number }
 ): Promise<{ success: boolean; data: Company; message?: string }> {
-  const tenants = getLocalTenantCompanies();
   const targetId = data.id || getActiveTenantId();
-  const existing = tenants.find((t) => t.id === targetId);
+  const headers: Record<string, string> = {
+    'X-Company-ID': String(targetId),
+  };
 
-  if (!existing) {
-    throw new Error('Tenant Company not found.');
-  }
-
-  // If subdomain changed, ensure unique
-  if (data.subdomain && data.subdomain.toLowerCase() !== existing.subdomain?.toLowerCase()) {
-    const cleanSubdomain = data.subdomain.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-    const dup = tenants.find((t) => t.id !== targetId && t.subdomain?.toLowerCase() === cleanSubdomain);
-    if (dup) {
-      throw new Error(`Subdomain "${cleanSubdomain}" is already used by ${dup.name}.`);
+  try {
+    const res = await api.put('/company', data, { headers });
+    if (res.data?.success && res.data.data) {
+      const updated: Company = res.data.data;
+      if (targetId === getActiveTenantId()) {
+        setActiveTenantCompany(updated);
+      }
+      return res.data;
     }
+  } catch (err: any) {
+    const errorMsg = err.response?.data?.message || err.message || 'Failed to update company profile.';
+    throw new Error(errorMsg);
   }
 
-  const updated: Company = {
-    ...existing,
-    ...data,
-    id: existing.id,
-    business_type_label: data.business_type 
-      ? BUSINESS_TYPE_CONFIG[data.business_type]?.label || existing.business_type_label 
-      : existing.business_type_label,
-    updated_at: new Date().toISOString(),
-  };
-
-  const updatedList = tenants.map((t) => (t.id === targetId ? updated : t));
-  saveLocalTenantCompanies(updatedList);
-
-  if (targetId === getActiveTenantId()) {
-    setActiveTenantCompany(updated);
-  }
-
-  return {
-    success: true,
-    message: `Company "${updated.name}" updated successfully.`,
-    data: updated,
-  };
+  throw new Error('Failed to update company profile.');
 }
 
 export async function deleteCompany(id: number): Promise<{ success: boolean; message: string }> {

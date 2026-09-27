@@ -1,5 +1,6 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
+import { useCompany } from '../../contexts/CompanyContext';
 
 interface DashboardHeaderProps {
   dateRange: string;
@@ -9,11 +10,22 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ dateRange, setDateRange, onRefresh, isFetching }: DashboardHeaderProps) {
+  const { company } = useCompany();
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900">Commercial Dashboard</h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Real-time overview of your ERP metrics</p>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl font-extrabold text-slate-900">Commercial Dashboard</h1>
+          {company?.name && (
+            <span id="dashboard-company-badge" className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-full">
+              {company.name}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-slate-500 font-medium mt-1">
+          Real-time overview of metrics for {company?.name || 'your enterprise'}
+        </p>
       </div>
 
       <div className="flex items-center gap-3">

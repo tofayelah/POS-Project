@@ -21,6 +21,7 @@ import { PurchaseInvoice, PurchaseInvoiceStatus, PurchasePaymentStatus } from '.
 import { getPurchases, postPurchaseInvoice } from '../../api/purchases';
 import { formatCurrency } from '../../utils/currency';
 import { SupplierPaymentModal } from '../../components/purchase/SupplierPaymentModal';
+import { DocumentHeader } from '../../components/common/DocumentHeader';
 
 export function PurchaseList() {
   const location = useLocation();
@@ -433,6 +434,12 @@ export function PurchaseList() {
 
             {/* Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-xs">
+              <DocumentHeader 
+                title="PURCHASE INVOICE" 
+                docNumber={selectedInvoice.supplier_invoice_number} 
+                docDate={selectedInvoice.invoice_date} 
+              />
+
               {/* Vendor & Finance Summary */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
                 <div>

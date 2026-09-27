@@ -55,4 +55,14 @@ class Company extends Model
     {
         return $this->belongsToMany(User::class, 'user_company_access');
     }
+
+    public function getVatRegistrationAttribute(?string $value): ?string
+    {
+        return $value ?? $this->attributes['tax_number'] ?? null;
+    }
+
+    public function getTaxNumberAttribute(?string $value): ?string
+    {
+        return $value ?? $this->attributes['vat_registration'] ?? null;
+    }
 }

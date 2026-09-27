@@ -22,11 +22,13 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
+import { useCompany } from '../../contexts/CompanyContext';
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, hasRole, hasPermission } = useAuth();
+  const { company: activeCompany } = useCompany();
 
   const handleLogout = async () => {
     await logout();
@@ -50,11 +52,20 @@ export function Sidebar() {
 
   return (
     <aside id="app-sidebar" className="w-64 bg-slate-900 flex flex-col shrink-0 h-full">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-          R
+      <div className="p-5 border-b border-slate-800/80">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xs shrink-0">
+            {activeCompany?.name?.charAt(0) || 'R'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-white font-semibold tracking-tight text-sm block truncate" id="sidebar-company-name">
+              {activeCompany?.name || 'RetailCore ERP'}
+            </span>
+            <span className="text-[10px] text-indigo-400 font-mono block truncate">
+              {activeCompany?.subdomain || 'tenant'}.sonaribd.com
+            </span>
+          </div>
         </div>
-        <span className="text-white font-semibold tracking-tight text-lg">RetailCore ERP</span>
       </div>
 
       <nav className="mt-6 px-4 space-y-1 flex-1 overflow-y-auto">

@@ -1,58 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Bell, Activity, Building2, Globe, ShieldCheck, ChevronDown, Check } from 'lucide-react';
 import { Link } from 'react-router';
 import { Company } from '../../types/organization';
-import { getCompanies, getCompany, setActiveTenantCompany } from '../../api/organization';
+import { useCompany } from '../../contexts/CompanyContext';
 
 export function Header() {
-  const [activeCompany, setActiveCompany] = useState<Company | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const { company: activeCompany, companies, switchCompany } = useCompany();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    loadTenantData();
-
-    const handleTenantChange = (e: any) => {
-      if (e.detail) {
-        setActiveCompany(e.detail);
-      } else {
-        loadTenantData();
-      }
-    };
-
-    window.addEventListener('retailcore_tenant_changed', handleTenantChange);
-    return () => window.removeEventListener('retailcore_tenant_changed', handleTenantChange);
-  }, []);
-
-  const loadTenantData = async () => {
-    try {
-      const [currRes, allRes] = await Promise.all([
-        getCompany(),
-        getCompanies(),
-      ]);
-      setActiveCompany(currRes.data);
-      setCompanies(allRes.data || []);
-    } catch {
-      // fallback
-    }
-  };
-
-  const handleSwitchTenant = (comp: Company) => {
-    setActiveTenantCompany(comp);
-    setActiveCompany(comp);
+  const handleSwitchTenant = async (comp: Company) => {
+    await switchCompany(comp);
     setIsDropdownOpen(false);
   };
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 relative z-30">
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full w-80">
+        <div className="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full w-72">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text" 
             placeholder="Search modules, records, or settings..." 
             className="bg-transparent border-none text-sm w-full outline-none text-slate-600"
           />
+        </div>
+
+        {/* Global Dynamic Company Identity / Welcome Banner */}
+        <div 
+          id="header-welcome-company"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+        >
+          <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          <span className="text-slate-600 font-medium">
+            Welcome to <span className="font-bold text-slate-900">{activeCompany?.name || 'RetailCore'}</span>
+          </span>
         </div>
 
         {/* Tenant Subdomain & Company Switcher */}

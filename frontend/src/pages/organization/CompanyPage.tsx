@@ -49,8 +49,10 @@ import {
   getBranches, 
   getWarehouses 
 } from '../../api/organization';
+import { useCompany } from '../../contexts/CompanyContext';
 
 export function CompanyPage() {
+  const { switchCompany, updateCompanyProfile } = useCompany();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,6 +116,8 @@ export function CompanyPage() {
     owner_email: '',
     phone: '',
     email: '',
+    website: '',
+    vat_registration: '',
     address: '',
     country: 'Bangladesh',
     currency_code: 'BDT',
@@ -158,7 +162,8 @@ export function CompanyPage() {
   };
 
   // Switch Active Tenant
-  const handleSwitchTenant = (comp: Company) => {
+  const handleSwitchTenant = async (comp: Company) => {
+    await switchCompany(comp);
     setActiveTenantCompany(comp);
     setActiveCompany(comp);
     setSuccessMessage(`Switched active workspace to "${comp.name}" (${comp.subdomain || 'apex'}.sonaribd.com). Data isolation guard updated.`);
@@ -274,11 +279,13 @@ export function CompanyPage() {
       owner_email: target.owner_email || target.email || '',
       phone: target.phone || target.owner_phone || '',
       email: target.email || target.owner_email || '',
+      website: target.website || '',
+      vat_registration: target.vat_registration || target.tax_number || '',
       address: target.address || '',
       country: target.country || 'Bangladesh',
       currency_code: target.currency_code || 'BDT',
       timezone: target.timezone || 'Asia/Dhaka',
-      tax_number: target.tax_number || '',
+      tax_number: target.tax_number || target.vat_registration || '',
       status: target.status || 'active',
       features_enabled: target.features_enabled || {},
     });
@@ -298,7 +305,7 @@ export function CompanyPage() {
     setSaving(true);
     setModalError(null);
     try {
-      await updateCompany({
+      const payload: Partial<Company> = {
         id: editingTargetCompany.id,
         name: editFormData.name.trim(),
         legal_name: editFormData.legal_name.trim() || null,
@@ -311,14 +318,22 @@ export function CompanyPage() {
         owner_phone: editFormData.phone.trim() || null,
         phone: editFormData.phone.trim() || null,
         email: editFormData.email.trim() || null,
+        website: editFormData.website.trim() || null,
+        vat_registration: editFormData.vat_registration.trim() || editFormData.tax_number.trim() || null,
+        tax_number: editFormData.vat_registration.trim() || editFormData.tax_number.trim() || null,
         address: editFormData.address.trim() || null,
         country: editFormData.country.trim(),
         currency_code: editFormData.currency_code.trim(),
         timezone: editFormData.timezone.trim(),
-        tax_number: editFormData.tax_number.trim() || null,
         status: editFormData.status,
         features_enabled: editFormData.features_enabled,
-      });
+      };
+
+      if (editingTargetCompany.id === activeCompany?.id) {
+        await updateCompanyProfile(payload);
+      } else {
+        await updateCompany(payload);
+      }
 
       setSuccessMessage(`Tenant company "${editFormData.name}" updated successfully.`);
       setIsEditModalOpen(false);
@@ -811,8 +826,10 @@ export function CompanyPage() {
                 <span className="text-slate-800 font-mono">{activeCompany.code}</span>
               </div>
               <div>
-                <span className="text-slate-400 block font-medium">Tax / BIN ID</span>
-                <span className="text-slate-800 font-mono">{activeCompany.tax_number || '—'}</span>
+                <span className="text-slate-400 block font-medium">VAT Registration / BIN</span>
+                <span className="text-slate-800 font-mono" id="active-company-vat">
+                  {activeCompany.vat_registration || activeCompany.tax_number || '—'}
+                </span>
               </div>
             </div>
 
@@ -829,6 +846,12 @@ export function CompanyPage() {
               <div>
                 <span className="text-slate-400 block font-medium">Official Contact Phone</span>
                 <span className="text-slate-700 font-medium">{activeCompany.phone || activeCompany.owner_phone || '—'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-medium">Official Website</span>
+                <span className="text-slate-700 font-medium font-mono" id="active-company-website">
+                  {activeCompany.website || '—'}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400 block font-medium">Base Currency & Timezone</span>
@@ -1365,6 +1388,43 @@ export function CompanyPage() {
                     value={editFormData.phone}
                     onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Company Contact Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    placeholder="contact@company.com"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Official Website</label>
+                  <input
+                    type="text"
+                    value={editFormData.website}
+                    onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                    placeholder="https://company.com"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">VAT Registration / BIN</label>
+                  <input
+                    type="text"
+                    value={editFormData.vat_registration}
+                    onChange={(e) => setEditFormData({ 
+                      ...editFormData, 
+                      vat_registration: e.target.value,
+                      tax_number: e.target.value 
+                    })}
+                    placeholder="e.g. 001234567-0101"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono outline-none"
                   />
                 </div>
 
