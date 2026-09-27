@@ -18,6 +18,7 @@ import { PaymentMethodsChart } from '../components/dashboard/PaymentMethodsChart
 import { LowStockTable } from '../components/dashboard/LowStockTable';
 import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { AccountingHealth } from '../components/dashboard/AccountingHealth';
+import { SystemStatusCard } from '../components/dashboard/SystemStatusCard';
 import { formatCurrency } from '../utils/currency';
 
 export function Dashboard() {
@@ -194,9 +195,14 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Inventory & Stock Row */}
-          <div className="grid grid-cols-1 gap-6">
-            <LowStockTable lowStockDetails={summary.low_stock_details} />
+          {/* Operational & Inventory Status Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <SystemStatusCard />
+            </div>
+            <div className="lg:col-span-2">
+              <LowStockTable lowStockDetails={summary.low_stock_details} />
+            </div>
           </div>
 
           {/* Recent Transactions Row */}

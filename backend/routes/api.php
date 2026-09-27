@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // System Settings
         Route::get('settings', [\App\Http\Controllers\Api\V1\SettingController::class, 'index'])->middleware('permission:settings.view');
         Route::match(['put', 'patch'], 'settings', [\App\Http\Controllers\Api\V1\SettingController::class, 'update'])->middleware('permission:settings.update');
+        Route::get('system/status', [\App\Http\Controllers\Api\V1\System\SystemStatusController::class, 'status']);
         
         // Audit Logs
         Route::get('audit-logs', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'index'])->middleware('permission:audit_logs.view');
