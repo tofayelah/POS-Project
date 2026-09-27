@@ -22,7 +22,7 @@ import { SystemStatusCard } from '../components/dashboard/SystemStatusCard';
 import { formatCurrency } from '../utils/currency';
 
 export function Dashboard() {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   const [dateRange, setDateRange] = useState('7days');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -62,13 +62,15 @@ export function Dashboard() {
     };
   }, [dateRange]);
 
+    const canViewDashboard = hasRole('Super Admin') || hasPermission('reports.dashboard');
+
   const { data: summary, isLoading, error, refetch, isFetching } = useQuery<DashboardSummary>({
     queryKey: ['dashboard-summary', dates.date_from, dates.date_to],
     queryFn: async () => {
       const response = await api.get('/dashboard/summary', { params: dates });
       return response.data.data;
     },
-    enabled: !!user && hasPermission('reports.dashboard'),
+    enabled: !!user && canViewDashboard,
     staleTime: 5 * 60 * 1000, // Cache for 5 mins
   });
 
@@ -78,7 +80,7 @@ export function Dashboard() {
     setIsRefreshing(false);
   };
 
-  if (!hasPermission('reports.dashboard')) {
+  if (!canViewDashboard) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4">

@@ -282,7 +282,9 @@ export function useProvideAuth(): AuthContextType {
    * Check if the authenticated user has a specific permission
    */
   const hasPermission = useCallback((permissionName: string): boolean => {
-    if (!user || !user.permissions) return false;
+    if (!user) return false;
+    if (user.roles?.some((r) => r.name.toLowerCase() === 'super admin')) return true;
+    if (!user.permissions) return false;
     return user.permissions.some((p) => {
       const pName = typeof p === 'string' ? p : p.name;
       return pName.toLowerCase() === permissionName.toLowerCase();
