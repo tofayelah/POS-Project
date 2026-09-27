@@ -58,6 +58,21 @@ class OrganizationHierarchyTest extends TestCase
             'country' => 'BD',
         ]);
 
+        $this->userA->companies()->attach($this->companyA->id);
+        $this->userB->companies()->attach($this->companyB->id);
+
+        Category::firstOrCreate([
+            'company_id' => $this->companyA->id,
+            'name' => 'General Category',
+            'slug' => 'general-category',
+        ]);
+
+        Unit::firstOrCreate([
+            'company_id' => $this->companyA->id,
+            'name' => 'Pcs',
+            'short_code' => 'pcs',
+        ]);
+
         $this->businessUnitA = BusinessUnit::create([
             'company_id' => $this->companyA->id,
             'name' => 'Fashion Division',

@@ -1623,4 +1623,265 @@ class InventoryService
             return $movement;
         });
     }
+
+    /**
+     * Receive purchased inventory / stock in.
+     * Compliant with Phase 3 Gate 1.2 requirements.
+     */
+    public function stockIn(
+        int $companyId,
+        int $warehouseId,
+        int $productVariantId,
+        float $quantity,
+        float $unitCost,
+        string $referenceType,
+        int $referenceId,
+        string $referenceNumber,
+        ?string $reason = null,
+        ?string $notes = null,
+        ?int $userId = null,
+        ?int $stockBatchId = null,
+        ?string $batchNumber = null,
+        ?int $storageLocationId = null
+    ): StockMovement {
+        return DB::transaction(function () use (
+            $companyId, $warehouseId, $productVariantId, $quantity, $unitCost,
+            $referenceType, $referenceId, $referenceNumber, $reason, $notes, $userId,
+            $stockBatchId, $batchNumber, $storageLocationId
+        ) {
+            // 1. Input Validation
+            if ($quantity <= 0) {
+                throw new ConflictHttpException("Stock-in quantity must be greater than zero.");
+            }
+            if ($unitCost < 0) {
+                throw new ConflictHttpException("Unit cost cannot be negative.");
+            }
+
+            // 2. Company Validation
+            $company = Company::find($companyId);
+            if (!$company) {
+                throw new ConflictHttpException("Company does not exist.");
+            }
+
+            // 3. Warehouse Validation
+            $warehouse = Warehouse::where('id', $warehouseId)
+                ->where('company_id', $companyId)
+                ->first();
+            if (!$warehouse) {
+                throw new ConflictHttpException("Warehouse does not belong to the specified company.");
+            }
+
+            // 4. Product Variant & Product Validation
+            $variant = ProductVariant::with('product')->find($productVariantId);
+            if (!$variant || !$variant->product || $variant->product->company_id !== $companyId) {
+                throw new ConflictHttpException("Product variant does not belong to the specified company.");
+            }
+            $productId = $variant->product_id;
+
+            // 5. Storage Location Validation
+            if ($storageLocationId !== null) {
+                $location = StorageLocation::find($storageLocationId);
+                if (!$location) {
+                    throw new ConflictHttpException("Storage location does not exist.");
+                }
+                if ($location->company_id !== $companyId) {
+                    throw new ConflictHttpException("Storage location does not belong to the specified company.");
+                }
+                if ($location->warehouse_id !== $warehouseId) {
+                    throw new ConflictHttpException("Storage location does not belong to the specified warehouse.");
+                }
+                if (isset($location->is_active) && !$location->is_active) {
+                    throw new ConflictHttpException("Storage location is inactive.");
+                }
+            }
+
+            // 6. Lock / Get / Create Inventory Position
+            $inventory = Inventory::where('company_id', $companyId)
+                ->where('warehouse_id', $warehouseId)
+                ->where('product_variant_id', $productVariantId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$inventory) {
+                $inventory = Inventory::create([
+                    'company_id' => $companyId,
+                    'business_unit_id' => $warehouse->business_unit_id ?? null,
+                    'branch_id' => $warehouse->branch_id ?? null,
+                    'warehouse_id' => $warehouseId,
+                    'product_id' => $productId,
+                    'product_variant_id' => $productVariantId,
+                    'quantity' => 0,
+                    'reserved_quantity' => 0,
+                    'available_quantity' => 0,
+                    'average_cost' => $unitCost,
+                    'total_value' => 0,
+                ]);
+                $inventory = Inventory::where('id', $inventory->id)->lockForUpdate()->first();
+            }
+
+            // 7. Idempotency Check (Safely performed under Inventory lock)
+            if (!empty($referenceType) && !empty($referenceId) && $referenceId !== 0) {
+                $existing = StockMovement::where('company_id', $companyId)
+                    ->where('movement_type', 'STOCK_IN')
+                    ->where('reference_type', $referenceType)
+                    ->where('reference_id', $referenceId)
+                    ->where('product_variant_id', $productVariantId)
+                    ->first();
+
+                if ($existing) {
+                    return $existing;
+                }
+            }
+
+            // 8. Stock Batch Logic
+            $batch = null;
+            if ($stockBatchId !== null) {
+                $batch = StockBatch::find($stockBatchId);
+                if (!$batch) {
+                    throw new ConflictHttpException("Stock batch does not exist.");
+                }
+                if ($batch->company_id !== $companyId) {
+                    throw new ConflictHttpException("Stock batch does not belong to the specified company.");
+                }
+                if ($batch->variant_id !== $productVariantId) {
+                    throw new ConflictHttpException("Stock batch does not belong to the specified product variant.");
+                }
+                if ($batch->product_id !== $productId) {
+                    throw new ConflictHttpException("Stock batch product does not match the product variant.");
+                }
+                if ($batchNumber !== null && $batch->batch_no !== $batchNumber) {
+                    throw new ConflictHttpException("Batch number conflicts with the specified stock batch.");
+                }
+            } elseif ($batchNumber !== null) {
+                $batch = StockBatch::where('company_id', $companyId)
+                    ->where('variant_id', $productVariantId)
+                    ->where('batch_no', $batchNumber)
+                    ->first();
+
+                if ($batch) {
+                    if ($batch->product_id !== $productId) {
+                        throw new ConflictHttpException("Existing stock batch product does not match product variant.");
+                    }
+                    $stockBatchId = $batch->id;
+                } else {
+                    try {
+                        $batch = StockBatch::create([
+                            'company_id' => $companyId,
+                            'product_id' => $productId,
+                            'variant_id' => $productVariantId,
+                            'batch_no' => $batchNumber,
+                            'unit_cost' => $unitCost,
+                            'status' => 'ACTIVE',
+                        ]);
+                        $stockBatchId = $batch->id;
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        $batch = StockBatch::where('company_id', $companyId)
+                            ->where('variant_id', $productVariantId)
+                            ->where('batch_no', $batchNumber)
+                            ->first();
+
+                        if ($batch) {
+                            if ($batch->product_id !== $productId) {
+                                throw new ConflictHttpException("Existing stock batch product does not match product variant.");
+                            }
+                            $stockBatchId = $batch->id;
+                        } else {
+                            throw $e;
+                        }
+                    }
+                }
+            }
+
+            // 9. Calculate Moving Average Cost & Update Inventory
+            $oldQuantity = (float) $inventory->quantity;
+            $oldAverageCost = (float) $inventory->average_cost;
+            $receivedQuantity = (float) $quantity;
+            $receivedUnitCost = (float) $unitCost;
+
+            $newQuantity = $oldQuantity + $receivedQuantity;
+
+            if ($oldQuantity <= 0) {
+                $newAverageCost = $receivedUnitCost;
+            } else {
+                $newAverageCost = (($oldQuantity * $oldAverageCost) + ($receivedQuantity * $receivedUnitCost)) / $newQuantity;
+            }
+
+            $inventory->quantity = $newQuantity;
+            $inventory->available_quantity = $newQuantity - (float) $inventory->reserved_quantity;
+            $inventory->average_cost = $newAverageCost;
+            $inventory->total_value = $newQuantity * $newAverageCost;
+            $inventory->save();
+
+            // 10. Update or Create InventoryBatch (when StockBatch exists)
+            if ($stockBatchId !== null) {
+                $invBatchQuery = InventoryBatch::where('inventory_id', $inventory->id)
+                    ->where('stock_batch_id', $stockBatchId);
+
+                if ($storageLocationId !== null) {
+                    $invBatchQuery->where('storage_location_id', $storageLocationId);
+                } else {
+                    $invBatchQuery->whereNull('storage_location_id');
+                }
+
+                $invBatch = $invBatchQuery->lockForUpdate()->first();
+
+                if ($invBatch) {
+                    $invBatch->quantity = (float) $invBatch->quantity + $quantity;
+                    $invBatch->save();
+                } else {
+                    $invBatch = InventoryBatch::create([
+                        'inventory_id' => $inventory->id,
+                        'stock_batch_id' => $stockBatchId,
+                        'storage_location_id' => $storageLocationId,
+                        'quantity' => $quantity,
+                    ]);
+                }
+            }
+
+            // 11. Create Immutable StockMovement
+            $movement = StockMovement::create([
+                'company_id' => $companyId,
+                'business_unit_id' => $warehouse->business_unit_id ?? null,
+                'branch_id' => $warehouse->branch_id ?? null,
+                'warehouse_id' => $warehouseId,
+                'product_id' => $productId,
+                'product_variant_id' => $productVariantId,
+                'movement_type' => 'STOCK_IN',
+                'quantity' => $quantity,
+                'unit_cost' => $unitCost,
+                'total_cost' => $quantity * $unitCost,
+                'quantity_before' => $oldQuantity,
+                'quantity_after' => $newQuantity,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+                'reference_number' => $referenceNumber,
+                'reason' => $reason,
+                'notes' => $notes,
+                'created_by' => $userId,
+                'stock_batch_id' => $stockBatchId,
+                'storage_location_id' => $storageLocationId,
+            ]);
+
+            // 12. Record Audit Log
+            AuditLog::create([
+                'uuid' => (string) Str::uuid(),
+                'company_id' => $companyId,
+                'user_id' => $userId,
+                'event' => 'STOCK_IN_RECEIVED',
+                'auditable_type' => StockMovement::class,
+                'auditable_id' => $movement->id,
+                'new_values' => [
+                    'warehouse_id' => $warehouseId,
+                    'variant_id' => $productVariantId,
+                    'quantity' => $quantity,
+                    'unit_cost' => $unitCost,
+                    'reference_type' => $referenceType,
+                    'reference_id' => $referenceId,
+                    'reference_number' => $referenceNumber,
+                ],
+            ]);
+
+            return $movement;
+        });
+    }
 }
