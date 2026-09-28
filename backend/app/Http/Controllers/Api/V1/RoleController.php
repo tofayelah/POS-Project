@@ -9,12 +9,14 @@ class RoleController extends Controller
 {
     public function index()
     {
-        return response()->json(['success' => true, 'data' => []]);
+        $roles = \App\Models\Role::with('permissions')->orderBy('id')->get();
+        return response()->json(['success' => true, 'data' => $roles]);
     }
 
     public function show($id)
     {
-        return response()->json(['success' => true, 'data' => ['id' => (int) $id]]);
+        $role = \App\Models\Role::with('permissions')->findOrFail($id);
+        return response()->json(['success' => true, 'data' => $role]);
     }
 
     public function store(Request $request)

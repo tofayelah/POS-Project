@@ -145,3 +145,29 @@ export interface StorageLocation {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface Role {
+  id: number;
+  name: string;
+  label?: string;
+  description?: string | null;
+  permissions?: Array<{
+    id: number;
+    name: string;
+    group?: string;
+  }>;
+}
+
+export interface OrganizationUser {
+  id: number;
+  uuid?: string;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  role?: string;
+  roles?: Array<{ id: number; name: string; label?: string }>;
+  companies?: Array<{ id: number; name: string; code?: string }>;
+  created_at?: string;
+  updated_at?: string;
+}
+

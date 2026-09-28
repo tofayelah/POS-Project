@@ -273,8 +273,16 @@ export function Sidebar() {
         {canViewAdmin && (
           <>
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Administration</div>
-            <Link to="/dashboard" id="nav-link-users" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">
-              <Users className="w-4 h-4" />
+            <Link 
+              to="/users" 
+              id="nav-link-users" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                location.pathname.startsWith('/users') 
+                  ? 'bg-slate-800 text-white font-medium' 
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Users className={`w-4 h-4 ${location.pathname.startsWith('/users') ? 'text-indigo-400' : 'text-slate-400'}`} />
               <span>Users</span>
             </Link>
             <Link to="/dashboard" id="nav-link-roles" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white transition-colors cursor-pointer">

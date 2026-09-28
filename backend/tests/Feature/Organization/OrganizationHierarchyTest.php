@@ -125,9 +125,6 @@ class OrganizationHierarchyTest extends TestCase
             'code' => 'DHA-WH',
             'warehouse_type' => 'BRANCH',
         ]);
-
-        $this->userA->companies()->attach($this->companyA->id);
-        $this->userB->companies()->attach($this->companyB->id);
     }
 
     private function createTestUsersAndPermissions(): void

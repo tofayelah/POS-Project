@@ -43,7 +43,14 @@ class BranchController extends Controller
         ]);
 
         // Ensure the business unit belongs to the same company
-        $bu = BusinessUnit::where('company_id', $companyId)->findOrFail($validated['business_unit_id']);
+        $bu = BusinessUnit::where('company_id', $companyId)->find($validated['business_unit_id']);
+        if (!$bu) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected business unit does not belong to the authorized company.',
+                'errors' => ['business_unit_id' => ['The selected business unit does not belong to the authorized company.']]
+            ], 422);
+        }
 
         // Check unique code within the business unit
         if (Branch::where('business_unit_id', $bu->id)->where('code', $validated['code'])->exists()) {
@@ -64,6 +71,7 @@ class BranchController extends Controller
         $branch = Branch::where('company_id', $companyId)->findOrFail($id);
 
         $validated = $request->validate([
+            'business_unit_id' => 'nullable|exists:business_units,id',
             'name' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
@@ -72,8 +80,21 @@ class BranchController extends Controller
             'status' => 'nullable|in:active,inactive'
         ]);
 
+        $targetBuId = $branch->business_unit_id;
+        if (isset($validated['business_unit_id']) && $validated['business_unit_id'] != $branch->business_unit_id) {
+            $bu = BusinessUnit::where('company_id', $companyId)->find($validated['business_unit_id']);
+            if (!$bu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected business unit does not belong to the authorized company.',
+                    'errors' => ['business_unit_id' => ['The selected business unit does not belong to the authorized company.']]
+                ], 422);
+            }
+            $targetBuId = $bu->id;
+        }
+
         if (isset($validated['code']) && $validated['code'] !== $branch->code) {
-            if (Branch::where('business_unit_id', $branch->business_unit_id)->where('code', $validated['code'])->exists()) {
+            if (Branch::where('business_unit_id', $targetBuId)->where('code', $validated['code'])->exists()) {
                 return response()->json(['success' => false, 'message' => 'Code already exists in this business unit.'], 422);
             }
         }

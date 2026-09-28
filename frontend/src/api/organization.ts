@@ -7,7 +7,9 @@ import {
   StorageLocation,
   BusinessType, 
   CreateCompanyPayload, 
-  TenantFeatures 
+  TenantFeatures,
+  OrganizationUser,
+  Role
 } from '../types/organization';
 
 const LOCAL_STORAGE_COMPANY_KEY = 'retailcore_company_profile';
@@ -659,3 +661,80 @@ export async function deleteStorageLocation(id: number): Promise<{ success: bool
   const res = await api.delete(`/storage-locations/${id}`);
   return res.data;
 }
+
+// ======================= USERS & TENANT ASSIGNMENTS =======================
+
+export async function getCompanyUsers(companyId?: number): Promise<{ success: boolean; data: OrganizationUser[] }> {
+  const targetId = companyId || getActiveTenantId();
+  const res = await api.get(`/companies/${targetId}/users`);
+  return res.data;
+}
+
+export async function getAllUsers(params?: {
+  company_id?: number;
+  search?: string;
+  status?: string;
+}): Promise<{ success: boolean; data: OrganizationUser[] }> {
+  const res = await api.get('/users', { params });
+  return res.data;
+}
+
+export async function getUser(id: number): Promise<{ success: boolean; data: OrganizationUser }> {
+  const res = await api.get(`/users/${id}`);
+  return res.data;
+}
+
+export async function createUser(data: {
+  name: string;
+  email: string;
+  password?: string;
+  role?: string;
+  role_id?: number;
+  company_id?: number;
+  status?: 'active' | 'inactive';
+}): Promise<{ success: boolean; message: string; data: OrganizationUser }> {
+  const res = await api.post('/users', data);
+  return res.data;
+}
+
+export async function updateUser(
+  id: number,
+  data: {
+    name?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+    role_id?: number;
+    status?: 'active' | 'inactive';
+  }
+): Promise<{ success: boolean; message: string; data: OrganizationUser }> {
+  const res = await api.put(`/users/${id}`, data);
+  return res.data;
+}
+
+export async function deleteUser(id: number): Promise<{ success: boolean; message?: string }> {
+  const res = await api.delete(`/users/${id}`);
+  return res.data;
+}
+
+export async function assignUserToCompany(
+  companyId: number,
+  data: { user_id: number; role?: string; role_id?: number }
+): Promise<{ success: boolean; message: string; data: OrganizationUser }> {
+  const res = await api.post(`/companies/${companyId}/users`, data);
+  return res.data;
+}
+
+export async function removeUserFromCompany(
+  companyId: number,
+  userId: number
+): Promise<{ success: boolean; message: string; data?: OrganizationUser }> {
+  const res = await api.delete(`/companies/${companyId}/users/${userId}`);
+  return res.data;
+}
+
+export async function getRoles(): Promise<{ success: boolean; data: Role[] }> {
+  const res = await api.get('/roles');
+  return res.data;
+}
+

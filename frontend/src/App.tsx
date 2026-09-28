@@ -37,6 +37,7 @@ import { BusinessUnitList } from './pages/organization/BusinessUnitList';
 import { BranchList } from './pages/organization/BranchList';
 import { WarehouseList } from './pages/organization/WarehouseList';
 import { StorageLocationList } from './pages/organization/StorageLocationList';
+import { UserList } from './pages/organization/UserList';
 
 const queryClient = new QueryClient();
 
@@ -288,6 +289,14 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/organization/storage-locations" element={<Navigate to="/storage-locations" replace />} />
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <UserList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/users" element={<Navigate to="/users" replace />} />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

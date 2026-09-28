@@ -12,8 +12,10 @@ class CompanyController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        $routeCompany = $request->route('company');
         
-        $companyId = $request->attributes->get('company_id')
+        $companyId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
+            ?? $request->attributes->get('company_id')
             ?? $request->header('X-Company-ID')
             ?? $request->header('X-Company-Id')
             ?? ($user ? $user->companies()->first()?->id : null);
@@ -63,8 +65,10 @@ class CompanyController extends Controller
     public function update(Request $request)
     {
         $user = $request->user();
+        $routeCompany = $request->route('company');
 
-        $companyId = $request->attributes->get('company_id')
+        $companyId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
+            ?? $request->attributes->get('company_id')
             ?? $request->header('X-Company-ID')
             ?? $request->header('X-Company-Id')
             ?? ($user ? $user->companies()->first()?->id : null);

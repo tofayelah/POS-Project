@@ -32,7 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users & Roles
         Route::get('users', [\App\Http\Controllers\Api\V1\UserController::class, 'index'])->middleware('permission:users.view');
         Route::post('users', [\App\Http\Controllers\Api\V1\UserController::class, 'store'])->middleware('permission:users.create');
+        Route::get('users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'show'])->middleware('permission:users.view');
         Route::match(['put', 'patch'], 'users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'update'])->middleware('permission:users.update');
+        Route::delete('users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'destroy'])->middleware('permission:users.delete');
+        Route::post('users/company-access', [\App\Http\Controllers\Api\V1\UserController::class, 'assignCompanyAccess'])->middleware('permission:users.company_access,users.update');
+        Route::post('users/remove-company-access', [\App\Http\Controllers\Api\V1\UserController::class, 'removeCompanyAccess'])->middleware('permission:users.company_access,users.update');
         
         Route::get('roles', [\App\Http\Controllers\Api\V1\RoleController::class, 'index'])->middleware('permission:roles.view');
         
@@ -41,6 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
         Route::get('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'index']);
         Route::post('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'store']);
+        Route::get('companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
+        Route::match(['put', 'patch'], 'companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
+        Route::get('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'companyUsers'])->middleware('permission:users.view');
+        Route::post('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'assignCompanyUser'])->middleware('permission:users.company_access,users.update');
+        Route::delete('companies/{company}/users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'removeCompanyUser'])->middleware('permission:users.company_access,users.update');
 
         // Organizational Hierarchy: Business Units
         Route::get('business-units', [\App\Http\Controllers\Api\V1\BusinessUnitController::class, 'index'])->middleware('permission:business_units.view');

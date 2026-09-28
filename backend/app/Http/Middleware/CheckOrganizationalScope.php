@@ -54,11 +54,12 @@ class CheckOrganizationalScope
 
         // If a specific ID is being accessed or manipulated, verify user's access
         if ($targetId !== null) {
+            $checkId = $targetId instanceof \Illuminate\Database\Eloquent\Model ? $targetId->getKey() : $targetId;
             $hasAccess = match ($scopeType) {
-                'company' => $user->hasCompanyAccess($targetId),
-                'business_unit' => $user->hasBusinessUnitAccess($targetId),
-                'branch' => $user->hasBranchAccess($targetId),
-                'warehouse' => $user->hasWarehouseAccess($targetId),
+                'company' => $user->hasCompanyAccess($checkId),
+                'business_unit' => $user->hasBusinessUnitAccess($checkId),
+                'branch' => $user->hasBranchAccess($checkId),
+                'warehouse' => $user->hasWarehouseAccess($checkId),
                 default => false,
             };
 
@@ -67,7 +68,7 @@ class CheckOrganizationalScope
                     'success' => false,
                     'message' => "Unauthorized. You do not have access to this organizational {$scopeType}.",
                     'scope' => $scopeType,
-                    'denied_id' => $targetId,
+                    'denied_id' => $checkId,
                 ], 403);
             }
         }

@@ -44,11 +44,25 @@ class WarehouseController extends Controller
         ]);
 
         // Ensure business unit belongs to the company
-        $bu = BusinessUnit::where('company_id', $companyId)->findOrFail($validated['business_unit_id']);
+        $bu = BusinessUnit::where('company_id', $companyId)->find($validated['business_unit_id']);
+        if (!$bu) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected business unit does not belong to the authorized company.',
+                'errors' => ['business_unit_id' => ['The selected business unit does not belong to the authorized company.']]
+            ], 422);
+        }
         
         // Ensure branch belongs to the business unit, if provided
         if (!empty($validated['branch_id'])) {
-            Branch::where('business_unit_id', $bu->id)->findOrFail($validated['branch_id']);
+            $branch = Branch::where('company_id', $companyId)->where('business_unit_id', $bu->id)->find($validated['branch_id']);
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected branch does not belong to the authorized business unit or company.',
+                    'errors' => ['branch_id' => ['The selected branch does not belong to the authorized business unit or company.']]
+                ], 422);
+            }
         }
 
         // Check unique code within the business unit
@@ -73,6 +87,7 @@ class WarehouseController extends Controller
         $warehouse = Warehouse::where('company_id', $companyId)->findOrFail($id);
 
         $validated = $request->validate([
+            'business_unit_id' => 'nullable|exists:business_units,id',
             'branch_id' => 'nullable|exists:branches,id',
             'name' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:255',
@@ -81,12 +96,34 @@ class WarehouseController extends Controller
             'status' => 'nullable|in:active,inactive'
         ]);
 
-        if (isset($validated['branch_id']) && $validated['branch_id'] !== $warehouse->branch_id) {
-             Branch::where('business_unit_id', $warehouse->business_unit_id)->findOrFail($validated['branch_id']);
+        $targetBuId = $warehouse->business_unit_id;
+        if (isset($validated['business_unit_id']) && $validated['business_unit_id'] != $warehouse->business_unit_id) {
+            $bu = BusinessUnit::where('company_id', $companyId)->find($validated['business_unit_id']);
+            if (!$bu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected business unit does not belong to the authorized company.',
+                    'errors' => ['business_unit_id' => ['The selected business unit does not belong to the authorized company.']]
+                ], 422);
+            }
+            $targetBuId = $bu->id;
+        }
+
+        if (array_key_exists('branch_id', $validated)) {
+            if (!empty($validated['branch_id']) && $validated['branch_id'] !== $warehouse->branch_id) {
+                $branch = Branch::where('company_id', $companyId)->where('business_unit_id', $targetBuId)->find($validated['branch_id']);
+                if (!$branch) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The selected branch does not belong to the authorized business unit or company.',
+                        'errors' => ['branch_id' => ['The selected branch does not belong to the authorized business unit or company.']]
+                    ], 422);
+                }
+            }
         }
 
         if (isset($validated['code']) && $validated['code'] !== $warehouse->code) {
-            if (Warehouse::where('business_unit_id', $warehouse->business_unit_id)->where('code', $validated['code'])->exists()) {
+            if (Warehouse::where('business_unit_id', $targetBuId)->where('code', $validated['code'])->exists()) {
                 return response()->json(['success' => false, 'message' => 'Code already exists in this business unit.'], 422);
             }
         }

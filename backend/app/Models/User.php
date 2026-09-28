@@ -71,43 +71,62 @@ class User extends Authenticatable
         return false;
     }
 
-    public function hasCompanyAccess(int|string $companyId): bool
+    public function hasCompanyAccess(int|string|\Illuminate\Database\Eloquent\Model $companyId): bool
     {
         if ($this->hasRole('Super Admin')) {
             return true;
         }
 
+        $id = $companyId instanceof \Illuminate\Database\Eloquent\Model ? $companyId->getKey() : (int) $companyId;
         $companies = $this->relationLoaded('companies') ? $this->companies : $this->companies()->get();
-        return $companies->contains('id', (int) $companyId);
+        return $companies->contains('id', $id);
     }
 
-    public function hasBusinessUnitAccess(int|string $businessUnitId): bool
+    public function hasBusinessUnitAccess(int|string|\Illuminate\Database\Eloquent\Model $businessUnitId): bool
     {
         if ($this->hasRole('Super Admin')) {
             return true;
         }
 
+        $id = $businessUnitId instanceof \Illuminate\Database\Eloquent\Model ? $businessUnitId->getKey() : (int) $businessUnitId;
         $businessUnits = $this->relationLoaded('businessUnits') ? $this->businessUnits : $this->businessUnits()->get();
-        return $businessUnits->contains('id', (int) $businessUnitId);
+        if ($businessUnits->isNotEmpty()) {
+            return $businessUnits->contains('id', $id);
+        }
+
+        $bu = $businessUnitId instanceof BusinessUnit ? $businessUnitId : BusinessUnit::find($id);
+        return $bu ? $this->hasCompanyAccess($bu->company_id) : false;
     }
 
-    public function hasBranchAccess(int|string $branchId): bool
+    public function hasBranchAccess(int|string|\Illuminate\Database\Eloquent\Model $branchId): bool
     {
         if ($this->hasRole('Super Admin')) {
             return true;
         }
 
+        $id = $branchId instanceof \Illuminate\Database\Eloquent\Model ? $branchId->getKey() : (int) $branchId;
         $branches = $this->relationLoaded('branches') ? $this->branches : $this->branches()->get();
-        return $branches->contains('id', (int) $branchId);
+        if ($branches->isNotEmpty()) {
+            return $branches->contains('id', $id);
+        }
+
+        $branch = $branchId instanceof Branch ? $branchId : Branch::find($id);
+        return $branch ? $this->hasCompanyAccess($branch->company_id) : false;
     }
 
-    public function hasWarehouseAccess(int|string $warehouseId): bool
+    public function hasWarehouseAccess(int|string|\Illuminate\Database\Eloquent\Model $warehouseId): bool
     {
         if ($this->hasRole('Super Admin')) {
             return true;
         }
 
+        $id = $warehouseId instanceof \Illuminate\Database\Eloquent\Model ? $warehouseId->getKey() : (int) $warehouseId;
         $warehouses = $this->relationLoaded('warehouses') ? $this->warehouses : $this->warehouses()->get();
-        return $warehouses->contains('id', (int) $warehouseId);
+        if ($warehouses->isNotEmpty()) {
+            return $warehouses->contains('id', $id);
+        }
+
+        $warehouse = $warehouseId instanceof Warehouse ? $warehouseId : Warehouse::find($id);
+        return $warehouse ? $this->hasCompanyAccess($warehouse->company_id) : false;
     }
 }
