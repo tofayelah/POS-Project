@@ -201,7 +201,7 @@ export function SupplierList() {
           <input
             id="supplier-search-input"
             type="text"
-            placeholder="Search suppliers by name, code, contact, mobile, city..."
+            placeholder="Search suppliers by name, short name (e.g. TMI), code, contact..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
@@ -295,15 +295,20 @@ export function SupplierList() {
                     {/* Name & Code */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100">
-                          {s.name.substring(0, 2).toUpperCase()}
+                        <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-100 uppercase">
+                          {s.short_name || s.name.substring(0, 2)}
                         </div>
                         <div>
                           <div 
                             onClick={() => setViewSupplier(s)}
-                            className="font-semibold text-slate-900 hover:text-indigo-600 cursor-pointer"
+                            className="font-semibold text-slate-900 hover:text-indigo-600 cursor-pointer flex items-center gap-2 flex-wrap"
                           >
-                            {s.name}
+                            <span>{s.name}</span>
+                            {s.short_name && (
+                              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 rounded tracking-wider">
+                                {s.short_name}
+                              </span>
+                            )}
                           </div>
                           <span className="font-mono text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 inline-block mt-0.5">
                             {s.supplier_code}
@@ -434,12 +439,19 @@ export function SupplierList() {
           <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                  {viewSupplier.name.substring(0, 2).toUpperCase()}
+                <div className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm uppercase">
+                  {viewSupplier.short_name || viewSupplier.name.substring(0, 2)}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">{viewSupplier.name}</h2>
-                  <span className="font-mono text-xs text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded font-semibold">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-slate-900">{viewSupplier.name}</h2>
+                    {viewSupplier.short_name && (
+                      <span className="px-2 py-0.5 text-xs font-bold bg-indigo-100 text-indigo-800 rounded border border-indigo-200">
+                        {viewSupplier.short_name}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-mono text-xs text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded font-semibold inline-block mt-0.5">
                     {viewSupplier.supplier_code}
                   </span>
                 </div>

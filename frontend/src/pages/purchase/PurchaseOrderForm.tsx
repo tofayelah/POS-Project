@@ -670,7 +670,7 @@ export function PurchaseOrderForm() {
                 <option value="">-- Choose Supplier --</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.supplier_code}) &bull; {s.mobile}
+                    {s.name} {s.short_name ? `[${s.short_name}]` : ''} ({s.supplier_code})
                   </option>
                 ))}
               </select>

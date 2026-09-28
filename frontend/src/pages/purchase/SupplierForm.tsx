@@ -42,6 +42,8 @@ export function SupplierForm() {
 
   // Form Fields
   const [name, setName] = useState('');
+  const [shortName, setShortName] = useState('');
+  const [isCustomShortName, setIsCustomShortName] = useState(false);
   const [supplierCode, setSupplierCode] = useState('');
   const [codeLoading, setCodeLoading] = useState(false);
   const [businessUnitId, setBusinessUnitId] = useState<number | ''>('');
@@ -116,6 +118,8 @@ export function SupplierForm() {
       const res = await getSupplier(supplierId);
       const s = res.data;
       setName(s.name || '');
+      setShortName(s.short_name || '');
+      if (s.short_name) setIsCustomShortName(true);
       setSupplierCode(s.supplier_code || '');
       setBusinessUnitId(s.business_unit_id || '');
       setStatus(s.status || 'ACTIVE');
@@ -160,6 +164,7 @@ export function SupplierForm() {
 
     const payload: SupplierPayload = {
       name: name.trim(),
+      short_name: shortName.trim() || null,
       supplier_code: supplierCode.trim(),
       business_unit_id: businessUnitId ? Number(businessUnitId) : null,
       status,
@@ -191,6 +196,8 @@ export function SupplierForm() {
         if (stayOnPage) {
           // Reset form for next entry and fetch new unique code
           setName('');
+          setShortName('');
+          setIsCustomShortName(false);
           setContactPerson('');
           setMobile('');
           setAlternateMobile('');
@@ -311,8 +318,8 @@ export function SupplierForm() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Supplier Name */}
-            <div className="md:col-span-2">
+            {/* Supplier Name & Short Name */}
+            <div>
               <label htmlFor="supplier-name-input" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Supplier / Vendor Legal Name <span className="text-rose-500">*</span>
               </label>
@@ -320,11 +327,54 @@ export function SupplierForm() {
                 id="supplier-name-input"
                 type="text"
                 required
-                placeholder="e.g. Rahim Textile Mills Ltd. / Apex Leather Corp."
+                placeholder="e.g. TM International / Rahim Textile Mills Ltd."
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setName(val);
+                  if (!isCustomShortName) {
+                    // Auto-suggest short name initials e.g. "TM International" -> "TMI"
+                    const words = val.trim().split(/\s+/).filter(w => !['ltd', 'ltd.', 'limited', 'inc', 'inc.', 'corp', 'co', 'pvt'].includes(w.toLowerCase()));
+                    if (words.length > 0 && val.trim().length > 0) {
+                      let generated = '';
+                      words.forEach(w => {
+                        // If word contains uppercase letters like TM or BTI
+                        const uppers = w.replace(/[^A-Z]/g, '');
+                        if (uppers.length > 1) {
+                          generated += uppers;
+                        } else if (w.length > 0) {
+                          generated += w[0].toUpperCase();
+                        }
+                      });
+                      setShortName(generated.substring(0, 10));
+                    } else {
+                      setShortName('');
+                    }
+                  }
+                }}
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium text-slate-900"
               />
+            </div>
+
+            {/* Supplier Short Name */}
+            <div>
+              <label htmlFor="supplier-short-name-input" className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Short Name / Alias <span className="text-xs text-indigo-600 font-normal">(e.g. TM International = TMI)</span>
+              </label>
+              <input
+                id="supplier-short-name-input"
+                type="text"
+                placeholder="e.g. TMI"
+                value={shortName}
+                onChange={(e) => {
+                  setShortName(e.target.value.toUpperCase());
+                  setIsCustomShortName(true);
+                }}
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-900 bg-white"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Compact short name used in purchase tags, invoice prints, and lists.
+              </p>
             </div>
 
             {/* Supplier Code */}

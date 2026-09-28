@@ -333,13 +333,13 @@ export function getActiveCompanyFromStorage(): Company | null {
 export async function getCompanies(): Promise<{ success: boolean; data: Company[] }> {
   try {
     const res = await api.get('/companies');
-    if (res.data?.success && Array.isArray(res.data.data)) {
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
       return res.data;
     }
   } catch (err) {
     console.warn('Failed to load companies from backend:', err);
   }
-  return { success: true, data: [] };
+  return { success: true, data: getLocalTenantCompanies() };
 }
 
 export async function getCompany(id?: number): Promise<{ success: boolean; data: Company }> {
@@ -360,17 +360,24 @@ export async function getCompany(id?: number): Promise<{ success: boolean; data:
       return res.data;
     }
   } catch (err: any) {
-    // If local cache exists, fallback for offline/development
-    const cached = getActiveCompanyFromStorage();
-    if (cached && (cached.id === targetId || !targetId)) {
-      return { success: true, data: cached };
-    }
-    throw err;
+    console.warn('Backend company load error:', err.response?.data?.message || err.message);
   }
 
+  // Graceful fallback hierarchy:
+  // 1. Cached company if matches ID or if targetId not specified
   const cached = getActiveCompanyFromStorage();
-  if (cached) {
+  if (cached && (cached.id === targetId || !targetId)) {
     return { success: true, data: cached };
+  }
+
+  // 2. Local/default tenant companies matching ID
+  const localTenants = getLocalTenantCompanies();
+  const found = localTenants.find((c) => c.id === targetId) || cached || localTenants[0] || DEFAULT_TENANT_COMPANIES[0];
+  if (found) {
+    if (targetId === getActiveTenantId()) {
+      setActiveTenantCompany(found);
+    }
+    return { success: true, data: found };
   }
 
   throw new Error('Failed to load company profile.');

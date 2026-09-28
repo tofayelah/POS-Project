@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
 import { ProductList } from './pages/products/ProductList';
 import { ProductForm } from './pages/products/ProductForm';
+import { ItemInformation } from './pages/products/ItemInformation';
 import { CategoryList } from './pages/products/CategoryList';
 import { BrandList } from './pages/products/BrandList';
 import { UnitList } from './pages/products/UnitList';
@@ -69,6 +70,14 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/products/item-information" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ItemInformation />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/item-information" element={<Navigate to="/products/item-information" replace />} />
             <Route path="/products/new" element={
               <ProtectedRoute>
                 <AdminLayout>

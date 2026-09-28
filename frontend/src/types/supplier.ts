@@ -5,6 +5,7 @@ export interface Supplier {
   business_unit_id?: number | null;
   supplier_code: string;
   name: string;
+  short_name?: string | null;
   contact_person?: string | null;
   mobile?: string | null;
   alternate_mobile?: string | null;
@@ -40,6 +41,7 @@ export interface Supplier {
 export interface SupplierPayload {
   supplier_code?: string;
   name: string;
+  short_name?: string | null;
   business_unit_id?: number | null;
   contact_person?: string | null;
   mobile?: string | null;

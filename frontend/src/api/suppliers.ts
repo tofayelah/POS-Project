@@ -19,6 +19,7 @@ const DEFAULT_SUPPLIERS: Supplier[] = [
     business_unit_id: 1,
     supplier_code: 'SUP-0001',
     name: 'Bengal Trade International Ltd.',
+    short_name: 'BTI',
     contact_person: 'Md. Rafiqul Islam',
     mobile: '+8801711000001',
     alternate_mobile: '+8801811000001',
@@ -42,6 +43,7 @@ const DEFAULT_SUPPLIERS: Supplier[] = [
     business_unit_id: 1,
     supplier_code: 'SUP-0002',
     name: 'Padma Packaging & Paper Mills',
+    short_name: 'PPPM',
     contact_person: 'Tanvir Hossain',
     mobile: '+8801711000002',
     email: 'sales@padmapackaging.com',
@@ -64,6 +66,7 @@ const DEFAULT_SUPPLIERS: Supplier[] = [
     business_unit_id: 2,
     supplier_code: 'SUP-0003',
     name: 'Chittagong Agro & Commodities Corp',
+    short_name: 'CAC',
     contact_person: 'Abdul Kader Chowdhury',
     mobile: '+8801711000003',
     email: 'supply@ctgcrop.com',
@@ -153,6 +156,7 @@ export const getSuppliers = async (
       filtered = filtered.filter(
         (s) =>
           s.name.toLowerCase().includes(term) ||
+          (s.short_name && s.short_name.toLowerCase().includes(term)) ||
           s.supplier_code.toLowerCase().includes(term) ||
           (s.contact_person && s.contact_person.toLowerCase().includes(term)) ||
           (s.mobile && s.mobile.toLowerCase().includes(term)) ||
@@ -249,6 +253,7 @@ export const createSupplier = async (
       business_unit_id: payload.business_unit_id ? Number(payload.business_unit_id) : null,
       supplier_code: finalCode,
       name: payload.name.trim(),
+      short_name: payload.short_name?.trim() || null,
       contact_person: payload.contact_person?.trim() || null,
       mobile: payload.mobile?.trim() || null,
       alternate_mobile: payload.alternate_mobile?.trim() || null,

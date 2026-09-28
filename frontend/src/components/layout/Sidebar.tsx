@@ -80,9 +80,21 @@ export function Sidebar() {
         </Link>
 
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Product Master</div>
-        <Link to="/products" id="nav-link-products" className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer">
+        <Link 
+          to="/products/item-information" 
+          id="nav-link-item-information" 
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+            location.pathname === '/products/item-information'
+              ? 'bg-slate-800 text-white font-medium'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+          }`}
+        >
+          <Barcode className={`w-4 h-4 ${location.pathname === '/products/item-information' ? 'text-cyan-400' : 'text-cyan-400'}`} />
+          <span className="font-semibold">Item Information</span>
+        </Link>
+        <Link to="/products" id="nav-link-products" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
           <Shirt className="w-4 h-4 text-blue-400" />
-          <span className="font-medium">Products & SKUs</span>
+          <span>Products & SKUs</span>
         </Link>
         <Link to="/categories" id="nav-link-categories" className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition-colors cursor-pointer text-xs">
           <FolderTree className="w-4 h-4 text-slate-400" />
