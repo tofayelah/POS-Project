@@ -9,16 +9,26 @@ class StoreCustomerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasPermissionTo('customers.create');
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasRole('Super Admin')
+            || $user->hasRole('Cashier')
+            || $user->hasRole('Manager')
+            || $user->hasPermission('customers.create');
     }
 
     public function rules(): array
     {
-        $companyId = request()->attributes->get('company_id');
-        
+        $companyId = $this->attributes->get('company_id')
+            ?? $this->header('X-Company-ID')
+            ?? $this->user()?->companies()->first()?->id;
+
         return [
             'customer_code' => [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 Rule::unique('customers')->where(function ($query) use ($companyId) {

@@ -103,7 +103,16 @@ export const PosCustomerModal: React.FC<PosCustomerModalProps> = ({
         onClose();
       }
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Failed to create customer');
+      const serverMsg = err.response?.data?.message;
+      const validationErrors = err.response?.data?.errors;
+      let firstError = serverMsg;
+      if (validationErrors && typeof validationErrors === 'object') {
+        const firstKey = Object.keys(validationErrors)[0];
+        if (firstKey && Array.isArray(validationErrors[firstKey]) && validationErrors[firstKey][0]) {
+          firstError = validationErrors[firstKey][0];
+        }
+      }
+      setErrorMessage(firstError || 'Failed to create customer');
     } finally {
       setCreateLoading(false);
     }

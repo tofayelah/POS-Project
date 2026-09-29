@@ -22,6 +22,8 @@ class CustomerLedgerTest extends TestCase
         $this->company = Company::factory()->create();
         $this->user = User::factory()->create();
         $this->user->companies()->attach($this->company->id);
+        $role = \App\Models\Role::firstOrCreate(['name' => 'Super Admin']);
+        $this->user->roles()->attach($role->id);
         
         $this->customer = Customer::create([
             'company_id' => $this->company->id,

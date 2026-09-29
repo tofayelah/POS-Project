@@ -39,5 +39,19 @@ class CustomerPermissionsSeeder extends Seeder
         if ($admin) {
             $admin->permissions()->syncWithoutDetaching(\App\Models\Permission::whereIn('name', $permissions)->pluck('id'));
         }
+
+        $manager = Role::where('name', 'Manager')->first();
+        if ($manager) {
+            $manager->permissions()->syncWithoutDetaching(
+                \App\Models\Permission::whereIn('name', ['customers.view', 'customers.create', 'customers.update', 'customer_groups.view', 'customer_ledger.view'])->pluck('id')
+            );
+        }
+
+        $cashier = Role::where('name', 'Cashier')->first();
+        if ($cashier) {
+            $cashier->permissions()->syncWithoutDetaching(
+                \App\Models\Permission::whereIn('name', ['customers.view', 'customers.create'])->pluck('id')
+            );
+        }
     }
 }

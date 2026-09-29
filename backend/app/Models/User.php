@@ -56,6 +56,11 @@ class User extends Authenticatable
         })->contains(fn($p) => strtolower($p->name) === strtolower($permission));
     }
 
+    public function hasPermissionTo(string $permission): bool
+    {
+        return $this->hasPermission($permission);
+    }
+
     public function hasAnyPermission(array $permissions): bool
     {
         if ($this->hasRole('Super Admin')) {

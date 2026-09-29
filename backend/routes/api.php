@@ -195,9 +195,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('customer-groups/{id}', [\App\Http\Controllers\Api\V1\CustomerGroupController::class, 'update'])->middleware('permission:customer_groups.update');
         Route::delete('customer-groups/{id}', [\App\Http\Controllers\Api\V1\CustomerGroupController::class, 'destroy'])->middleware('permission:customer_groups.delete');
 
-        Route::get('customers/search', [\App\Http\Controllers\Api\V1\CustomerController::class, 'search'])->middleware('permission:customers.view');
+        Route::get('customers/next-code', [\App\Http\Controllers\Api\V1\CustomerController::class, 'nextCode'])->middleware('permission:customers.view,pos.view');
+        Route::get('customers/search', [\App\Http\Controllers\Api\V1\CustomerController::class, 'search'])->middleware('permission:customers.view,pos.view');
         Route::get('customers', [\App\Http\Controllers\Api\V1\CustomerController::class, 'index'])->middleware('permission:customers.view');
-        Route::post('customers', [\App\Http\Controllers\Api\V1\CustomerController::class, 'store'])->middleware('permission:customers.create');
+        Route::post('customers', [\App\Http\Controllers\Api\V1\CustomerController::class, 'store'])->middleware('permission:customers.create,pos.view');
         Route::get('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'show'])->middleware('permission:customers.view');
         Route::put('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'update'])->middleware('permission:customers.update');
         Route::delete('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'destroy'])->middleware('permission:customers.delete');

@@ -20,6 +20,58 @@ class CustomerController extends Controller
         $this->ledgerService = $ledgerService;
     }
 
+    /**
+     * Generate guaranteed unique next customer code for the company
+     */
+    public static function generateUniqueCustomerCode($companyId): string
+    {
+        $codes = Customer::withTrashed()
+            ->where('company_id', $companyId)
+            ->where('customer_code', 'LIKE', 'CUST-%')
+            ->pluck('customer_code');
+
+        $maxNum = 0;
+        foreach ($codes as $code) {
+            if (preg_match('/^CUST-(\d+)$/i', $code, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNum = $maxNum + 1;
+        $newCode = 'CUST-' . str_pad((string)$nextNum, 5, '0', STR_PAD_LEFT);
+
+        while (Customer::withTrashed()
+            ->where('company_id', $companyId)
+            ->where('customer_code', $newCode)
+            ->exists()) {
+            $nextNum++;
+            $newCode = 'CUST-' . str_pad((string)$nextNum, 5, '0', STR_PAD_LEFT);
+        }
+
+        return $newCode;
+    }
+
+    /**
+     * Endpoint to fetch the next system-generated unique customer code
+     */
+    public function nextCode(Request $request)
+    {
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->user()?->companies()->first()?->id;
+        $code = self::generateUniqueCustomerCode($companyId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'customer_code' => $code
+            ]
+        ]);
+    }
+
     public function index(Request $request)
     {
         $this->authorize('customers.view');
@@ -55,74 +107,94 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request)
     {
-        $companyId = $request->attributes->get('company_id');
-        
-        $customer = DB::transaction(function() use ($request, $companyId) {
-            $customer = Customer::create([
-                'company_id' => $companyId,
-                'business_unit_id' => $request->business_unit_id,
-                'customer_group_id' => $request->customer_group_id,
-                'customer_code' => $request->customer_code,
-                'name' => $request->name,
-                'mobile' => $request->mobile,
-                'alternate_mobile' => $request->alternate_mobile,
-                'email' => $request->email,
-                'address' => $request->address,
-                'city' => $request->city,
-                'country' => $request->country,
-                'credit_limit' => $request->credit_limit,
-                'payment_terms' => $request->payment_terms,
-                'status' => $request->status ?? 'ACTIVE',
-                'notes' => $request->notes,
-                'created_by' => $request->user()->id,
-                'opening_balance' => 0 // Set in ledger
-            ]);
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->user()?->companies()->first()?->id;
 
-            AuditLog::log(
-                $request->user(), 
-                $companyId, 
-                'CUSTOMER_CREATED', 
-                $customer, 
-                null, 
-                ['customer_code' => $customer->customer_code, 'name' => $customer->name]
-            );
+        $maxAttempts = 3;
+        $attempt = 0;
 
-            if ($request->has('opening_balance_amount') && $request->opening_balance_amount > 0) {
-                $debit = $request->opening_balance_direction === 'DEBIT' ? $request->opening_balance_amount : 0;
-                $credit = $request->opening_balance_direction === 'CREDIT' ? $request->opening_balance_amount : 0;
-                
-                $this->ledgerService->postTransaction(
-                    $companyId,
-                    $customer->id,
-                    'OPENING_BALANCE',
-                    $debit,
-                    $credit,
-                    $request->opening_balance_date ?: now(),
-                    Customer::class,
-                    $customer->id,
-                    'OB-' . $customer->customer_code,
-                    'Initial Opening Balance',
-                    $request->user()->id
-                );
-                
-                AuditLog::log(
-                    $request->user(), 
-                    $companyId, 
-                    'CUSTOMER_OPENING_BALANCE_CREATED', 
-                    $customer, 
-                    null, 
-                    ['amount' => $request->opening_balance_amount, 'direction' => $request->opening_balance_direction]
-                );
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            try {
+                $customer = DB::transaction(function() use ($request, $companyId) {
+                    $customerCode = $request->customer_code;
+                    if (empty($customerCode)) {
+                        $customerCode = self::generateUniqueCustomerCode($companyId);
+                    }
+
+                    $customer = Customer::create([
+                        'company_id' => $companyId,
+                        'business_unit_id' => $request->business_unit_id,
+                        'customer_group_id' => $request->customer_group_id,
+                        'customer_code' => $customerCode,
+                        'name' => $request->name,
+                        'mobile' => $request->mobile,
+                        'alternate_mobile' => $request->alternate_mobile,
+                        'email' => $request->email,
+                        'address' => $request->address,
+                        'city' => $request->city,
+                        'country' => $request->country,
+                        'credit_limit' => $request->credit_limit ?? 0,
+                        'payment_terms' => $request->payment_terms,
+                        'status' => $request->status ?? 'ACTIVE',
+                        'notes' => $request->notes,
+                        'created_by' => $request->user()?->id,
+                        'opening_balance' => 0 // Set in ledger
+                    ]);
+
+                    AuditLog::log(
+                        $request->user(),
+                        $companyId,
+                        'CUSTOMER_CREATED',
+                        $customer,
+                        null,
+                        ['customer_code' => $customer->customer_code, 'name' => $customer->name]
+                    );
+
+                    if ($request->has('opening_balance_amount') && $request->opening_balance_amount > 0) {
+                        $debit = $request->opening_balance_direction === 'DEBIT' ? $request->opening_balance_amount : 0;
+                        $credit = $request->opening_balance_direction === 'CREDIT' ? $request->opening_balance_amount : 0;
+
+                        $this->ledgerService->postTransaction(
+                            $companyId,
+                            $customer->id,
+                            'OPENING_BALANCE',
+                            $debit,
+                            $credit,
+                            $request->opening_balance_date ?: now(),
+                            Customer::class,
+                            $customer->id,
+                            'OB-' . $customer->customer_code,
+                            'Initial Opening Balance',
+                            $request->user()->id
+                        );
+
+                        AuditLog::log(
+                            $request->user(),
+                            $companyId,
+                            'CUSTOMER_OPENING_BALANCE_CREATED',
+                            $customer,
+                            null,
+                            ['amount' => $request->opening_balance_amount, 'direction' => $request->opening_balance_direction]
+                        );
+                    }
+
+                    return $customer;
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Customer created successfully',
+                    'data' => $customer->load('group')
+                ], 201);
+
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if (!empty($request->customer_code) || $attempt >= $maxAttempts) {
+                    throw $e;
+                }
             }
-
-            return $customer;
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer created successfully',
-            'data' => $customer->load('group')
-        ], 201);
+        }
     }
 
     public function show(Request $request, $id)

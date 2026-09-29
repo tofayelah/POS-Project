@@ -9,7 +9,8 @@ class UpdateCustomerGroupRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasPermissionTo('customer_groups.update');
+        $user = $this->user();
+        return $user && ($user->hasRole('Super Admin') || $user->hasPermission('customer_groups.update'));
     }
 
     public function rules(): array

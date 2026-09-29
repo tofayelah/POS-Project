@@ -9,7 +9,8 @@ class StoreCustomerGroupRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasPermissionTo('customer_groups.create');
+        $user = $this->user();
+        return $user && ($user->hasRole('Super Admin') || $user->hasPermission('customer_groups.create'));
     }
 
     public function rules(): array

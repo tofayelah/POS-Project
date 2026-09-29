@@ -25,10 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Super Admin universal Gate bypass
+        // Super Admin universal Gate bypass & RBAC permission gate evaluation
         Gate::before(function ($user, $ability) {
-            if ($user instanceof User && $user->hasRole('Super Admin')) {
-                return true;
+            if ($user instanceof User) {
+                if ($user->hasRole('Super Admin') || $user->hasPermission($ability)) {
+                    return true;
+                }
             }
         });
 
