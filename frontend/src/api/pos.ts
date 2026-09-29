@@ -30,19 +30,77 @@ export interface SaleItemData {
   tax?: number;
 }
 
+export interface PosProductVariant {
+  id: number;
+  product_id: number;
+  sku: string;
+  variant_name: string;
+  cost_price?: number | string;
+  selling_price: number | string;
+  wholesale_price?: number | string;
+  mrp: number | string;
+  tax_rate?: number | string | null;
+  status: string;
+  available_stock?: number;
+  product: {
+    id: number;
+    name: string;
+    tax_rate?: number | string | null;
+    category?: {
+      id: number;
+      name: string;
+    };
+  };
+  barcodes?: Array<{
+    id: number;
+    barcode: string;
+    barcode_type?: string;
+    is_primary: boolean;
+  }>;
+}
+
+export interface CartItem {
+  id: string; // unique row key
+  product_variant_id: number;
+  barcode: string;
+  sku: string;
+  name: string;
+  variant_name: string;
+  category_name: string;
+  quantity: number;
+  unit_price: number;
+  discount_percent: number;
+  discount_amount: number;
+  tax_rate: number;
+  tax_amount: number;
+  line_total: number;
+  available_stock: number;
+}
+
 export interface SalePaymentData {
-  method: string;
+  method: string; // 'CASH' | 'CARD' | 'BKASH' | 'NAGAD' | 'ROCKET' | 'BANK'
   amount: number;
+  card_type?: string;
+  card_bank?: string;
+  transaction_ref?: string;
 }
 
 export interface CompleteSaleData {
   pos_session_id: number;
-  customer_id?: number;
+  customer_id?: number | null;
   items: SaleItemData[];
   sale_discount?: number;
   payments: SalePaymentData[];
   notes?: string;
   invoice_number?: string;
+  idempotency_key?: string;
+}
+
+export interface PosStaffUser {
+  id: number;
+  name: string;
+  email: string;
+  role?: string;
 }
 
 export const posApi = {
@@ -62,14 +120,22 @@ export const posApi = {
     api.post<{success: boolean, data: PosSession}>(`/pos/sessions/${id}/close`, { closing_cash: closingCash, notes }).then(res => res.data),
 
   searchProducts: (query: string) => 
-    api.get<{success: boolean, data: any[]}>('/pos/products/search', { params: { q: query } }).then(res => res.data),
+    api.get<{success: boolean, data: PosProductVariant[]}>('/pos/products/search', { params: { q: query } }).then(res => res.data),
     
   getBarcode: (barcode: string) => 
-    api.get<{success: boolean, data: any}>(`/pos/barcode/${barcode}`).then(res => res.data),
+    api.get<{success: boolean, data: PosProductVariant}>(`/pos/barcode/${barcode}`).then(res => res.data),
     
   completeSale: (data: CompleteSaleData) => 
     api.post<{success: boolean, data: any}>('/sales/complete', data).then(res => res.data),
     
   holdSale: (data: Partial<CompleteSaleData>) => 
     api.post<{success: boolean, data: any}>('/sales/hold', data).then(res => res.data),
+
+  getUsers: () =>
+    api.get<{success: boolean, data: any}>('/users').then(res => {
+      const d = res.data;
+      if (Array.isArray(d)) return d;
+      if (Array.isArray(d?.data)) return d.data;
+      return [];
+    }),
 };

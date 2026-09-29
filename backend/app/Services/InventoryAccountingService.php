@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\GoodsReceipt;
 use App\Models\JournalEntry;
 use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\StockMovement;
 
 class InventoryAccountingService
@@ -230,5 +231,127 @@ class InventoryAccountingService
     public function postTransfer(?StockMovement $outMovement = null, ?StockMovement $inMovement = null, ?int $userId = null): null
     {
         return null;
+    }
+
+    /**
+     * Post automated journal entry for a Sale Invoice.
+     * Debit: Accounts Receivable (grand_total)
+     * Credit: Sales Revenue (grand_total - tax_total)
+     * Credit: VAT Payable (tax_total, if > 0)
+     */
+    public function postSaleInvoice(Sale $sale, ?int $userId = null): ?JournalEntry
+    {
+        $companyId = $sale->company_id;
+        if (!$this->accountMappingService->isAccountingEnabled($companyId)) {
+            return null;
+        }
+
+        $grandTotal = round((float) $sale->grand_total, 4);
+        if ($grandTotal <= 0) {
+            return null;
+        }
+
+        $taxTotal = round((float) $sale->tax_total, 4);
+        $revenueTotal = round($grandTotal - $taxTotal, 4);
+
+        $arAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_RECEIVABLE);
+        $revenueAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_SALES_REVENUE);
+
+        $lines = [
+            [
+                'account_id' => $arAccount->id,
+                'debit' => $grandTotal,
+                'credit' => 0,
+                'branch_id' => $sale->branch_id,
+                'warehouse_id' => $sale->warehouse_id,
+                'description' => "Accounts receivable for Sale {$sale->invoice_number}",
+            ],
+            [
+                'account_id' => $revenueAccount->id,
+                'debit' => 0,
+                'credit' => $revenueTotal,
+                'branch_id' => $sale->branch_id,
+                'warehouse_id' => $sale->warehouse_id,
+                'description' => "Sales revenue for Sale {$sale->invoice_number}",
+            ],
+        ];
+
+        if ($taxTotal > 0) {
+            $vatAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_VAT_PAYABLE);
+            $lines[] = [
+                'account_id' => $vatAccount->id,
+                'debit' => 0,
+                'credit' => $taxTotal,
+                'branch_id' => $sale->branch_id,
+                'warehouse_id' => $sale->warehouse_id,
+                'description' => "VAT payable for Sale {$sale->invoice_number}",
+            ];
+        }
+
+        $journalDate = $sale->sale_date ? (is_string($sale->sale_date) ? $sale->sale_date : $sale->sale_date->format('Y-m-d')) : date('Y-m-d');
+
+        $data = [
+            'journal_date' => $journalDate,
+            'reference_type' => 'Sale',
+            'reference_id' => $sale->id,
+            'description' => "Sale Invoice: {$sale->invoice_number}",
+            'source' => 'SALES',
+            'idempotency_key' => "SALE-INV-{$sale->id}",
+            'lines' => $lines,
+        ];
+
+        return $this->accountingService->postAutomatedJournal($companyId, $data, $userId);
+    }
+
+    /**
+     * Post automated journal entry for Cost of Goods Sold (COGS) on a completed sale.
+     * Debit: Cost of Goods Sold (COGS)
+     * Credit: Inventory Asset (reduction)
+     */
+    public function postSaleCogs(Sale $sale, float $totalCogs, ?int $userId = null): ?JournalEntry
+    {
+        $companyId = $sale->company_id;
+        if (!$this->accountMappingService->isAccountingEnabled($companyId)) {
+            return null;
+        }
+
+        $cogsAmount = round($totalCogs, 4);
+        if ($cogsAmount <= 0) {
+            return null;
+        }
+
+        $cogsAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_COGS);
+        $assetAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_INVENTORY_ASSET);
+
+        $journalDate = $sale->sale_date ? (is_string($sale->sale_date) ? $sale->sale_date : $sale->sale_date->format('Y-m-d')) : date('Y-m-d');
+
+        $data = [
+            'journal_date' => $journalDate,
+            'reference_type' => 'Sale',
+            'reference_id' => $sale->id,
+            'description' => "Cost of Goods Sold for Sale: {$sale->invoice_number}",
+            'source' => 'SALES',
+            'idempotency_key' => "SALE-COGS-{$sale->id}",
+            'lines' => [
+                [
+                    'account_id' => $cogsAccount->id,
+                    'debit' => $cogsAmount,
+                    'credit' => 0,
+                    'branch_id' => $sale->branch_id,
+                    'warehouse_id' => $sale->warehouse_id,
+                    'description' => "COGS for Sale {$sale->invoice_number}",
+                ],
+                [
+                    'account_id' => $assetAccount->id,
+                    'debit' => 0,
+                    'credit' => $cogsAmount,
+                    'branch_id' => $sale->branch_id,
+                    'warehouse_id' => $sale->warehouse_id,
+                    'description' => "Inventory asset reduction for Sale {$sale->invoice_number}",
+                ],
+            ],
+        ];
+
+        return $this->accountingService->postAutomatedJournal($companyId, $data, $userId);
     }
 }

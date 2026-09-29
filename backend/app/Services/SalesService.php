@@ -2,24 +2,40 @@
 
 namespace App\Services;
 
+use App\Models\AuditLog;
+use App\Models\Customer;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
+use App\Models\PosSession;
+use App\Models\ProductVariant;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SalePayment;
-use App\Models\ProductVariant;
-use App\Models\Customer;
-use App\Models\PosSession;
+use App\Services\CustomerLedgerService;
+use App\Services\InventoryAccountingService;
+use App\Services\InventoryService;
+use App\Services\PaymentService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Exception;
 
 class SalesService
 {
     protected $inventoryService;
     protected $customerLedgerService;
+    protected $paymentService;
+    protected $inventoryAccountingService;
 
-    public function __construct(InventoryService $inventoryService, CustomerLedgerService $customerLedgerService)
-    {
+    public function __construct(
+        InventoryService $inventoryService,
+        CustomerLedgerService $customerLedgerService,
+        PaymentService $paymentService,
+        InventoryAccountingService $inventoryAccountingService
+    ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
+        $this->paymentService = $paymentService;
+        $this->inventoryAccountingService = $inventoryAccountingService;
     }
 
     public function completeSale($companyId, $data)
@@ -30,7 +46,7 @@ class SalesService
                     ->where('idempotency_key', $data['idempotency_key'])
                     ->first();
                 if ($existingSale && $existingSale->status === 'COMPLETED') {
-                    return $existingSale->load(['items', 'payments', 'customer', 'terminal']);
+                    return $existingSale->load(['items', 'payments', 'paymentAllocations.payment', 'customer', 'terminal']);
                 }
             }
 
@@ -83,7 +99,7 @@ class SalesService
                 if ($item['quantity'] <= 0) throw new Exception("Quantity must be greater than 0");
                 if ($item['unit_price'] < 0) throw new Exception("Price cannot be negative");
                 
-                $variant = ProductVariant::with('product')
+                $variant = ProductVariant::with(['product', 'barcodes'])
                     ->where('id', $item['product_variant_id'])
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -92,45 +108,57 @@ class SalesService
                     throw new Exception("Invalid product ownership.");
                 }
                 
-                if ($variant->product->status !== 'ACTIVE' || $variant->status !== 'ACTIVE') {
+                $prodStatus = strtoupper($variant->product->status ?? 'ACTIVE');
+                $varStatus = strtoupper($variant->status ?? 'ACTIVE');
+                if ($prodStatus !== 'ACTIVE' || $varStatus !== 'ACTIVE') {
                     throw new Exception("Cannot sell inactive product.");
                 }
                 
-                $lineTotal = ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0);
-                if ($lineTotal < 0) throw new Exception("Line total cannot be negative");
+                // Server-authoritative tax calculation
+                $taxRate = (float) ($variant->tax_rate ?? $variant->product->tax_rate ?? 0.0);
+                $itemDiscount = (float) ($item['discount'] ?? 0);
+                $taxableAmount = max(0, ($item['quantity'] * $item['unit_price']) - $itemDiscount);
+                $itemTax = round($taxableAmount * ($taxRate / 100), 4);
+                $lineTotal = round($taxableAmount + $itemTax, 4);
 
                 $subtotal += ($item['quantity'] * $item['unit_price']);
-                $totalDiscount += ($item['discount'] ?? 0);
-                $totalTax += ($item['tax'] ?? 0);
+                $totalDiscount += $itemDiscount;
+                $totalTax += $itemTax;
                 
                 $itemsData[] = [
                     'variant' => $variant,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
+                    'discount' => $itemDiscount,
+                    'tax' => $itemTax,
+                    'tax_rate' => $taxRate,
                     'line_total' => $lineTotal
                 ];
             }
 
-            $grandTotal = $subtotal - $totalDiscount + $totalTax - ($data['sale_discount'] ?? 0);
+            $saleDiscount = (float) ($data['sale_discount'] ?? 0);
+            $grandTotal = round($subtotal - $totalDiscount + $totalTax - $saleDiscount, 4);
+            if ($grandTotal < 0) {
+                $grandTotal = 0;
+            }
             
             $paidAmount = 0;
             $payments = [];
             if (!empty($data['payments'])) {
                 foreach ($data['payments'] as $payment) {
-                    if ($payment['amount'] <= 0) continue;
-                    $paidAmount += $payment['amount'];
+                    $amt = (float) ($payment['amount'] ?? 0);
+                    if ($amt <= 0) continue;
+                    $paidAmount += $amt;
                     $payments[] = $payment;
                 }
             }
             
             // Handle overpayment (Change)
             $actualPaidForSale = min($paidAmount, $grandTotal);
-            $dueAmount = max(0, $grandTotal - $actualPaidForSale);
+            $dueAmount = max(0, round($grandTotal - $actualPaidForSale, 4));
             
             $paymentStatus = 'DUE';
-            if ($dueAmount == 0) $paymentStatus = 'PAID';
+            if ($dueAmount <= 0.0001) $paymentStatus = 'PAID';
             else if ($actualPaidForSale > 0) $paymentStatus = 'PARTIAL';
 
             if ($dueAmount > 0) {
@@ -139,7 +167,6 @@ class SalesService
                 }
                 if ($customer->credit_limit !== null && $customer->credit_limit > 0) {
                     // Check credit limit
-                    // Get current due from ledger
                     $currentBalance = DB::table('customer_ledgers')
                         ->where('customer_id', $customer->id)
                         ->orderBy('id', 'desc')
@@ -163,12 +190,12 @@ class SalesService
                     'pos_session_id' => $session->id,
                     'customer_id' => $customer ? $customer->id : null,
                     'subtotal' => $subtotal,
-                    'discount_total' => $totalDiscount + ($data['sale_discount'] ?? 0),
+                    'discount_total' => $totalDiscount + $saleDiscount,
                     'tax_total' => $totalTax,
                     'grand_total' => $grandTotal,
-                    'paid_amount' => $actualPaidForSale,
-                    'due_amount' => $dueAmount,
-                    'payment_status' => $paymentStatus,
+                    'paid_amount' => 0,
+                    'due_amount' => $grandTotal,
+                    'payment_status' => 'DUE',
                     'status' => 'COMPLETED',
                     'idempotency_key' => $data['idempotency_key'] ?? null,
                     'cashier_id' => $data['cashier_id']
@@ -189,12 +216,12 @@ class SalesService
                     'sale_date' => now()->toDateString(),
                     'status' => 'COMPLETED',
                     'subtotal' => $subtotal,
-                    'discount_total' => $totalDiscount + ($data['sale_discount'] ?? 0),
+                    'discount_total' => $totalDiscount + $saleDiscount,
                     'tax_total' => $totalTax,
                     'grand_total' => $grandTotal,
-                    'paid_amount' => $actualPaidForSale,
-                    'due_amount' => $dueAmount,
-                    'payment_status' => $paymentStatus,
+                    'paid_amount' => 0,
+                    'due_amount' => $grandTotal,
+                    'payment_status' => 'DUE',
                     'notes' => $data['notes'] ?? null,
                     'cashier_id' => $data['cashier_id'],
                     'created_by' => $data['cashier_id']
@@ -202,6 +229,7 @@ class SalesService
             }
 
             // Process Items and Inventory
+            $totalCogs = 0;
             foreach ($itemsData as $item) {
                 $variant = $item['variant'];
                 $product = $variant->product;
@@ -217,60 +245,116 @@ class SalesService
                     "Sale {$sale->invoice_number}"
                 );
                 
-                $unitCost = $inventoryMove['unit_cost'] ?? 0;
+                $unitCost = (float) ($inventoryMove['unit_cost'] ?? 0);
+                $lineCogs = round($unitCost * $item['quantity'], 4);
+                $totalCogs += $lineCogs;
                 
+                $primaryBarcode = $variant->barcodes ? $variant->barcodes->firstWhere('is_primary', true)?->barcode : null;
+                $barcodeSnapshot = $primaryBarcode ?? $variant->barcodes?->first()?->barcode ?? $variant->sku;
+
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
                     'product_variant_id' => $variant->id,
                     'sku_snapshot' => $variant->sku,
-                    'barcode_snapshot' => $variant->barcode,
+                    'barcode_snapshot' => $barcodeSnapshot,
                     'product_name_snapshot' => $product->name,
-                    'variant_description_snapshot' => $variant->name,
+                    'variant_description_snapshot' => $variant->variant_name ?? $variant->name ?? $variant->sku,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'discount' => $item['discount'],
                     'tax' => $item['tax'],
                     'line_total' => $item['line_total'],
                     'unit_cost_snapshot' => $unitCost,
-                    'total_cost_snapshot' => $unitCost * $item['quantity']
+                    'total_cost_snapshot' => $lineCogs
                 ]);
             }
 
-            // Process Payments
+            // 1. Post Sale Invoice General Ledger Journal Entry (AR, Revenue, VAT)
+            $this->inventoryAccountingService->postSaleInvoice($sale, $data['cashier_id']);
+
+            // 2. Post Sale COGS General Ledger Journal Entry (COGS, Inventory Asset)
+            if ($totalCogs > 0) {
+                $this->inventoryAccountingService->postSaleCogs($sale, $totalCogs, $data['cashier_id']);
+            }
+
+            // 3. Process Payments via Authoritative PaymentService (Payment v2 + Allocation + SalePayment)
             $remainingPaid = $actualPaidForSale;
+            $payIndex = 0;
             foreach ($payments as $payment) {
                 if ($remainingPaid <= 0) break;
                 
-                $alloc = min($payment['amount'], $remainingPaid);
+                $alloc = min((float) $payment['amount'], $remainingPaid);
+                if ($alloc <= 0) continue;
                 $remainingPaid -= $alloc;
+                $payIndex++;
                 
+                $method = strtoupper($payment['method'] ?? $payment['payment_method'] ?? 'CASH');
+
+                $paymentIdempKey = !empty($data['idempotency_key']) 
+                    ? "{$data['idempotency_key']}-PAY-{$payIndex}" 
+                    : "SALE-{$sale->id}-PAY-{$payIndex}-" . Str::uuid();
+
+                // Authoritative Payment v2 (posts DR Cash/Bank, CR AR if accounting enabled)
+                $paymentRecord = $this->paymentService->createPayment($companyId, [
+                    'amount' => $alloc,
+                    'payment_type' => 'CUSTOMER',
+                    'payment_method' => $method,
+                    'branch_id' => $sale->branch_id,
+                    'reference_number' => $payment['reference_number'] ?? $payment['transaction_ref'] ?? $sale->invoice_number,
+                    'payment_date' => $sale->sale_date ? (is_string($sale->sale_date) ? $sale->sale_date : $sale->sale_date->format('Y-m-d')) : date('Y-m-d'),
+                    'idempotency_key' => $paymentIdempKey,
+                ], $data['cashier_id']);
+
+                // Polymorphic PaymentAllocation to Sale (updates sale paid_amount, due_amount, payment_status)
+                $this->paymentService->allocatePayment($companyId, $paymentRecord->id, [
+                    [
+                        'allocatable_type' => 'Sale',
+                        'allocatable_id' => $sale->id,
+                        'amount' => $alloc,
+                    ]
+                ], $data['cashier_id']);
+
+                // Session compatibility: also record SalePayment for cashier shift drawer audit
                 SalePayment::create([
                     'sale_id' => $sale->id,
-                    'payment_method' => $payment['method'], // CASH, CARD, BKASH, etc.
+                    'payment_method' => $method,
                     'amount' => $alloc,
                     'received_by' => $data['cashier_id']
                 ]);
             }
 
+            // Refresh sale model after payment allocations
+            $sale->refresh();
+
             // Customer Ledger for Due Amount
-            if ($dueAmount > 0 && $customer) {
-                $this->customerLedgerService->addAdjustment(
+            if ($sale->due_amount > 0 && $customer) {
+                $this->customerLedgerService->postTransaction(
                     $companyId,
                     $customer->id,
-                    $dueAmount,
-                    'DEBIT', // Due means customer owes us
                     'SALE',
+                    $sale->due_amount,
+                    0,
+                    $sale->sale_date ? (is_string($sale->sale_date) ? $sale->sale_date : $sale->sale_date->format('Y-m-d')) : date('Y-m-d'),
+                    'Sale',
                     $sale->id,
                     $sale->invoice_number,
-                    "Credit sale {$sale->invoice_number}"
+                    "Credit sale {$sale->invoice_number}",
+                    $data['cashier_id']
                 );
             }
             
             // Audit Log
-            // App\Services\AuditLogService::log(...) if it exists, or just emit event.
+            AuditLog::log(
+                $companyId,
+                $data['cashier_id'],
+                'SALE_COMPLETED',
+                $sale->id,
+                'Sale',
+                "Completed sale {$sale->invoice_number} for total {$sale->grand_total}"
+            );
 
-            return $sale->load(['items', 'payments', 'customer', 'terminal']);
+            return $sale->load(['items', 'payments', 'paymentAllocations.payment', 'customer', 'terminal']);
         });
     }
     
