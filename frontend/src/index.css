@@ -5,3 +5,105 @@
     @apply m-0 h-full overflow-hidden;
   }
 }
+
+@keyframes barcodeFlashSuccess {
+  0% {
+    background-color: rgba(6, 78, 59, 0.95);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.8), inset 0 0 12px rgba(52, 211, 153, 0.6);
+    border-color: #34d399;
+    transform: scale(1.015);
+  }
+  40% {
+    background-color: rgba(6, 95, 70, 0.8);
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.6);
+    border-color: #10b981;
+    transform: scale(1.01);
+  }
+  100% {
+    background-color: rgb(30, 41, 59);
+    box-shadow: none;
+    border-color: rgb(51, 65, 85);
+    transform: scale(1);
+  }
+}
+
+@keyframes barcodeFlashError {
+  0% {
+    background-color: rgba(136, 19, 55, 0.95);
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.8);
+    border-color: #f43f5e;
+    transform: translateX(-4px);
+  }
+  25% {
+    transform: translateX(4px);
+  }
+  50% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+  100% {
+    background-color: rgb(30, 41, 59);
+    box-shadow: none;
+    border-color: rgb(51, 65, 85);
+    transform: translateX(0);
+  }
+}
+
+.animate-barcode-flash-success {
+  animation: barcodeFlashSuccess 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-barcode-flash-error {
+  animation: barcodeFlashError 0.45s ease-in-out forwards;
+}
+
+/* 80mm Thermal Receipt Print Rules */
+@media screen {
+  .thermal-receipt-container {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .thermal-receipt-container,
+  .thermal-receipt-container * {
+    visibility: visible !important;
+  }
+
+  .thermal-receipt-container {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 76mm !important;
+    padding: 2mm !important;
+    margin: 0 auto !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+}
+
