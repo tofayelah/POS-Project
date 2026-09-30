@@ -228,6 +228,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('pos/sessions/current', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'current'])->middleware('permission:pos.view');
         Route::post('pos/sessions/open', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'open'])->middleware('permission:pos.open_session');
         Route::post('pos/sessions/{id}/close', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'close'])->middleware('permission:pos.close_session');
+        Route::get('pos/sessions/{id}/reconciliation', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'reconciliation'])->middleware('permission:pos.view');
 
         Route::get('pos/products/search', [\App\Http\Controllers\Api\V1\PosProductController::class, 'search'])->middleware('permission:pos.view');
         Route::get('pos/barcode/{barcode}', [\App\Http\Controllers\Api\V1\PosProductController::class, 'barcode'])->middleware('permission:pos.view');

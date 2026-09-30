@@ -48,17 +48,25 @@ export const PosSessionModal: React.FC<PosSessionModalProps> = ({
   const loadTerminals = async () => {
     try {
       setLoading(true);
-      const res = await posApi.getTerminals();
+      setError(null);
+      const res = await posApi.getTerminals({ status: 'ACTIVE' });
       if (res.success && res.data) {
-        setTerminals(res.data);
-        const activeTerminal = res.data.find((t) => t.status === 'ACTIVE') || res.data[0];
-        if (activeTerminal) {
-          setSelectedTerminalId(activeTerminal.id);
+        const activeTerminals = res.data.filter((t) => t.status === 'ACTIVE');
+        setTerminals(activeTerminals);
+        if (activeTerminals.length > 0) {
+          setSelectedTerminalId(activeTerminals[0].id);
+        } else {
+          setSelectedTerminalId('');
         }
+      } else {
+        setTerminals([]);
+        setSelectedTerminalId('');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load terminals', err);
-      setError('Could not fetch POS terminals. Please verify terminal setup.');
+      setError(err?.response?.data?.message || 'Could not fetch POS terminals. Please verify terminal setup.');
+      setTerminals([]);
+      setSelectedTerminalId('');
     } finally {
       setLoading(false);
     }
@@ -179,22 +187,30 @@ export const PosSessionModal: React.FC<PosSessionModalProps> = ({
               <label className="block font-semibold text-slate-700 mb-1">
                 Select POS Terminal <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <Terminal className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  required
-                  value={selectedTerminalId}
-                  onChange={(e) => setSelectedTerminalId(Number(e.target.value))}
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded font-medium focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="" disabled>-- Select Terminal --</option>
-                  {terminals.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.terminal_name} ({t.terminal_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {terminals.length === 0 && !loading ? (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                  <span>No active POS terminal available. Please contact an administrator.</span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Terminal className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <select
+                    required
+                    value={selectedTerminalId}
+                    onChange={(e) => setSelectedTerminalId(Number(e.target.value))}
+                    disabled={loading || terminals.length === 0}
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded font-medium focus:ring-2 focus:ring-emerald-500 text-xs disabled:bg-slate-100 disabled:text-slate-400"
+                  >
+                    <option value="" disabled>-- Select Terminal --</option>
+                    {terminals.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.terminal_name} — {t.terminal_code}{t.branch?.name ? ` (${t.branch.name})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div>
@@ -233,8 +249,8 @@ export const PosSessionModal: React.FC<PosSessionModalProps> = ({
             <div className="pt-2">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs transition-colors flex items-center justify-center gap-2"
+                disabled={loading || terminals.length === 0 || !selectedTerminalId}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded shadow-xs transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? 'Opening Session...' : 'Start POS Session & Begin Selling'}
               </button>

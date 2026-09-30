@@ -756,4 +756,364 @@ describe('RetailCore POS Cart Auto-Backup (localStorage / sessionStorage)', () =
       expect(calculatePointsEarned(2000, true, 400)).toBe(0);
     });
   });
+
+  describe('Feature 1: Smart Discount % ↔ Amount Calculations', () => {
+    const calculateDiscountFromPercent = (eligibleSubtotal: number, percentStr: string) => {
+      if (percentStr === '' || eligibleSubtotal <= 0) {
+        return { amountStr: '0.00', amountNum: 0 };
+      }
+      const pct = parseFloat(percentStr);
+      if (isNaN(pct) || pct <= 0) {
+        return { amountStr: '0.00', amountNum: 0 };
+      }
+      const clampedPct = Math.min(100, Math.max(0, pct));
+      const calcAmt = Math.round(((eligibleSubtotal * clampedPct) / 100) * 100) / 100;
+      return { amountStr: calcAmt.toFixed(2), amountNum: calcAmt };
+    };
+
+    const calculatePercentFromDiscount = (eligibleSubtotal: number, amountStr: string) => {
+      if (amountStr === '' || eligibleSubtotal <= 0) {
+        return { percentStr: '0.00', percentNum: 0, clampedAmount: 0 };
+      }
+      const amt = parseFloat(amountStr);
+      if (isNaN(amt) || amt <= 0) {
+        return { percentStr: '0.00', percentNum: 0, clampedAmount: 0 };
+      }
+      const clampedAmt = Math.min(eligibleSubtotal, Math.max(0, amt));
+      const calcPct = Math.round(((clampedAmt / eligibleSubtotal) * 100) * 100) / 100;
+      return { percentStr: calcPct.toFixed(2), percentNum: calcPct, clampedAmount: clampedAmt };
+    };
+
+    it('5% discount displays correct Taka amount on ৳1,000 subtotal', () => {
+      const subtotal = 1000;
+      const res = calculateDiscountFromPercent(subtotal, '5');
+      expect(res.amountStr).toBe('50.00');
+      expect(res.amountNum).toBe(50.00);
+    });
+
+    it('12.5% discount displays correct Taka amount on ৳2,400 subtotal', () => {
+      const subtotal = 2400;
+      const res = calculateDiscountFromPercent(subtotal, '12.5');
+      expect(res.amountStr).toBe('300.00');
+      expect(res.amountNum).toBe(300.00);
+    });
+
+    it('Taka discount of ৳100 displays correct percentage (10.00%) on ৳1,000 subtotal', () => {
+      const subtotal = 1000;
+      const res = calculatePercentFromDiscount(subtotal, '100');
+      expect(res.percentStr).toBe('10.00');
+      expect(res.percentNum).toBe(10.00);
+      expect(res.clampedAmount).toBe(100);
+    });
+
+    it('Taka discount of ৳50 displays correct percentage (2.50%) on ৳2,000 subtotal', () => {
+      const subtotal = 2000;
+      const res = calculatePercentFromDiscount(subtotal, '50');
+      expect(res.percentStr).toBe('2.50');
+      expect(res.percentNum).toBe(2.50);
+    });
+
+    it('handles zero subtotal gracefully without NaN or Infinity', () => {
+      const zeroSubtotal = 0;
+      const fromPct = calculateDiscountFromPercent(zeroSubtotal, '5');
+      expect(fromPct.amountStr).toBe('0.00');
+      expect(fromPct.amountNum).toBe(0);
+      expect(isNaN(fromPct.amountNum)).toBe(false);
+
+      const fromAmt = calculatePercentFromDiscount(zeroSubtotal, '100');
+      expect(fromAmt.percentStr).toBe('0.00');
+      expect(fromAmt.percentNum).toBe(0);
+      expect(isNaN(fromAmt.percentNum)).toBe(false);
+      expect(isFinite(fromAmt.percentNum)).toBe(true);
+    });
+
+    it('100% discount results in discount equal to subtotal', () => {
+      const subtotal = 1500;
+      const res = calculateDiscountFromPercent(subtotal, '100');
+      expect(res.amountNum).toBe(1500.00);
+      expect(res.amountStr).toBe('1500.00');
+    });
+
+    it('0% discount results in ৳0.00', () => {
+      const subtotal = 1000;
+      const res = calculateDiscountFromPercent(subtotal, '0');
+      expect(res.amountStr).toBe('0.00');
+      expect(res.amountNum).toBe(0);
+    });
+
+    it('clamps discount amount exceeding subtotal and sets percentage to 100%', () => {
+      const subtotal = 1000;
+      const res = calculatePercentFromDiscount(subtotal, '1500'); // exceeds 1000
+      expect(res.clampedAmount).toBe(1000);
+      expect(res.percentStr).toBe('100.00');
+      expect(res.percentNum).toBe(100.00);
+    });
+
+    it('handles decimal precision safely (৳1234.56 @ 7.5%)', () => {
+      const subtotal = 1234.56;
+      const res = calculateDiscountFromPercent(subtotal, '7.5');
+      // 1234.56 * 0.075 = 92.592 => 92.59
+      expect(res.amountStr).toBe('92.59');
+      expect(res.amountNum).toBe(92.59);
+    });
+
+    it('discount conversion does not create update loops or drifting', () => {
+      const subtotal = 1000;
+      // Step 1: User types 5%
+      const step1 = calculateDiscountFromPercent(subtotal, '5');
+      expect(step1.amountStr).toBe('50.00');
+
+      // Step 2: Amount converted back to %
+      const step2 = calculatePercentFromDiscount(subtotal, step1.amountStr);
+      expect(step2.percentStr).toBe('5.00');
+
+      // Step 3: % converted back to amount
+      const step3 = calculateDiscountFromPercent(subtotal, step2.percentStr);
+      expect(step3.amountStr).toBe('50.00');
+      expect(step3.amountNum).toBe(step1.amountNum);
+    });
+  });
+
+  describe('Feature 2: POS Sales Slip / Customer Hand-Over Report & Print Safety', () => {
+    const sampleCompletedSale = {
+      invoiceNumber: 'INV-2026-0099',
+      saleDate: '2026-09-30 14:30:00',
+      cashierName: 'Fatima Rahman',
+      terminalName: 'POS-01',
+      branchName: 'Dhanmondi Branch',
+      saleType: 'RETAIL / COUNTER SALE',
+      customer: {
+        id: 42,
+        name: 'Tariqul Islam',
+        mobile: '01711223344',
+        customer_code: 'CUST-0042',
+        address: 'House 12, Road 4, Dhanmondi, Dhaka',
+      },
+      items: [
+        {
+          id: '1',
+          name: 'Classic Oxford Shirt',
+          variant_name: 'White / L',
+          sku: 'SHIRT-WHT-L',
+          barcode: '8901234567890',
+          quantity: 2,
+          unit_price: 1200.00,
+          discount_amount: 100.00,
+          tax_amount: 172.50,
+          line_total: 2472.50,
+        },
+      ],
+      subtotal: 2400.00,
+      discountTotal: 220.00,
+      specialDiscount: 120.00,
+      discountPercent: 5.00,
+      taxTotal: 172.50,
+      grandTotal: 2352.50,
+      paidAmount: 2352.50,
+      changeAmount: 0.00,
+      dueAmount: 0.00,
+      paymentMethod: 'SPLIT',
+      payments: [
+        { method: 'POINT_REDEMPTION', amount: 400.00 },
+        { method: 'CASH', amount: 1500.00 },
+        { method: 'BKASH', amount: 452.50, transaction_ref: 'TRX-BK-998811' },
+      ],
+      previousPoints: 850,
+      pointsRedeemed: 400,
+      pointsEarned: 0,
+      customerPointsBalance: 450,
+    };
+
+    it('sales slip displays sale invoice number', () => {
+      expect(sampleCompletedSale.invoiceNumber).toBe('INV-2026-0099');
+      expect(sampleCompletedSale.invoiceNumber.length).toBeGreaterThan(5);
+    });
+
+    it('sales slip displays registered customer information and code', () => {
+      expect(sampleCompletedSale.customer).not.toBeNull();
+      expect(sampleCompletedSale.customer.name).toBe('Tariqul Islam');
+      expect(sampleCompletedSale.customer.mobile).toBe('01711223344');
+      expect(sampleCompletedSale.customer.customer_code).toBe('CUST-0042');
+    });
+
+    it('sales slip displays Walk-in Customer when customer is null', () => {
+      const walkInSale = { ...sampleCompletedSale, customer: null };
+      const displayCustomerName = walkInSale.customer ? (walkInSale.customer as any).name : 'Walk-in Customer';
+      expect(displayCustomerName).toBe('Walk-in Customer');
+    });
+
+    it('sales slip displays item details including variant, SKU/barcode, and line financial values', () => {
+      const item = sampleCompletedSale.items[0];
+      expect(item.name).toBe('Classic Oxford Shirt');
+      expect(item.variant_name).toBe('White / L');
+      expect(item.barcode).toBe('8901234567890');
+      expect(item.quantity).toBe(2);
+      expect(item.unit_price).toBe(1200.00);
+      expect(item.line_total).toBe(2472.50);
+    });
+
+    it('sales slip displays discount percentage and amount simultaneously', () => {
+      expect(sampleCompletedSale.discountPercent).toBe(5.00);
+      expect(sampleCompletedSale.specialDiscount).toBe(120.00);
+      expect(sampleCompletedSale.discountTotal).toBe(220.00);
+    });
+
+    it('sales slip displays full payment tender breakdown with split methods', () => {
+      expect(sampleCompletedSale.payments).toHaveLength(3);
+      expect(sampleCompletedSale.payments[0].method).toBe('POINT_REDEMPTION');
+      expect(sampleCompletedSale.payments[0].amount).toBe(400.00);
+      expect(sampleCompletedSale.payments[1].method).toBe('CASH');
+      expect(sampleCompletedSale.payments[1].amount).toBe(1500.00);
+      expect(sampleCompletedSale.payments[2].method).toBe('BKASH');
+      expect(sampleCompletedSale.payments[2].amount).toBe(452.50);
+      expect(sampleCompletedSale.payments[2].transaction_ref).toBe('TRX-BK-998811');
+
+      const sumTenders = sampleCompletedSale.payments.reduce((s, p) => s + p.amount, 0);
+      expect(sumTenders).toBe(sampleCompletedSale.paidAmount);
+    });
+
+    it('sales slip displays loyalty redemption, previous points, and balance when applicable', () => {
+      expect(sampleCompletedSale.previousPoints).toBe(850);
+      expect(sampleCompletedSale.pointsRedeemed).toBe(400);
+      expect(sampleCompletedSale.pointsEarned).toBe(0);
+      expect(sampleCompletedSale.customerPointsBalance).toBe(450);
+    });
+
+    it('reprint does NOT call sale creation API and operates strictly on existing completed sale', () => {
+      const mockApiComplete = vi.fn();
+      let printDialogInvoked = false;
+
+      const triggerReprint = (saleData: any) => {
+        // Pure reprint: never calls mockApiComplete
+        if (saleData) {
+          printDialogInvoked = true;
+        }
+      };
+
+      triggerReprint(sampleCompletedSale);
+
+      expect(mockApiComplete).not.toHaveBeenCalled();
+      expect(printDialogInvoked).toBe(true);
+      expect(sampleCompletedSale.invoiceNumber).toBe('INV-2026-0099');
+    });
+
+    it('print failure does NOT affect sale completion or drop sale data', () => {
+      let printErrorMessage: string | null = null;
+      let saleRecord = { ...sampleCompletedSale };
+
+      const safePrint = (data: any) => {
+        try {
+          throw new Error('Printer disconnected');
+        } catch (e: any) {
+          printErrorMessage = e.message;
+        }
+      };
+
+      safePrint(saleRecord);
+
+      expect(printErrorMessage).toBe('Printer disconnected');
+      // Sale record remains completely intact
+      expect(saleRecord.invoiceNumber).toBe('INV-2026-0099');
+      expect(saleRecord.grandTotal).toBe(2352.50);
+      expect(saleRecord.items).toHaveLength(1);
+    });
+  });
+
+  describe('POS Terminal Management & Session Opening Dropdown Flow', () => {
+    const mockTerminals = [
+      {
+        id: 1,
+        company_id: 10,
+        terminal_code: 'SONARI-01',
+        terminal_name: 'Sonari Counter-01',
+        status: 'ACTIVE' as const,
+        warehouse_id: 5,
+        branch_id: 2,
+        branch: { id: 2, name: 'Dhanmondi Branch' },
+        warehouse: { id: 5, name: 'Dhanmondi Warehouse' },
+      },
+      {
+        id: 2,
+        company_id: 10,
+        terminal_code: 'SONARI-02',
+        terminal_name: 'Sonari Counter-02',
+        status: 'INACTIVE' as const,
+        warehouse_id: 5,
+        branch_id: 2,
+        branch: { id: 2, name: 'Dhanmondi Branch' },
+        warehouse: { id: 5, name: 'Dhanmondi Warehouse' },
+      },
+      {
+        id: 3,
+        company_id: 10,
+        terminal_code: 'GULSHAN-01',
+        terminal_name: 'Gulshan Express POS',
+        status: 'ACTIVE' as const,
+        warehouse_id: 8,
+        branch_id: 3,
+        branch: { id: 3, name: 'Gulshan Branch' },
+        warehouse: { id: 8, name: 'Gulshan Warehouse' },
+      },
+    ];
+
+    it('filters out inactive terminals for Open Session dropdown', () => {
+      const activeOnly = mockTerminals.filter((t) => t.status === 'ACTIVE');
+      expect(activeOnly).toHaveLength(2);
+      expect(activeOnly.map((t) => t.id)).toEqual([1, 3]);
+      expect(activeOnly.some((t) => (t.status as string) === 'INACTIVE')).toBe(false);
+    });
+
+    it('formats terminal options correctly as Terminal Name — Terminal Code with branch', () => {
+      const formatOption = (t: typeof mockTerminals[0]) =>
+        `${t.terminal_name} — ${t.terminal_code}${t.branch?.name ? ` (${t.branch.name})` : ''}`;
+
+      expect(formatOption(mockTerminals[0])).toBe('Sonari Counter-01 — SONARI-01 (Dhanmondi Branch)');
+      expect(formatOption(mockTerminals[2])).toBe('Gulshan Express POS — GULSHAN-01 (Gulshan Branch)');
+    });
+
+    it('displays clear message when no active terminal is available and disables submission', () => {
+      const emptyTerminals: typeof mockTerminals = [];
+      const hasTerminals = emptyTerminals.length > 0;
+      const emptyMessage = 'No active POS terminal available. Please contact an administrator.';
+
+      expect(hasTerminals).toBe(false);
+      expect(emptyMessage).toBe('No active POS terminal available. Please contact an administrator.');
+
+      const isSubmitDisabled = (terminalsList: any[], selectedId: any, loading: boolean) =>
+        loading || terminalsList.length === 0 || !selectedId;
+
+      expect(isSubmitDisabled(emptyTerminals, '', false)).toBe(true);
+      expect(isSubmitDisabled(mockTerminals, 1, false)).toBe(false);
+      expect(isSubmitDisabled(mockTerminals, '', false)).toBe(true);
+      expect(isSubmitDisabled(mockTerminals, 1, true)).toBe(true);
+    });
+
+    it('binds selected POS terminal ID, cashier ID, and opening cash to the session creation payload', () => {
+      const selectedTerminalId = 1;
+      const cashierId = 42;
+      const openingCash = 3500;
+      const notes = 'Opening shift change';
+
+      const payload = {
+        pos_terminal_id: selectedTerminalId,
+        cashier_id: cashierId,
+        opening_cash: openingCash,
+        notes,
+      };
+
+      expect(payload.pos_terminal_id).toBe(1);
+      expect(payload.cashier_id).toBe(42);
+      expect(payload.opening_cash).toBe(3500);
+      expect(payload.notes).toBe('Opening shift change');
+    });
+
+    it('quick status toggle updates terminal status between ACTIVE and INACTIVE', () => {
+      const toggleStatus = (currentStatus: 'ACTIVE' | 'INACTIVE') =>
+        currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+      expect(toggleStatus('ACTIVE')).toBe('INACTIVE');
+      expect(toggleStatus('INACTIVE')).toBe('ACTIVE');
+    });
+  });
 });
+

@@ -57,8 +57,15 @@ class SalesService
 
             $session = PosSession::where('company_id', $companyId)
                 ->where('id', $data['pos_session_id'])
-                ->where('status', 'OPEN')
-                ->firstOrFail();
+                ->first();
+
+            if (!$session) {
+                throw new Exception("POS session not found.");
+            }
+
+            if ($session->status !== 'OPEN') {
+                throw new Exception("Cannot create sale. POS session is {$session->status}.");
+            }
 
             if ($session->cashier_id !== $data['cashier_id']) {
                 throw new Exception("Cashier mismatch. Cannot complete sale for another user's session.");
@@ -142,6 +149,13 @@ class SalesService
             }
 
             $saleDiscount = (float) ($data['sale_discount'] ?? 0);
+            if ($saleDiscount < -0.0001) {
+                throw new ConflictHttpException("Sale discount cannot be negative.");
+            }
+            $eligibleSubtotal = max(0, $subtotal - $totalDiscount);
+            if ($saleDiscount > ($eligibleSubtotal + 0.0001)) {
+                throw new ConflictHttpException("Sale discount cannot exceed eligible subtotal.");
+            }
             $totalDiscountAmount = $totalDiscount + $saleDiscount;
             $grandTotal = round($subtotal - $totalDiscount + $totalTax - $saleDiscount, 4);
             if ($grandTotal < 0) {

@@ -76,4 +76,17 @@ class PosSessionController extends Controller
         
         return response()->json(['success' => true, 'data' => $session]);
     }
+
+    public function reconciliation(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        try {
+            $data = $this->posService->getSessionReconciliation($companyId, $id);
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'POS session not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
 }

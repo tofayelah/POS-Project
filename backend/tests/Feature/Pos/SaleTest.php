@@ -779,4 +779,177 @@ class SaleTest extends TestCase
         $this->assertDatabaseMissing('sales', ['id' => $held->id]);
         $this->assertDatabaseMissing('sale_items', ['sale_id' => $held->id]);
     }
+
+    /**
+     * Server-authoritative discount calculation and balanced accounting.
+     */
+    public function test_server_authoritative_discount_calculation_and_balanced_accounting()
+    {
+        $this->mappingService->setAccountingEnabled($this->company->id, true);
+
+        // Qty: 2 @ 1000 = 2000 subtotal, Sale Discount: 100 (5%), Tax (10% of 2000): 200 => Grand Total: 2100
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'customer_id' => null,
+            'idempotency_key' => 'SALE-DISC-TEST-' . Str::random(8),
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 2,
+                    'unit_price' => 1000.00,
+                    'discount' => 0.00,
+                    'tax' => 200.00,
+                ],
+            ],
+            'sale_discount' => 100.00,
+            'payments' => [
+                [
+                    'method' => 'CASH',
+                    'amount' => 2100.00,
+                ],
+            ],
+        ];
+
+        $sale = $this->salesService->completeSale($this->company->id, $payload);
+
+        $this->assertInstanceOf(Sale::class, $sale);
+        $this->assertEquals(2000.00, (float) $sale->subtotal);
+        $this->assertEquals(100.00, (float) $sale->discount_total);
+        $this->assertEquals(2100.00, (float) $sale->grand_total);
+        $this->assertEquals(2100.00, (float) $sale->paid_amount);
+        $this->assertEquals(0.00, (float) $sale->due_amount);
+
+        // Verify balanced journal entries
+        $saleJournal = JournalEntry::where('company_id', $this->company->id)
+            ->where('reference_type', 'Sale')
+            ->where('reference_id', $sale->id)
+            ->with('lines')
+            ->first();
+
+        $this->assertNotNull($saleJournal);
+        $totalDebit = $saleJournal->lines->sum('debit');
+        $totalCredit = $saleJournal->lines->sum('credit');
+        $this->assertEqualsWithDelta((float) $totalDebit, (float) $totalCredit, 0.001, "Sale Journal #{$saleJournal->id} is out of balance!");
+    }
+
+    /**
+     * Sale discount exceeding subtotal is rejected by server.
+     */
+    public function test_sale_discount_exceeding_subtotal_is_rejected()
+    {
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\ConflictHttpException::class);
+        $this->expectExceptionMessage('Sale discount cannot exceed eligible subtotal.');
+
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'idempotency_key' => 'SALE-DISC-EXCEED-' . Str::random(8),
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 1,
+                    'unit_price' => 1000.00,
+                    'discount' => 0.00,
+                ],
+            ],
+            'sale_discount' => 1500.00, // Exceeds 1000 subtotal
+            'payments' => [
+                [
+                    'method' => 'CASH',
+                    'amount' => 0.00,
+                ],
+            ],
+        ];
+
+        $this->salesService->completeSale($this->company->id, $payload);
+    }
+
+    /**
+     * Negative sale discount is rejected by server.
+     */
+    public function test_negative_sale_discount_is_rejected()
+    {
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\ConflictHttpException::class);
+        $this->expectExceptionMessage('Sale discount cannot be negative.');
+
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'idempotency_key' => 'SALE-DISC-NEG-' . Str::random(8),
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 1,
+                    'unit_price' => 1000.00,
+                    'discount' => 0.00,
+                ],
+            ],
+            'sale_discount' => -50.00,
+            'payments' => [
+                [
+                    'method' => 'CASH',
+                    'amount' => 1000.00,
+                ],
+            ],
+        ];
+
+        $this->salesService->completeSale($this->company->id, $payload);
+    }
+
+    /**
+     * Reprinting / retrieving a sale receipt does not alter inventory, payments, or ledger.
+     */
+    public function test_reprint_and_receipt_retrieval_does_not_alter_inventory_payments_or_loyalty()
+    {
+        $superAdminRole = \App\Models\Role::firstOrCreate(['name' => 'Super Admin']);
+        $this->user->roles()->syncWithoutDetaching([$superAdminRole->id]);
+
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'idempotency_key' => 'SALE-REPRINT-TEST-' . Str::random(8),
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 1,
+                    'unit_price' => 1000.00,
+                    'discount' => 0.00,
+                    'tax' => 100.00,
+                ],
+            ],
+            'sale_discount' => 0,
+            'payments' => [
+                [
+                    'method' => 'CASH',
+                    'amount' => 1100.00,
+                ],
+            ],
+        ];
+
+        $sale = $this->salesService->completeSale($this->company->id, $payload);
+
+        // Snapshot counts
+        $stockMovementCountBefore = StockMovement::where('company_id', $this->company->id)->count();
+        $paymentCountBefore = Payment::where('company_id', $this->company->id)->count();
+        $journalCountBefore = JournalEntry::where('company_id', $this->company->id)->count();
+        $ledgerCountBefore = CustomerLedger::where('company_id', $this->company->id)->count();
+
+        // Simulate reprint by querying sale details via API multiple times
+        for ($i = 0; $i < 3; $i++) {
+            $response = $this->actingAs($this->user)
+                ->withHeaders(['X-Company-ID' => $this->company->id])
+                ->getJson("/api/v1/sales/{$sale->id}");
+
+            $response->assertStatus(200);
+            $response->assertJson(['success' => true]);
+            $this->assertEquals($sale->invoice_number, $response->json('data.invoice_number'));
+        }
+
+        // Verify zero mutation
+        $this->assertEquals($stockMovementCountBefore, StockMovement::where('company_id', $this->company->id)->count());
+        $this->assertEquals($paymentCountBefore, Payment::where('company_id', $this->company->id)->count());
+        $this->assertEquals($journalCountBefore, JournalEntry::where('company_id', $this->company->id)->count());
+        $this->assertEquals($ledgerCountBefore, CustomerLedger::where('company_id', $this->company->id)->count());
+    }
 }

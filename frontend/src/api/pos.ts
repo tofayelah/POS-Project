@@ -28,6 +28,8 @@ export interface PosTerminal {
   status: 'ACTIVE' | 'INACTIVE';
   warehouse_id?: number;
   branch_id?: number | null;
+  branch?: { id: number; name: string } | null;
+  warehouse?: { id: number; name: string } | null;
   default_cash_account_id?: number | null;
   default_card_account_id?: number | null;
   default_bkash_account_id?: number | null;
@@ -212,8 +214,8 @@ export interface PosHeldSale {
 }
 
 export const posApi = {
-  getTerminals: () => 
-    api.get<{success: boolean, data: PosTerminal[]}>('/pos/terminals').then(res => res.data),
+  getTerminals: (params?: { status?: string; branch_id?: number }) => 
+    api.get<{success: boolean, data: PosTerminal[]}>('/pos/terminals', { params }).then(res => res.data),
   
   createTerminal: (data: Partial<PosTerminal>) => 
     api.post<{success: boolean, data: PosTerminal}>('/pos/terminals', data).then(res => res.data),
@@ -262,6 +264,9 @@ export const posApi = {
     
   closeSession: (id: number, closingCash: number, notes?: string) => 
     api.post<{success: boolean, data: PosSession}>(`/pos/sessions/${id}/close`, { closing_cash: closingCash, notes }).then(res => res.data),
+
+  getSessionReconciliation: (sessionId: number) =>
+    api.get<{success: boolean, data: any}>(`/pos/sessions/${sessionId}/reconciliation`).then(res => res.data),
 
   searchProducts: (query: string) => 
     api.get<{success: boolean, data: PosProductVariant[]}>('/pos/products/search', { params: { q: query } }).then(res => res.data),
