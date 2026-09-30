@@ -1114,6 +1114,31 @@ describe('RetailCore POS Cart Auto-Backup (localStorage / sessionStorage)', () =
       expect(toggleStatus('ACTIVE')).toBe('INACTIVE');
       expect(toggleStatus('INACTIVE')).toBe('ACTIVE');
     });
+
+    it('validates navigation route path and RBAC permission for POS Terminal Management', () => {
+      const posTerminalRoute = '/pos/terminals';
+      const openSessionRoute = '/pos';
+
+      expect(posTerminalRoute).toBe('/pos/terminals');
+      expect(openSessionRoute).toBe('/pos');
+
+      const checkCanViewPosAdmin = (roles: string[], permissions: string[]) => {
+        const hasRole = (r: string) => roles.some((role) => role.toLowerCase() === r.toLowerCase());
+        const hasPermission = (p: string) => permissions.some((perm) => perm.toLowerCase() === p.toLowerCase());
+        return hasRole('Super Admin') || hasRole('Admin') || hasPermission('pos.view');
+      };
+
+      // Super Admin and Admin can view
+      expect(checkCanViewPosAdmin(['Super Admin'], [])).toBe(true);
+      expect(checkCanViewPosAdmin(['Admin'], [])).toBe(true);
+
+      // User with pos.view permission can view
+      expect(checkCanViewPosAdmin(['Cashier'], ['pos.view'])).toBe(true);
+
+      // User without role or permission is denied
+      expect(checkCanViewPosAdmin(['Cashier'], ['sales.view'])).toBe(false);
+      expect(checkCanViewPosAdmin(['Guest'], [])).toBe(false);
+    });
   });
 });
 

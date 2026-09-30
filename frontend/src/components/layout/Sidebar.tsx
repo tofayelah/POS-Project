@@ -18,7 +18,8 @@ import {
   FileText,
   ShoppingCart,
   Boxes,
-  CreditCard
+  CreditCard,
+  Monitor
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -47,7 +48,8 @@ export function Sidebar() {
   const primaryRole = user?.roles?.[0]?.name || 'Admin';
 
   // RBAC checks for UI navigation visibility (safe default-deny)
-  const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users');
+  const canViewPos = hasRole('Super Admin') || hasRole('Admin') || hasPermission('pos.view');
+  const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || canViewPos;
   const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
 
   return (
@@ -273,6 +275,35 @@ export function Sidebar() {
         {canViewAdmin && (
           <>
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4 mt-6">Administration</div>
+            {canViewPos && (
+              <div className="mb-2">
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-4 py-1">POS</div>
+                <Link 
+                  to="/pos/terminals" 
+                  id="nav-link-pos-terminals" 
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+                    location.pathname.startsWith('/pos/terminals')
+                      ? 'bg-slate-800 text-white font-medium' 
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Monitor className={`w-4 h-4 ${location.pathname.startsWith('/pos/terminals') ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <span>POS Terminal Management</span>
+                </Link>
+                <Link 
+                  to="/pos" 
+                  id="nav-link-open-pos-session" 
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-xs ${
+                    location.pathname === '/pos'
+                      ? 'bg-slate-800 text-white font-medium' 
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                  }`}
+                >
+                  <ShoppingCart className={`w-4 h-4 ${location.pathname === '/pos' ? 'text-emerald-400' : 'text-slate-400'}`} />
+                  <span>Open POS Counter Session</span>
+                </Link>
+              </div>
+            )}
             <Link 
               to="/users" 
               id="nav-link-users" 

@@ -32,6 +32,7 @@ import { CustomerGroupList } from './pages/customers/CustomerGroupList';
 import ExpenseIndex from "./pages/expenses/ExpenseIndex";
 import ExpenseCreate from "./pages/expenses/ExpenseCreate";
 import { PosTerminal } from './pages/pos/PosTerminal';
+import { PosTerminalManagement } from './pages/pos/PosTerminalManagement';
 import { CompanyPage } from './pages/organization/CompanyPage';
 import { BusinessUnitList } from './pages/organization/BusinessUnitList';
 import { BranchList } from './pages/organization/BranchList';
@@ -248,6 +249,15 @@ export default function App() {
                 <PosTerminal />
               </ProtectedRoute>
             } />
+            <Route path="/pos/terminals" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PosTerminalManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/pos-terminals" element={<Navigate to="/pos/terminals" replace />} />
+            <Route path="/admin/pos/terminals" element={<Navigate to="/pos/terminals" replace />} />
             {/* Organization Routes */}
             <Route path="/company" element={
               <ProtectedRoute>
