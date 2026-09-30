@@ -31,8 +31,8 @@ class CheckPermission
             ], 403);
         }
 
-        // Super Admin role possesses full bypass
-        if ($user->hasRole('Super Admin')) {
+        // Super Admin or Admin role possesses full bypass
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
             return $next($request);
         }
 
