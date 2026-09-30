@@ -206,11 +206,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('customers/{id}/ledger', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'index'])->middleware('permission:customer_ledger.view');
         Route::post('customers/{id}/opening-balance', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'storeOpeningBalance'])->middleware('permission:customer_ledger.create_opening_balance');
         Route::post('customers/{id}/ledger/adjustment', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'storeAdjustment'])->middleware('permission:customer_ledger.create_adjustment');
+        Route::get('customers/{id}/points', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPoints'])->middleware('permission:customers.view,pos.view');
+        Route::get('customers/{id}/points/ledger', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPointLedger'])->middleware('permission:customers.view,pos.view');
+        Route::post('customers/{id}/points/adjust', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'adjustPoints'])->middleware('permission:customers.update');
 
         // SPRINT 06 — POS & Sales
         Route::get('pos/terminals', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'index'])->middleware('permission:pos.view');
         Route::post('pos/terminals', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'store'])->middleware('permission:pos.view');
+        Route::get('pos/terminals/{id}', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'show'])->middleware('permission:pos.view');
         Route::put('pos/terminals/{id}', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'update'])->middleware('permission:pos.view');
+        Route::put('pos/terminals/{id}/payment-methods', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'syncPaymentMethods'])->middleware('permission:pos.view');
+
+        Route::get('pos/payment-methods', [\App\Http\Controllers\Api\V1\PaymentMethodController::class, 'index'])->middleware('permission:pos.view');
+        Route::post('pos/payment-methods', [\App\Http\Controllers\Api\V1\PaymentMethodController::class, 'store'])->middleware('permission:pos.view');
+        Route::put('pos/payment-methods/{id}', [\App\Http\Controllers\Api\V1\PaymentMethodController::class, 'update'])->middleware('permission:pos.view');
+        Route::post('pos/payment-methods/{id}/toggle', [\App\Http\Controllers\Api\V1\PaymentMethodController::class, 'toggle'])->middleware('permission:pos.view');
+
+        Route::get('pos/loyalty/settings', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'getSettings'])->middleware('permission:pos.view');
+        Route::put('pos/loyalty/settings', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'updateSettings'])->middleware('permission:pos.view');
 
         Route::get('pos/sessions/current', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'current'])->middleware('permission:pos.view');
         Route::post('pos/sessions/open', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'open'])->middleware('permission:pos.open_session');

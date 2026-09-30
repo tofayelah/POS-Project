@@ -558,6 +558,7 @@ describe('RetailCore POS Cart Auto-Backup (localStorage / sessionStorage)', () =
           sku: item.barcode_snapshot || '',
           name: item.product_name_snapshot,
           variant_name: item.variant_description_snapshot || '',
+          category_name: 'General',
           quantity: qty,
           unit_price: unitPrice,
           discount_percent: Math.round(discPct * 100) / 100,
@@ -602,6 +603,157 @@ describe('RetailCore POS Cart Auto-Backup (localStorage / sessionStorage)', () =
       expect(shortcuts.map((s) => s.key)).toEqual([
         'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'Ctrl+Enter', 'Ctrl+N', 'Esc'
       ]);
+    });
+  });
+
+  describe('POS Multi-Tender & Loyalty Points Redemption Business Rules', () => {
+    const calculatePointsEarned = (subtotal: number, hasDiscount: boolean, pointsRedeemed: number): number => {
+      if (hasDiscount || pointsRedeemed > 0) return 0;
+      return Math.floor(subtotal / 100);
+    };
+
+    const validateRedemption = (
+      balance: number,
+      pointsToRedeem: number,
+      hasDiscount: boolean,
+      grandTotal: number
+    ): { valid: boolean; error?: string } => {
+      if (hasDiscount) {
+        return { valid: false, error: 'Point redemption cannot be combined with discounts.' };
+      }
+      if (balance < 400) {
+        return { valid: false, error: 'Minimum 400 points required to redeem.' };
+      }
+      if (pointsToRedeem < 400) {
+        return { valid: false, error: 'Minimum 400 points required to redeem.' };
+      }
+      if (pointsToRedeem > balance) {
+        return { valid: false, error: 'Points to redeem cannot exceed available balance.' };
+      }
+      if (pointsToRedeem > grandTotal) {
+        return { valid: false, error: 'Points redemption value cannot exceed Grand Total.' };
+      }
+      return { valid: true };
+    };
+
+    const reconcileTender = (
+      grandTotal: number,
+      payments: Array<{ method: string; amount: number }>,
+      isSingleCash: boolean,
+      isWalkIn: boolean
+    ): { status: 'BALANCED' | 'OVERPAYMENT' | 'UNDERPAYMENT_REJECT' | 'UNDERPAYMENT_CREDIT'; diff: number; change: number; due: number } => {
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      const diff = Math.round((totalPaid - grandTotal) * 10000) / 10000;
+
+      if (Math.abs(diff) <= 0.0001) {
+        return { status: 'BALANCED', diff: 0, change: 0, due: 0 };
+      }
+
+      if (diff > 0.0001) {
+        if (isSingleCash) {
+          return { status: 'BALANCED', diff, change: totalPaid - grandTotal, due: 0 };
+        }
+        return { status: 'OVERPAYMENT', diff, change: 0, due: 0 };
+      }
+
+      // Underpayment
+      const due = grandTotal - totalPaid;
+      if (isWalkIn) {
+        return { status: 'UNDERPAYMENT_REJECT', diff, change: 0, due };
+      }
+      return { status: 'UNDERPAYMENT_CREDIT', diff, change: 0, due };
+    };
+
+    it('correctly reconciles multi-tender split: Point ৳400 + Cash ৳500 + bKash ৳100 = ৳1,000', () => {
+      const grandTotal = 1000.00;
+      const payments = [
+        { method: 'POINT_REDEMPTION', amount: 400.00 },
+        { method: 'CASH', amount: 500.00 },
+        { method: 'BKASH', amount: 100.00 },
+      ];
+
+      const res = reconcileTender(grandTotal, payments, false, false);
+      expect(res.status).toBe('BALANCED');
+      expect(res.diff).toBe(0);
+      expect(res.due).toBe(0);
+      expect(res.change).toBe(0);
+    });
+
+    it('strictly rejects overpayment in multi-tender split (৳1050 vs ৳1000)', () => {
+      const grandTotal = 1000.00;
+      const payments = [
+        { method: 'POINT_REDEMPTION', amount: 400.00 },
+        { method: 'CASH', amount: 550.00 },
+        { method: 'BKASH', amount: 100.00 },
+      ];
+
+      const res = reconcileTender(grandTotal, payments, false, false);
+      expect(res.status).toBe('OVERPAYMENT');
+      expect(res.diff).toBe(50.00);
+    });
+
+    it('allows customer overpayment for single cash tender and calculates change', () => {
+      const grandTotal = 850.00;
+      const payments = [{ method: 'CASH', amount: 1000.00 }];
+
+      const res = reconcileTender(grandTotal, payments, true, true);
+      expect(res.status).toBe('BALANCED');
+      expect(res.change).toBe(150.00);
+      expect(res.due).toBe(0);
+    });
+
+    it('rejects underpayment for walk-in customer', () => {
+      const grandTotal = 1000.00;
+      const payments = [{ method: 'CASH', amount: 800.00 }];
+
+      const res = reconcileTender(grandTotal, payments, false, true); // walk-in = true
+      expect(res.status).toBe('UNDERPAYMENT_REJECT');
+      expect(res.due).toBe(200.00);
+    });
+
+    it('allows underpayment for registered customer posting to Accounts Receivable', () => {
+      const grandTotal = 1000.00;
+      const payments = [{ method: 'CASH', amount: 700.00 }];
+
+      const res = reconcileTender(grandTotal, payments, false, false); // registered = false walk-in
+      expect(res.status).toBe('UNDERPAYMENT_CREDIT');
+      expect(res.due).toBe(300.00);
+    });
+
+    it('enforces minimum 400 points redemption threshold', () => {
+      const balance = 350;
+      const res = validateRedemption(balance, 350, false, 1000);
+      expect(res.valid).toBe(false);
+      expect(res.error).toContain('Minimum 400 points');
+    });
+
+    it('validates successful point redemption for eligible customer with >= 400 points', () => {
+      const balance = 500;
+      const res = validateRedemption(balance, 400, false, 1000);
+      expect(res.valid).toBe(true);
+      expect(res.error).toBeUndefined();
+    });
+
+    it('enforces mutual exclusivity: point redemption rejected when discount is applied', () => {
+      const balance = 600;
+      const res = validateRedemption(balance, 400, true, 1000); // hasDiscount = true
+      expect(res.valid).toBe(false);
+      expect(res.error).toContain('cannot be combined with discounts');
+    });
+
+    it('calculates 1 point earned per eligible ৳100 spent', () => {
+      expect(calculatePointsEarned(1000, false, 0)).toBe(10);
+      expect(calculatePointsEarned(1550, false, 0)).toBe(15);
+      expect(calculatePointsEarned(99.99, false, 0)).toBe(0);
+    });
+
+    it('awards 0 points earned when discount is applied or points are redeemed', () => {
+      // With discount
+      expect(calculatePointsEarned(2000, true, 0)).toBe(0);
+      // With point redemption
+      expect(calculatePointsEarned(2000, false, 400)).toBe(0);
+      // With both
+      expect(calculatePointsEarned(2000, true, 400)).toBe(0);
     });
   });
 });

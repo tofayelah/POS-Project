@@ -25,6 +25,7 @@ class Customer extends Model
         'credit_limit',
         'payment_terms',
         'opening_balance',
+        'points_balance',
         'notes',
         'status',
         'created_by',
@@ -34,6 +35,7 @@ class Customer extends Model
     protected $casts = [
         'credit_limit' => 'decimal:4',
         'opening_balance' => 'decimal:4',
+        'points_balance' => 'decimal:4',
     ];
 
     public function company()
@@ -49,5 +51,10 @@ class Customer extends Model
     public function ledgers()
     {
         return $this->hasMany(CustomerLedger::class);
+    }
+
+    public function pointLedgers()
+    {
+        return $this->hasMany(CustomerPointLedger::class);
     }
 }

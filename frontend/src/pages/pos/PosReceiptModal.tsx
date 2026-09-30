@@ -23,6 +23,10 @@ interface PosReceiptModalProps {
     cashierName: string;
     terminalName: string;
     notes?: string;
+    pointsRedeemed?: number;
+    pointsEarned?: number;
+    customerPointsBalance?: number;
+    payments?: Array<{ method: string; amount: number; transaction_ref?: string }>;
   } | null;
   companyName?: string;
   companyAddress?: string;
@@ -277,6 +281,31 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                 </div>
               </div>
 
+              {/* Loyalty Points Section */}
+              {(Boolean(saleData.pointsRedeemed) || Boolean(saleData.pointsEarned) || saleData.customerPointsBalance !== undefined) && (
+                <div className="py-2 border-b border-dashed border-slate-400 text-[11px] space-y-0.5 bg-amber-50/50 px-1 rounded">
+                  <span className="font-bold text-amber-900 block text-[10px] uppercase">Loyalty Rewards</span>
+                  {Boolean(saleData.pointsRedeemed) && (
+                    <div className="flex justify-between text-amber-800">
+                      <span>Points Redeemed:</span>
+                      <span className="font-bold">-{saleData.pointsRedeemed} pts (৳{saleData.pointsRedeemed})</span>
+                    </div>
+                  )}
+                  {Boolean(saleData.pointsEarned) && (
+                    <div className="flex justify-between text-emerald-700">
+                      <span>Points Earned:</span>
+                      <span className="font-bold">+{saleData.pointsEarned} pts</span>
+                    </div>
+                  )}
+                  {saleData.customerPointsBalance !== undefined && (
+                    <div className="flex justify-between text-slate-700 pt-0.5 border-t border-amber-200">
+                      <span>Points Balance:</span>
+                      <span className="font-bold">{saleData.customerPointsBalance} pts</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Payment Breakdown */}
               <div className="py-2.5 border-b border-dashed border-slate-400 text-[11px] space-y-1">
                 <div className="flex justify-between">
@@ -285,6 +314,19 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                     {saleData.paymentMethod} {saleData.cardType ? `(${saleData.cardType})` : ''}
                   </span>
                 </div>
+
+                {saleData.payments && saleData.payments.length > 1 && (
+                  <div className="py-1 border-t border-dotted border-slate-300 space-y-0.5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Tenders:</span>
+                    {saleData.payments.map((p, idx) => (
+                      <div key={idx} className="flex justify-between text-[10px] pl-1 font-mono">
+                        <span>{p.method}:</span>
+                        <span>৳ {Number(p.amount).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-slate-600">Paid Amount:</span>
                   <span className="font-bold">৳ {saleData.paidAmount.toFixed(2)}</span>
@@ -448,6 +490,38 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                     <span>GRAND TOTAL:</span>
                     <span>৳ {saleData.grandTotal.toFixed(2)}</span>
                   </div>
+
+                  {/* Loyalty Points in A4 */}
+                  {(Boolean(saleData.pointsRedeemed) || Boolean(saleData.pointsEarned)) && (
+                    <div className="py-1 border-t border-dotted border-slate-300 text-[11px] space-y-0.5 text-amber-900">
+                      {Boolean(saleData.pointsRedeemed) && (
+                        <div className="flex justify-between">
+                          <span>Loyalty Points Redeemed:</span>
+                          <span className="font-bold">-{saleData.pointsRedeemed} pts (৳{saleData.pointsRedeemed})</span>
+                        </div>
+                      )}
+                      {Boolean(saleData.pointsEarned) && (
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Points Earned Today:</span>
+                          <span className="font-bold">+{saleData.pointsEarned} pts</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tender details in A4 */}
+                  {saleData.payments && saleData.payments.length > 1 && (
+                    <div className="py-1 border-t border-dotted border-slate-300 space-y-0.5 text-[11px]">
+                      <span className="font-bold text-slate-600 block">Payment Tenders:</span>
+                      {saleData.payments.map((p, idx) => (
+                        <div key={idx} className="flex justify-between text-slate-700">
+                          <span>{p.method}:</span>
+                          <span>৳ {Number(p.amount).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex justify-between pt-1 border-t border-dotted border-slate-300 text-slate-700">
                     <span>Paid Amount:</span>
                     <span>৳ {saleData.paidAmount.toFixed(2)}</span>

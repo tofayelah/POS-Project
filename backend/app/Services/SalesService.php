@@ -14,9 +14,11 @@ use App\Models\SalePayment;
 use App\Services\CustomerLedgerService;
 use App\Services\InventoryAccountingService;
 use App\Services\InventoryService;
+use App\Services\LoyaltyService;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Exception;
 
 class SalesService
@@ -25,17 +27,20 @@ class SalesService
     protected $customerLedgerService;
     protected $paymentService;
     protected $inventoryAccountingService;
+    protected $loyaltyService;
 
     public function __construct(
         InventoryService $inventoryService,
         CustomerLedgerService $customerLedgerService,
         PaymentService $paymentService,
-        InventoryAccountingService $inventoryAccountingService
+        InventoryAccountingService $inventoryAccountingService,
+        LoyaltyService $loyaltyService
     ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
         $this->paymentService = $paymentService;
         $this->inventoryAccountingService = $inventoryAccountingService;
+        $this->loyaltyService = $loyaltyService;
     }
 
     public function completeSale($companyId, $data)
@@ -137,31 +142,96 @@ class SalesService
             }
 
             $saleDiscount = (float) ($data['sale_discount'] ?? 0);
+            $totalDiscountAmount = $totalDiscount + $saleDiscount;
             $grandTotal = round($subtotal - $totalDiscount + $totalTax - $saleDiscount, 4);
             if ($grandTotal < 0) {
                 $grandTotal = 0;
             }
-            
+
+            // Terminal Enabled Payment Methods Validation
+            $terminalId = $session->pos_terminal_id;
+            if ($terminalId) {
+                $hasTerminalPMConfig = DB::table('pos_terminal_payment_methods')
+                    ->where('pos_terminal_id', $terminalId)
+                    ->exists();
+                if ($hasTerminalPMConfig) {
+                    $enabledCodes = DB::table('pos_terminal_payment_methods')
+                        ->join('payment_methods', 'payment_methods.id', '=', 'pos_terminal_payment_methods.payment_method_id')
+                        ->where('pos_terminal_payment_methods.pos_terminal_id', $terminalId)
+                        ->where('pos_terminal_payment_methods.is_enabled', true)
+                        ->pluck('payment_methods.code')
+                        ->map(fn($c) => strtoupper($c))
+                        ->toArray();
+
+                    foreach ($data['payments'] ?? [] as $pmItem) {
+                        $mCode = strtoupper($pmItem['method'] ?? $pmItem['payment_method'] ?? 'CASH');
+                        if (!in_array($mCode, $enabledCodes)) {
+                            throw new ConflictHttpException("Payment method '{$mCode}' is not enabled for this POS terminal.");
+                        }
+                    }
+                }
+            }
+
+            // Prepare payments & Calculate Point Redemption
             $paidAmount = 0;
             $payments = [];
+            $pointRedemptionAmount = 0;
+
             if (!empty($data['payments'])) {
                 foreach ($data['payments'] as $payment) {
                     $amt = (float) ($payment['amount'] ?? 0);
                     if ($amt <= 0) continue;
+                    $mName = strtoupper($payment['method'] ?? $payment['payment_method'] ?? 'CASH');
+                    if ($mName === 'POINT_REDEMPTION') {
+                        $pointRedemptionAmount += $amt;
+                    }
                     $paidAmount += $amt;
                     $payments[] = $payment;
                 }
             }
-            
-            // Handle overpayment (Change)
-            $actualPaidForSale = min($paidAmount, $grandTotal);
-            $dueAmount = max(0, round($grandTotal - $actualPaidForSale, 4));
-            
-            $paymentStatus = 'DUE';
-            if ($dueAmount <= 0.0001) $paymentStatus = 'PAID';
-            else if ($actualPaidForSale > 0) $paymentStatus = 'PARTIAL';
 
-            if ($dueAmount > 0) {
+            // Check if points_redeemed is explicitly passed
+            $loyaltySettings = $this->loyaltyService->getSettings($companyId);
+            $redemptionValuePerPoint = (float) $loyaltySettings->redemption_point_value ?: 1.0;
+            if (!empty($data['points_redeemed']) && $pointRedemptionAmount <= 0) {
+                $pointRedemptionAmount = round((float) $data['points_redeemed'] * $redemptionValuePerPoint, 4);
+            }
+
+            $pointsRedeemed = 0;
+            if ($pointRedemptionAmount > 0) {
+                if (!$customer) {
+                    throw new ConflictHttpException("Walk-in customers cannot redeem loyalty points.");
+                }
+                $pointsRedeemed = round($pointRedemptionAmount / $redemptionValuePerPoint, 4);
+
+                // Validates min 400, customer balance, discount mutual exclusion, grand total
+                $this->loyaltyService->validateRedemption(
+                    $companyId,
+                    $customer,
+                    $pointsRedeemed,
+                    $totalDiscountAmount,
+                    $grandTotal
+                );
+            }
+
+            // Payment Total Validation: Overpayment and Underpayment Rules
+            $isSingleCashPayment = (count($payments) === 1 && strtoupper($payments[0]['method'] ?? $payments[0]['payment_method'] ?? '') === 'CASH');
+
+            if ($paidAmount > ($grandTotal + 0.0001)) {
+                if ($isSingleCashPayment) {
+                    // Single cash tender: customer hands cash, cashier calculates change
+                    $actualPaidForSale = $grandTotal;
+                } else {
+                    // Split payments, digital payments, point redemption: overpayment strictly rejected
+                    throw new ConflictHttpException("Payment total ({$paidAmount}) exceeds grand total ({$grandTotal}). Overpayment is not permitted.");
+                }
+            } else {
+                $actualPaidForSale = $paidAmount;
+            }
+
+            $dueAmount = max(0, round($grandTotal - $actualPaidForSale, 4));
+
+            if ($dueAmount > 0.0001) {
                 if (!$customer) {
                     throw new Exception("Walk-in customers cannot have a due balance.");
                 }
@@ -171,7 +241,7 @@ class SalesService
                         ->where('customer_id', $customer->id)
                         ->orderBy('id', 'desc')
                         ->value('balance_after') ?? 0;
-                        
+
                     if (($currentBalance + $dueAmount) > $customer->credit_limit) {
                         throw new Exception("Credit limit exceeded.");
                     }
@@ -291,11 +361,24 @@ class SalesService
                 
                 $method = strtoupper($payment['method'] ?? $payment['payment_method'] ?? 'CASH');
 
+                // If POINT_REDEMPTION, deduct customer loyalty points atomically
+                if ($method === 'POINT_REDEMPTION' && $customer && $pointsRedeemed > 0) {
+                    $pointsForThisPayment = round($alloc / $redemptionValuePerPoint, 4);
+                    $this->loyaltyService->redeemPoints(
+                        $companyId,
+                        $customer->id,
+                        $pointsForThisPayment,
+                        $sale->id,
+                        $sale->invoice_number,
+                        $data['cashier_id']
+                    );
+                }
+
                 $paymentIdempKey = !empty($data['idempotency_key']) 
                     ? "{$data['idempotency_key']}-PAY-{$payIndex}" 
                     : "SALE-{$sale->id}-PAY-{$payIndex}-" . Str::uuid();
 
-                // Authoritative Payment v2 (posts DR Cash/Bank, CR AR if accounting enabled)
+                // Authoritative Payment v2 (posts DR Cash/Bank or DR Loyalty Expense, CR AR if accounting enabled)
                 $paymentRecord = $this->paymentService->createPayment($companyId, [
                     'amount' => $alloc,
                     'payment_type' => 'CUSTOMER',
@@ -342,6 +425,26 @@ class SalesService
                     "Credit sale {$sale->invoice_number}",
                     $data['cashier_id']
                 );
+            }
+
+            // 4. Award Loyalty Points (Zero accounting journal, updated atomically with point ledger)
+            if ($customer) {
+                $pointsEarned = $this->loyaltyService->calculatePointsEarned(
+                    $companyId,
+                    $subtotal,
+                    $totalDiscountAmount,
+                    $pointsRedeemed
+                );
+                if ($pointsEarned > 0) {
+                    $this->loyaltyService->earnPoints(
+                        $companyId,
+                        $customer->id,
+                        $pointsEarned,
+                        $sale->id,
+                        $sale->invoice_number,
+                        $data['cashier_id']
+                    );
+                }
             }
             
             // Audit Log

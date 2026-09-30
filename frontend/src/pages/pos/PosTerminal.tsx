@@ -24,6 +24,11 @@ import {
   Check,
   Tag,
   Percent,
+  Gift,
+  Coins,
+  Star,
+  Layers,
+  Split,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCompany } from '../../contexts/CompanyContext';
@@ -35,6 +40,8 @@ import {
   SalePaymentData,
   CompleteSaleData,
   PosHeldSale,
+  PaymentMethod,
+  CustomerPoints,
 } from '../../api/pos';
 import { Customer, customersApi } from '../../api/customers';
 import { PosReceiptModal } from './PosReceiptModal';
@@ -177,7 +184,13 @@ export function PosTerminal() {
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<number | ''>(() => initialBackup?.selectedStaffId || '');
 
+  // Loyalty & Points state
+  const [customerPoints, setCustomerPoints] = useState<CustomerPoints | null>(null);
+  const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
+  const [pointsInput, setPointsInput] = useState<string>('0');
+
   // Payment state
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethod[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'BKASH' | 'NAGAD' | 'BANK'>(
     () => initialBackup?.paymentMethod || 'CASH'
   );
@@ -185,8 +198,20 @@ export function PosTerminal() {
   const [cardType, setCardType] = useState('VISA');
   const [cardBank, setCardBank] = useState('City Bank');
   const [cardApprovalCode, setCardApprovalCode] = useState('');
+  const [mfsTransactionRef, setMfsTransactionRef] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Split Tender State
+  const [isSplitPayment, setIsSplitPayment] = useState(false);
+  const [splitTenders, setSplitTenders] = useState<Array<{
+    id: string;
+    method: string;
+    amount: string;
+    transaction_ref?: string;
+    card_type?: string;
+    card_bank?: string;
+  }>>([]);
 
   // Modals state
   const [productSearchModalOpen, setProductSearchModalOpen] = useState(false);
@@ -225,7 +250,38 @@ export function PosTerminal() {
   useEffect(() => {
     checkActiveSession();
     loadStaffUsers();
+    loadPaymentMethods();
   }, []);
+
+  const loadPaymentMethods = async () => {
+    try {
+      const res = await posApi.getPaymentMethods({ is_active: true });
+      if (res.success && Array.isArray(res.data)) {
+        setAvailablePaymentMethods(res.data);
+      }
+    } catch {
+      // Fallback silently to default system methods
+    }
+  };
+
+  // Fetch customer loyalty points when customer changes
+  useEffect(() => {
+    if (customer?.id) {
+      posApi.getCustomerPoints(customer.id)
+        .then((res) => {
+          if (res.success && res.data) {
+            setCustomerPoints(res.data);
+          } else {
+            setCustomerPoints(null);
+          }
+        })
+        .catch(() => setCustomerPoints(null));
+    } else {
+      setCustomerPoints(null);
+      setRedeemedPoints(0);
+      setPointsInput('0');
+    }
+  }, [customer?.id]);
 
   // Close search dropdown on click outside
   useEffect(() => {
@@ -347,31 +403,93 @@ export function PosTerminal() {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
+  // ----------------------------------------------------
+  // Loyalty & Payment Calculations
+  // ----------------------------------------------------
+  const hasAnyDiscount = useMemo(() => {
+    return (itemDiscountsTotal > 0.0001) || (specialDiscount > 0.0001);
+  }, [itemDiscountsTotal, specialDiscount]);
+
+  const redemptionRate = useMemo(() => {
+    return customerPoints?.redemption_rate ? Number(customerPoints.redemption_rate) : 1.0;
+  }, [customerPoints]);
+
+  const pointsMonetaryValue = useMemo(() => {
+    return Math.round(redeemedPoints * redemptionRate * 100) / 100;
+  }, [redeemedPoints, redemptionRate]);
+
+  const remainingGrandTotal = useMemo(() => {
+    return Math.max(0, Math.round((grandTotal - pointsMonetaryValue) * 100) / 100);
+  }, [grandTotal, pointsMonetaryValue]);
+
+  // Points earned on current sale: 1 pt per ৳100 spent, 0 if discount or redemption applied
+  const potentialPointsEarned = useMemo(() => {
+    if (!customer) return 0;
+    if (hasAnyDiscount || redeemedPoints > 0) return 0;
+    return Math.floor(subtotal / 100);
+  }, [customer, hasAnyDiscount, redeemedPoints, subtotal]);
+
+  // Maximum redeemable points: min 400 pts, max min(balance, grandTotal)
+  const maxRedeemablePoints = useMemo(() => {
+    if (!customerPoints || hasAnyDiscount) return 0;
+    const balance = customerPoints.points_balance || 0;
+    if (balance < 400) return 0;
+    const maxByTotal = Math.floor(grandTotal / redemptionRate);
+    return Math.min(balance, maxByTotal);
+  }, [customerPoints, hasAnyDiscount, grandTotal, redemptionRate]);
+
+  // Split Tenders Sum
+  const splitTendersSum = useMemo(() => {
+    return splitTenders.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+  }, [splitTenders]);
+
+  // Total tender provided across payment channels + points
+  const totalTenderProvided = useMemo(() => {
+    if (isSplitPayment) {
+      return Math.round((splitTendersSum + pointsMonetaryValue) * 100) / 100;
+    }
+    const tender = parseFloat(tenderedAmount) || 0;
+    const nonCashPaid = paymentMethod === 'CASH' ? tender : remainingGrandTotal;
+    return Math.round((nonCashPaid + pointsMonetaryValue) * 100) / 100;
+  }, [isSplitPayment, splitTendersSum, pointsMonetaryValue, tenderedAmount, paymentMethod, remainingGrandTotal]);
+
   // Paid amount and change
   const numericTendered = useMemo(() => {
     return parseFloat(tenderedAmount) || 0;
   }, [tenderedAmount]);
 
   const changeAmount = useMemo(() => {
-    if (numericTendered > grandTotal) {
-      return numericTendered - grandTotal;
+    if (isSplitPayment) return 0; // Split overpayment is strictly rejected
+    if (paymentMethod === 'CASH') {
+      if (numericTendered > remainingGrandTotal) {
+        return Math.round((numericTendered - remainingGrandTotal) * 100) / 100;
+      }
     }
     return 0;
-  }, [numericTendered, grandTotal]);
+  }, [isSplitPayment, paymentMethod, numericTendered, remainingGrandTotal]);
 
   const dueAmount = useMemo(() => {
-    if (numericTendered < grandTotal) {
-      return grandTotal - numericTendered;
+    if (isSplitPayment) {
+      if (totalTenderProvided < grandTotal) {
+        return Math.round((grandTotal - totalTenderProvided) * 100) / 100;
+      }
+      return 0;
+    }
+    if (paymentMethod === 'CASH') {
+      if (numericTendered < remainingGrandTotal) {
+        return Math.round((remainingGrandTotal - numericTendered) * 100) / 100;
+      }
+      return 0;
     }
     return 0;
-  }, [numericTendered, grandTotal]);
+  }, [isSplitPayment, totalTenderProvided, grandTotal, paymentMethod, numericTendered, remainingGrandTotal]);
 
-  // Sync Tendered amount with Grand Total by default if Cash
+  // Sync Tendered amount with remaining Grand Total by default if Cash
   useEffect(() => {
-    if (grandTotal > 0 && (!tenderedAmount || parseFloat(tenderedAmount) === 0)) {
-      setTenderedAmount(grandTotal.toFixed(2));
+    if (remainingGrandTotal >= 0 && (!tenderedAmount || parseFloat(tenderedAmount) === 0 || !isSplitPayment)) {
+      setTenderedAmount(remainingGrandTotal.toFixed(2));
     }
-  }, [grandTotal]);
+  }, [remainingGrandTotal, isSplitPayment]);
 
   // ----------------------------------------------------
   // Barcode Scanning, Live Search & Adding Product
@@ -658,6 +776,12 @@ export function PosTerminal() {
     setCustomer(null);
     setCustomerMobileQuery('');
     setLastScannedStock(null);
+    setRedeemedPoints(0);
+    setPointsInput('0');
+    setIsSplitPayment(false);
+    setSplitTenders([]);
+    setCustomerPoints(null);
+    setMfsTransactionRef('');
     barcodeInputRef.current?.focus();
   };
 
@@ -834,12 +958,33 @@ export function PosTerminal() {
       return;
     }
 
-    // Validation: Walk-in customers cannot have due balance
-    if (dueAmount > 0 && !customer) {
-      setErrorMessage('Walk-in customer cannot have a due balance. Please register customer [F8] or collect full payment.');
-      playSound('error');
-      tenderedInputRef.current?.focus();
-      return;
+    // Validation: Point redemption rules
+    if (redeemedPoints > 0) {
+      if (!customer) {
+        setErrorMessage('Walk-in customers cannot redeem loyalty points.');
+        playSound('error');
+        return;
+      }
+      if (hasAnyDiscount) {
+        setErrorMessage('Point redemption cannot be combined with discounts. Please clear discounts first.');
+        playSound('error');
+        return;
+      }
+      if (redeemedPoints < 400) {
+        setErrorMessage('Minimum 400 points required to redeem.');
+        playSound('error');
+        return;
+      }
+      if (customerPoints && redeemedPoints > customerPoints.points_balance) {
+        setErrorMessage(`Customer has only ${customerPoints.points_balance} points available.`);
+        playSound('error');
+        return;
+      }
+      if (pointsMonetaryValue > grandTotal + 0.0001) {
+        setErrorMessage('Points redemption value cannot exceed Grand Total.');
+        playSound('error');
+        return;
+      }
     }
 
     // Prepare Sale Items
@@ -853,15 +998,67 @@ export function PosTerminal() {
 
     // Prepare Payment Data
     const paymentsData: SalePaymentData[] = [];
-    const paid = numericTendered > 0 ? numericTendered : grandTotal;
+    if (redeemedPoints > 0) {
+      paymentsData.push({
+        method: 'POINT_REDEMPTION' as any,
+        amount: pointsMonetaryValue,
+      });
+    }
 
-    paymentsData.push({
-      method: paymentMethod,
-      amount: paid,
-      card_type: paymentMethod === 'CARD' ? cardType : undefined,
-      card_bank: paymentMethod === 'CARD' ? cardBank : undefined,
-      transaction_ref: cardApprovalCode || undefined,
-    });
+    if (isSplitPayment) {
+      for (const tender of splitTenders) {
+        const amt = parseFloat(tender.amount) || 0;
+        if (amt > 0) {
+          paymentsData.push({
+            method: tender.method as any,
+            amount: amt,
+            card_type: tender.method === 'CARD' ? (tender.card_type || cardType) : undefined,
+            card_bank: tender.method === 'CARD' ? (tender.card_bank || cardBank) : undefined,
+            transaction_ref: tender.transaction_ref || undefined,
+          });
+        }
+      }
+    } else {
+      // Single tender mode
+      const remaining = Math.max(0, grandTotal - pointsMonetaryValue);
+      const paid = numericTendered > 0 ? numericTendered : remaining;
+      if (paid > 0 || remaining === 0) {
+        if (paid > 0) {
+          paymentsData.push({
+            method: paymentMethod,
+            amount: paid,
+            card_type: paymentMethod === 'CARD' ? cardType : undefined,
+            card_bank: paymentMethod === 'CARD' ? cardBank : undefined,
+            transaction_ref: paymentMethod === 'CARD' ? cardApprovalCode : (mfsTransactionRef || undefined),
+          });
+        }
+      }
+    }
+
+    // Overpayment and Underpayment checks
+    const totalPaid = paymentsData.reduce((s, p) => s + p.amount, 0);
+    const isSingleCash = !isSplitPayment && redeemedPoints === 0 && paymentMethod === 'CASH';
+
+    if (totalPaid > grandTotal + 0.0001) {
+      if (!isSingleCash) {
+        setErrorMessage(
+          `Payment total (৳${totalPaid.toFixed(2)}) exceeds Grand Total (৳${grandTotal.toFixed(2)}). Overpayment is not permitted in multi-tender or digital payments.`
+        );
+        playSound('error');
+        return;
+      }
+    }
+
+    if (totalPaid < grandTotal - 0.0001) {
+      if (!customer) {
+        setErrorMessage(
+          `Walk-in customer cannot have a due balance. Total paid: ৳${totalPaid.toFixed(2)}, required: ৳${grandTotal.toFixed(2)}.`
+        );
+        playSound('error');
+        tenderedInputRef.current?.focus();
+        return;
+      }
+    }
 
     const payload: CompleteSaleData = {
       pos_session_id: session.id,
@@ -869,6 +1066,7 @@ export function PosTerminal() {
       items: itemsData,
       sale_discount: specialDiscount,
       payments: paymentsData,
+      points_redeemed: redeemedPoints > 0 ? redeemedPoints : undefined,
       notes: salesNote || undefined,
       idempotency_key: `pos-${session.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     };
@@ -883,8 +1081,11 @@ export function PosTerminal() {
         const completed = res.data;
 
         // Track cash sales for session closing audit
-        if (paymentMethod === 'CASH') {
-          setTotalSessionCashSales((prev) => prev + Math.min(paid, grandTotal));
+        const cashSum = paymentsData
+          .filter((p) => String(p.method).toUpperCase() === 'CASH')
+          .reduce((s, p) => s + p.amount, 0);
+        if (cashSum > 0) {
+          setTotalSessionCashSales((prev) => prev + Math.min(cashSum, grandTotal));
         }
 
         const receiptData = {
@@ -895,15 +1096,31 @@ export function PosTerminal() {
           discountTotal: itemDiscountsTotal + specialDiscount,
           taxTotal,
           grandTotal,
-          paidAmount: paid,
+          paidAmount: isSingleCash ? Math.min(numericTendered, grandTotal) : totalPaid,
           changeAmount,
-          paymentMethod,
+          paymentMethod: isSplitPayment
+            ? 'SPLIT'
+            : redeemedPoints > 0
+            ? `${paymentMethod} + PTS`
+            : paymentMethod,
           cardType: paymentMethod === 'CARD' ? cardType : undefined,
           cardBank: paymentMethod === 'CARD' ? cardBank : undefined,
           customer,
           cashierName: user?.name || 'Cashier',
           terminalName: session.terminal_code || `Terminal #${session.pos_terminal_id}`,
           notes: salesNote,
+          pointsRedeemed: redeemedPoints > 0 ? redeemedPoints : undefined,
+          pointsEarned: potentialPointsEarned,
+          customerPointsBalance: customer
+            ? (customerPoints
+                ? customerPoints.points_balance - redeemedPoints + potentialPointsEarned
+                : 0)
+            : undefined,
+          payments: paymentsData.map((p) => ({
+            method: p.method,
+            amount: p.amount,
+            transaction_ref: p.transaction_ref,
+          })),
         };
 
         setLastCompletedSale(receiptData);
@@ -1753,8 +1970,14 @@ export function PosTerminal() {
                 <span className="mx-2">|</span>
                 <span>Qty: <strong className="text-slate-900">{totalQty.toFixed(2)}</strong></span>
               </div>
-              <div className="text-slate-400 font-medium">
-                Pts: N/A
+              <div className="text-slate-700 font-medium flex items-center gap-1">
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                <span>Pts: <strong>{customer ? `${customerPoints?.points_balance ?? 0}` : 'Walk-in'}</strong></span>
+                {customer && (
+                  <span className="text-[10px] text-emerald-700 ml-1">
+                    (+{potentialPointsEarned} earn)
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -1779,40 +2002,47 @@ export function PosTerminal() {
                 <Percent className="w-3.5 h-3.5 text-slate-400" />
                 F4 Discount:
               </span>
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center border border-slate-300 rounded overflow-hidden">
-                  <input
-                    ref={discountInputRef}
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="any"
-                    value={discountPercent}
-                    onChange={(e) => {
-                      setDiscountPercent(e.target.value);
-                      setDiscountAmount('0');
-                    }}
-                    placeholder="%"
-                    className="w-12 text-center py-0.5 text-xs font-bold focus:outline-hidden"
-                  />
-                  <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">%</span>
+              <div className="flex flex-col items-end gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center border border-slate-300 rounded overflow-hidden">
+                    <input
+                      ref={discountInputRef}
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      disabled={redeemedPoints > 0}
+                      value={discountPercent}
+                      onChange={(e) => {
+                        setDiscountPercent(e.target.value);
+                        setDiscountAmount('0');
+                      }}
+                      placeholder="%"
+                      className="w-12 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                    />
+                    <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">%</span>
+                  </div>
+                  <span className="text-slate-400 font-sans">or</span>
+                  <div className="flex items-center border border-slate-300 rounded overflow-hidden">
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      disabled={redeemedPoints > 0}
+                      value={discountAmount}
+                      onChange={(e) => {
+                        setDiscountAmount(e.target.value);
+                        setDiscountPercent('0');
+                      }}
+                      placeholder="Tk"
+                      className="w-14 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                    />
+                    <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">Tk</span>
+                  </div>
                 </div>
-                <span className="text-slate-400 font-sans">or</span>
-                <div className="flex items-center border border-slate-300 rounded overflow-hidden">
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={discountAmount}
-                    onChange={(e) => {
-                      setDiscountAmount(e.target.value);
-                      setDiscountPercent('0');
-                    }}
-                    placeholder="Tk"
-                    className="w-14 text-center py-0.5 text-xs font-bold focus:outline-hidden"
-                  />
-                  <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">Tk</span>
-                </div>
+                {redeemedPoints > 0 && (
+                  <span className="text-[10px] text-amber-700 italic">Discounts disabled during point redemption</span>
+                )}
               </div>
             </div>
 
@@ -1824,148 +2054,464 @@ export function PosTerminal() {
             )}
 
             <div className="flex justify-between font-bold text-sm text-slate-900 pt-1 border-t border-slate-300">
-              <span>NET PAYABLE:</span>
+              <span>GRAND TOTAL:</span>
               <span className="text-emerald-700">৳ {grandTotal.toFixed(2)}</span>
             </div>
-          </div>
 
-          {/* Payment Method Selector */}
-          <div className="p-3 bg-slate-100 border-b border-slate-300 space-y-2.5">
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-              Payment Method
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('CASH')}
-                className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'CASH'
-                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Banknote className="w-4 h-4" />
-                <span>Cash</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('CARD')}
-                className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'CARD'
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>Card [F11]</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('BKASH')}
-                className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'BKASH'
-                    ? 'bg-pink-600 border-pink-600 text-white shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Smartphone className="w-4 h-4" />
-                <span>bKash / MFS</span>
-              </button>
-            </div>
-
-            {/* If Card Payment: Card Type & Bank Controls */}
-            {paymentMethod === 'CARD' && (
-              <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded space-y-2 text-xs">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">F11 CARD TYPE</label>
-                    <select
-                      ref={cardTypeSelectRef}
-                      value={cardType}
-                      onChange={(e) => setCardType(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold"
-                    >
-                      <option value="VISA">Visa Card</option>
-                      <option value="MASTERCARD">MasterCard</option>
-                      <option value="AMEX">American Express</option>
-                      <option value="NEXUS">DBBL Nexus</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">CARD BANK</label>
-                    <select
-                      value={cardBank}
-                      onChange={(e) => setCardBank(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold"
-                    >
-                      <option value="City Bank">City Bank</option>
-                      <option value="BRAC Bank">BRAC Bank</option>
-                      <option value="DBBL">DBBL</option>
-                      <option value="EBL">Eastern Bank</option>
-                      <option value="SCB">Standard Chartered</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-0.5">APPROVAL / REF CODE</label>
-                  <input
-                    type="text"
-                    value={cardApprovalCode}
-                    onChange={(e) => setCardApprovalCode(e.target.value)}
-                    placeholder="Terminal auth code / transaction reference"
-                    className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono"
-                  />
-                </div>
+            {redeemedPoints > 0 && (
+              <div className="flex justify-between font-bold text-xs text-purple-700 pt-0.5">
+                <span className="flex items-center gap-1 font-sans">
+                  <Gift className="w-3.5 h-3.5 text-purple-600" />
+                  Points Redeemed ({redeemedPoints} pts):
+                </span>
+                <span>-৳ {pointsMonetaryValue.toFixed(2)}</span>
               </div>
             )}
 
-            {/* Tendered / Paid Amount Input [F12] */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-700">
-                  F12 Tendered Cash (৳)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setTenderedAmount(grandTotal.toFixed(2))}
-                  className="text-[10px] font-bold text-blue-600 hover:underline"
-                >
-                  Exact Cash
-                </button>
+            {redeemedPoints > 0 && (
+              <div className="flex justify-between font-bold text-xs text-emerald-800 pt-1 border-t border-purple-200">
+                <span>REMAINING PAYABLE:</span>
+                <span>৳ {remainingGrandTotal.toFixed(2)}</span>
               </div>
+            )}
+          </div>
 
-              <input
-                ref={tenderedInputRef}
-                type="number"
-                min="0"
-                step="any"
-                value={tenderedAmount}
-                onChange={(e) => setTenderedAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded font-mono font-bold text-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
+          {/* -------------------------------------------------- */}
+          {/* CUSTOMER LOYALTY POINTS & REDEMPTION PANEL        */}
+          {/* -------------------------------------------------- */}
+          <div className="p-3 bg-white border-b border-slate-300 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+                <Gift className="w-4 h-4 text-purple-600" />
+                <span>Loyalty Points</span>
+              </div>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                customer
+                  ? 'bg-purple-100 text-purple-800'
+                  : 'bg-slate-100 text-slate-500'
+              }`}>
+                {customer ? `${customerPoints?.points_balance ?? 0} Pts (৳${((customerPoints?.points_balance ?? 0) * redemptionRate).toFixed(2)})` : 'Walk-in'}
+              </span>
+            </div>
 
-              {/* Quick Cash Add Buttons */}
-              <div className="grid grid-cols-4 gap-1 pt-1 font-mono text-[11px]">
-                {[500, 1000, 2000, 5000].map((amt) => (
+            {!customer ? (
+              <p className="text-[11px] text-slate-500 italic">
+                Select a customer [F8] to view points balance and redeem.
+              </p>
+            ) : hasAnyDiscount ? (
+              <div className="p-2 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-800 flex items-start gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Discounts active — Loyalty point redemption is not permitted when item or invoice discounts are applied.
+                </span>
+              </div>
+            ) : (customerPoints?.points_balance || 0) < 400 ? (
+              <div className="p-2 bg-slate-100 border border-slate-200 rounded text-[11px] text-slate-600 flex items-center justify-between">
+                <span>Min 400 points required to redeem.</span>
+                <span className="font-bold text-slate-700">Need {400 - (customerPoints?.points_balance || 0)} more</span>
+              </div>
+            ) : (
+              <div className="space-y-2 bg-purple-50/60 border border-purple-200 rounded p-2.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-purple-900">Redeem Points (1 Pt = ৳{redemptionRate.toFixed(2)}):</span>
+                  {redeemedPoints > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRedeemedPoints(0);
+                        setPointsInput('0');
+                      }}
+                      className="text-rose-600 hover:text-rose-800 font-bold hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min="400"
+                    max={maxRedeemablePoints}
+                    step="1"
+                    value={pointsInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPointsInput(val);
+                      const num = parseInt(val, 10);
+                      if (!isNaN(num) && num >= 400 && num <= maxRedeemablePoints) {
+                        setRedeemedPoints(num);
+                      } else if (isNaN(num) || num === 0) {
+                        setRedeemedPoints(0);
+                      }
+                    }}
+                    placeholder="Min 400"
+                    className="w-24 px-2 py-1 bg-white border border-purple-300 rounded font-mono font-bold text-xs focus:ring-1 focus:ring-purple-500"
+                  />
                   <button
-                    key={amt}
+                    type="button"
+                    disabled={maxRedeemablePoints < 400}
+                    onClick={() => {
+                      setRedeemedPoints(400);
+                      setPointsInput('400');
+                    }}
+                    className="px-2 py-1 bg-white border border-purple-300 hover:bg-purple-100 rounded text-[11px] font-bold text-purple-700 transition-colors disabled:opacity-50"
+                  >
+                    400 Pts
+                  </button>
+                  <button
+                    type="button"
+                    disabled={maxRedeemablePoints < 400}
+                    onClick={() => {
+                      setRedeemedPoints(maxRedeemablePoints);
+                      setPointsInput(String(maxRedeemablePoints));
+                    }}
+                    className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-[11px] font-bold transition-colors disabled:opacity-50"
+                  >
+                    Max ({maxRedeemablePoints})
+                  </button>
+                </div>
+
+                {redeemedPoints > 0 ? (
+                  <div className="text-[11px] text-purple-900 font-bold flex justify-between items-center bg-white px-2 py-1 rounded border border-purple-200">
+                    <span>Applied: {redeemedPoints} Pts</span>
+                    <span className="text-emerald-700">-৳{pointsMonetaryValue.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-purple-700 italic">
+                    Earns 0 points on sale when redemption is used. Discounts locked.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* -------------------------------------------------- */}
+          {/* PAYMENT TENDER (Single or Multi-Tender)            */}
+          {/* -------------------------------------------------- */}
+          <div className="p-3 bg-slate-100 border-b border-slate-300 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Payment Tender
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isSplitPayment;
+                  setIsSplitPayment(next);
+                  if (next && splitTenders.length === 0) {
+                    setSplitTenders([
+                      {
+                        id: 'tender-1',
+                        method: paymentMethod,
+                        amount: remainingGrandTotal > 0 ? remainingGrandTotal.toFixed(2) : '0',
+                      },
+                    ]);
+                  }
+                }}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 border transition-colors ${
+                  isSplitPayment
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <Layers className="w-3 h-3" />
+                <span>{isSplitPayment ? 'Multi-Tender ON' : 'Enable Multi-Tender'}</span>
+              </button>
+            </div>
+
+            {!isSplitPayment ? (
+              /* SINGLE TENDER FLOW */
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('CASH')}
+                    className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
+                      paymentMethod === 'CASH'
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Banknote className="w-4 h-4" />
+                    <span>Cash [F12]</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('CARD')}
+                    className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
+                      paymentMethod === 'CARD'
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Card [F11]</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('BKASH')}
+                    className={`py-2 px-1 text-xs font-bold rounded border flex flex-col items-center gap-1 transition-all ${
+                      paymentMethod === 'BKASH'
+                        ? 'bg-pink-600 border-pink-600 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>bKash / MFS</span>
+                  </button>
+                </div>
+
+                {/* If Card Payment */}
+                {paymentMethod === 'CARD' && (
+                  <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">F11 CARD TYPE</label>
+                        <select
+                          ref={cardTypeSelectRef}
+                          value={cardType}
+                          onChange={(e) => setCardType(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold"
+                        >
+                          <option value="VISA">Visa Card</option>
+                          <option value="MASTERCARD">MasterCard</option>
+                          <option value="AMEX">American Express</option>
+                          <option value="NEXUS">DBBL Nexus</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">CARD BANK</label>
+                        <select
+                          value={cardBank}
+                          onChange={(e) => setCardBank(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-bold"
+                        >
+                          <option value="City Bank">City Bank</option>
+                          <option value="BRAC Bank">BRAC Bank</option>
+                          <option value="DBBL">DBBL</option>
+                          <option value="EBL">Eastern Bank</option>
+                          <option value="SCB">Standard Chartered</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">APPROVAL / REF CODE</label>
+                      <input
+                        type="text"
+                        value={cardApprovalCode}
+                        onChange={(e) => setCardApprovalCode(e.target.value)}
+                        placeholder="Terminal auth code / transaction reference"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* If bKash / MFS */}
+                {paymentMethod === 'BKASH' && (
+                  <div className="p-2 bg-pink-50 border border-pink-200 rounded space-y-1 text-xs">
+                    <label className="block text-[10px] font-bold text-slate-600">TRX ID / REF</label>
+                    <input
+                      type="text"
+                      value={mfsTransactionRef}
+                      onChange={(e) => setMfsTransactionRef(e.target.value)}
+                      placeholder="e.g. TRX-9B7A21"
+                      className="w-full bg-white border border-pink-300 rounded px-2 py-1 text-xs font-mono"
+                    />
+                  </div>
+                )}
+
+                {/* Tendered Amount Input */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-slate-700">
+                      {paymentMethod === 'CASH' ? 'F12 Tendered Cash (৳)' : 'Tender Amount (৳)'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setTenderedAmount(remainingGrandTotal.toFixed(2))}
+                      className="text-[10px] font-bold text-blue-600 hover:underline"
+                    >
+                      Exact (৳{remainingGrandTotal.toFixed(2)})
+                    </button>
+                  </div>
+
+                  <input
+                    ref={tenderedInputRef}
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={tenderedAmount}
+                    onChange={(e) => setTenderedAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-400 rounded font-mono font-bold text-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  {paymentMethod === 'CASH' && (
+                    <div className="grid grid-cols-4 gap-1 pt-1 font-mono text-[11px]">
+                      {[500, 1000, 2000, 5000].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => {
+                            const cur = parseFloat(tenderedAmount) || 0;
+                            setTenderedAmount((cur + amt).toFixed(2));
+                          }}
+                          className="py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded font-bold text-slate-700 transition-colors shadow-2xs"
+                        >
+                          +{amt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* MULTI-TENDER / SPLIT PAYMENT FLOW */
+              <div className="space-y-2">
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                  {redeemedPoints > 0 && (
+                    <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded p-1.5 text-xs font-mono">
+                      <div className="w-24 text-[10px] font-bold text-purple-900 flex items-center gap-1">
+                        <Gift className="w-3 h-3 text-purple-600" />
+                        <span>POINTS</span>
+                      </div>
+                      <div className="flex-1 font-bold text-purple-900">
+                        ৳ {pointsMonetaryValue.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-purple-600 font-sans italic pr-2">Locked</span>
+                    </div>
+                  )}
+
+                  {splitTenders.map((row, idx) => (
+                    <div key={row.id} className="flex items-center gap-1.5 bg-white border border-slate-300 rounded p-1.5 text-xs">
+                      <select
+                        value={row.method}
+                        onChange={(e) => {
+                          const updated = [...splitTenders];
+                          updated[idx] = { ...updated[idx], method: e.target.value };
+                          setSplitTenders(updated);
+                        }}
+                        className="w-24 bg-slate-50 border border-slate-300 rounded px-1 py-1 text-[11px] font-bold"
+                      >
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card</option>
+                        <option value="BKASH">bKash</option>
+                        <option value="NAGAD">Nagad</option>
+                        <option value="BANK">Bank</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={row.amount}
+                        onChange={(e) => {
+                          const updated = [...splitTenders];
+                          updated[idx] = { ...updated[idx], amount: e.target.value };
+                          setSplitTenders(updated);
+                        }}
+                        placeholder="0.00"
+                        className="w-24 bg-white border border-slate-300 rounded px-2 py-1 font-mono font-bold text-xs"
+                      />
+
+                      <input
+                        type="text"
+                        value={row.transaction_ref || ''}
+                        onChange={(e) => {
+                          const updated = [...splitTenders];
+                          updated[idx] = { ...updated[idx], transaction_ref: e.target.value };
+                          setSplitTenders(updated);
+                        }}
+                        placeholder="Ref / Trx"
+                        className="flex-1 bg-white border border-slate-300 rounded px-1.5 py-1 text-[11px] font-mono"
+                      />
+
+                      {splitTenders.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSplitTenders(splitTenders.filter((_, i) => i !== idx));
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-600"
+                          title="Remove tender line"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center pt-1">
+                  <button
                     type="button"
                     onClick={() => {
-                      const cur = parseFloat(tenderedAmount) || 0;
-                      setTenderedAmount((cur + amt).toFixed(2));
+                      const curSum = splitTenders.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+                      const needed = Math.max(0, remainingGrandTotal - curSum);
+                      setSplitTenders([
+                        ...splitTenders,
+                        {
+                          id: `tender-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+                          method: 'CASH',
+                          amount: needed > 0 ? needed.toFixed(2) : '0',
+                        },
+                      ]);
                     }}
-                    className="py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded font-bold text-slate-700 transition-colors shadow-2xs"
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                   >
-                    +{amt}
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Payment Line</span>
                   </button>
-                ))}
+
+                  <span className="text-[11px] font-mono text-slate-600">
+                    Tender Sum: <strong>৳{totalTenderProvided.toFixed(2)}</strong>
+                  </span>
+                </div>
+
+                {/* Live Multi-Tender Reconciliation Status Banner */}
+                {(() => {
+                  const diff = totalTenderProvided - grandTotal;
+                  if (Math.abs(diff) <= 0.0001) {
+                    return (
+                      <div className="p-2 bg-emerald-50 border border-emerald-300 rounded text-xs text-emerald-800 font-bold flex items-center justify-between">
+                        <span>✓ Balanced: ৳{totalTenderProvided.toFixed(2)} / ৳{grandTotal.toFixed(2)}</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      </div>
+                    );
+                  }
+                  if (diff > 0.0001) {
+                    return (
+                      <div className="p-2 bg-rose-50 border border-rose-300 rounded text-xs text-rose-800 font-bold flex items-start justify-between gap-1.5">
+                        <div>
+                          <div>❌ Overpayment: +৳{diff.toFixed(2)}</div>
+                          <div className="text-[10px] font-normal text-rose-700">
+                            Multi-tender overpayment is rejected. Must match Grand Total exactly.
+                          </div>
+                        </div>
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800 font-bold flex items-start justify-between gap-1.5">
+                      <div>
+                        <div>⚠️ Underpayment: -৳{(-diff).toFixed(2)}</div>
+                        <div className="text-[10px] font-normal text-amber-700">
+                          {customer ? 'Remainder will post to Accounts Receivable.' : 'Walk-in customer must pay full amount.'}
+                        </div>
+                      </div>
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    </div>
+                  );
+                })()}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

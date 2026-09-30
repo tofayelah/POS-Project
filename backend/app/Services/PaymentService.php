@@ -104,11 +104,25 @@ class PaymentService
 
                 // Post automated single General Ledger entry if accounting is enabled
                 if ($this->accountMappingService->isAccountingEnabled($companyId)) {
-                    $cashBankAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_CASH_BANK);
-
                     if ($paymentType === 'CUSTOMER') {
-                        // Customer Payment: Debit Cash/Bank, Credit Accounts Receivable
+                        // Customer Payment: Debit Cash/Bank (or Loyalty Expense for points), Credit Accounts Receivable
                         $arAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_RECEIVABLE);
+
+                        if ($paymentMethod === 'POINT_REDEMPTION') {
+                            if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_LOYALTY_EXPENSE)) {
+                                $debitAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_LOYALTY_EXPENSE);
+                            } else {
+                                $fallbackExpense = \App\Models\Account::where('company_id', $companyId)
+                                    ->where('account_type', 'EXPENSE')
+                                    ->where('is_active', true)
+                                    ->first();
+                                $debitAccount = $fallbackExpense ?: $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_LOYALTY_EXPENSE);
+                            }
+                            $lineDesc = "Loyalty points redemption settlement for customer payment {$payment->payment_number}";
+                        } else {
+                            $debitAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_CASH_BANK);
+                            $lineDesc = "Cash/Bank receipt for customer payment {$payment->payment_number}";
+                        }
 
                         $journalData = [
                             'journal_date' => $data['payment_date'] ?? date('Y-m-d'),
@@ -119,11 +133,11 @@ class PaymentService
                             'idempotency_key' => "PAYMENT-{$payment->id}",
                             'lines' => [
                                 [
-                                    'account_id' => $cashBankAccount->id,
+                                    'account_id' => $debitAccount->id,
                                     'debit' => $amount,
                                     'credit' => 0,
                                     'branch_id' => $payment->branch_id,
-                                    'description' => "Cash/Bank receipt for customer payment {$payment->payment_number}",
+                                    'description' => $lineDesc,
                                 ],
                                 [
                                     'account_id' => $arAccount->id,
@@ -136,6 +150,7 @@ class PaymentService
                         ];
                     } else {
                         // Supplier Payment: Debit Accounts Payable, Credit Cash/Bank
+                        $cashBankAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_CASH_BANK);
                         $apAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE);
 
                         $journalData = [

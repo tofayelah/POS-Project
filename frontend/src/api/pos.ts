@@ -1,12 +1,46 @@
 import api from './axios';
 import { Customer } from './customers';
 
+export interface PaymentMethod {
+  id: number;
+  company_id: number;
+  name: string;
+  code: string; // CASH, CARD, BKASH, NAGAD, BANK, POINT_REDEMPTION
+  type: 'CASH' | 'CARD' | 'MFS' | 'BANK' | 'POINT';
+  is_active: boolean;
+  sort_order: number;
+  account_id?: number | null;
+  account?: {
+    id: number;
+    account_code: string;
+    account_name: string;
+  } | null;
+  pivot?: {
+    is_enabled: boolean;
+  };
+}
+
 export interface PosTerminal {
   id: number;
   company_id: number;
   terminal_code: string;
   terminal_name: string;
   status: 'ACTIVE' | 'INACTIVE';
+  warehouse_id?: number;
+  branch_id?: number | null;
+  default_cash_account_id?: number | null;
+  default_card_account_id?: number | null;
+  default_bkash_account_id?: number | null;
+  default_nagad_account_id?: number | null;
+  default_bank_account_id?: number | null;
+  receipt_header?: string | null;
+  receipt_footer?: string | null;
+  payment_methods?: PaymentMethod[];
+  default_cash_account?: { id: number; account_code: string; account_name: string } | null;
+  default_card_account?: { id: number; account_code: string; account_name: string } | null;
+  default_bkash_account?: { id: number; account_code: string; account_name: string } | null;
+  default_nagad_account?: { id: number; account_code: string; account_name: string } | null;
+  default_bank_account?: { id: number; account_code: string; account_name: string } | null;
 }
 
 export interface PosSession {
@@ -20,6 +54,44 @@ export interface PosSession {
   expected_cash?: number;
   cash_difference?: number;
   status: 'OPEN' | 'CLOSED';
+}
+
+export interface LoyaltySettings {
+  id?: number;
+  company_id?: number;
+  earning_spend_per_point: number;
+  earning_points_awarded: number;
+  redemption_point_value: number;
+  min_redemption_points: number;
+  is_active: boolean;
+  disallow_earn_on_discount: boolean;
+  disallow_earn_on_redemption: boolean;
+  disallow_discount_with_redemption: boolean;
+}
+
+export interface CustomerPoints {
+  customer_id: number;
+  customer_name: string;
+  points_balance: number;
+  redemption_value: number;
+  min_redemption_points: number;
+  can_redeem: boolean;
+  recent_ledger: any[];
+}
+
+export interface CustomerPointLedgerItem {
+  id: number;
+  customer_id: number;
+  sale_id?: number | null;
+  transaction_type: 'EARN' | 'REDEEM' | 'ADJUSTMENT' | 'REVERSAL';
+  points: number;
+  balance_before: number;
+  balance_after: number;
+  reference_number?: string | null;
+  description?: string | null;
+  created_at: string;
+  creator?: { id: number; name: string } | null;
+  sale?: { id: number; invoice_number: string } | null;
 }
 
 export interface SaleItemData {
@@ -78,7 +150,7 @@ export interface CartItem {
 }
 
 export interface SalePaymentData {
-  method: string; // 'CASH' | 'CARD' | 'BKASH' | 'NAGAD' | 'ROCKET' | 'BANK'
+  method: string; // 'CASH' | 'CARD' | 'BKASH' | 'NAGAD' | 'BANK' | 'POINT_REDEMPTION'
   amount: number;
   card_type?: string;
   card_bank?: string;
@@ -91,6 +163,7 @@ export interface CompleteSaleData {
   items: SaleItemData[];
   sale_discount?: number;
   payments: SalePaymentData[];
+  points_redeemed?: number;
   notes?: string;
   invoice_number?: string;
   idempotency_key?: string;
@@ -144,7 +217,43 @@ export const posApi = {
   
   createTerminal: (data: Partial<PosTerminal>) => 
     api.post<{success: boolean, data: PosTerminal}>('/pos/terminals', data).then(res => res.data),
+
+  getTerminal: (id: number) =>
+    api.get<{success: boolean, data: PosTerminal}>(`/pos/terminals/${id}`).then(res => res.data),
+
+  updateTerminal: (id: number, data: Partial<PosTerminal>) =>
+    api.put<{success: boolean, data: PosTerminal}>(`/pos/terminals/${id}`, data).then(res => res.data),
+
+  syncTerminalPaymentMethods: (id: number, methods: Array<{ payment_method_id: number; is_enabled: boolean }>) =>
+    api.put<{success: boolean, data: PosTerminal}>(`/pos/terminals/${id}/payment-methods`, { methods }).then(res => res.data),
   
+  getPaymentMethods: (params?: { is_active?: boolean }) =>
+    api.get<{success: boolean, data: PaymentMethod[]}>('/pos/payment-methods', { params }).then(res => res.data),
+
+  createPaymentMethod: (data: Partial<PaymentMethod>) =>
+    api.post<{success: boolean, data: PaymentMethod}>('/pos/payment-methods', data).then(res => res.data),
+
+  updatePaymentMethod: (id: number, data: Partial<PaymentMethod>) =>
+    api.put<{success: boolean, data: PaymentMethod}>(`/pos/payment-methods/${id}`, data).then(res => res.data),
+
+  togglePaymentMethod: (id: number) =>
+    api.post<{success: boolean, data: PaymentMethod}>(`/pos/payment-methods/${id}/toggle`).then(res => res.data),
+
+  getLoyaltySettings: () =>
+    api.get<{success: boolean, data: LoyaltySettings}>('/pos/loyalty/settings').then(res => res.data),
+
+  updateLoyaltySettings: (data: Partial<LoyaltySettings>) =>
+    api.put<{success: boolean, data: LoyaltySettings}>('/pos/loyalty/settings', data).then(res => res.data),
+
+  getCustomerPoints: (customerId: number) =>
+    api.get<{success: boolean, data: CustomerPoints}>(`/customers/${customerId}/points`).then(res => res.data),
+
+  getCustomerPointLedger: (customerId: number, page: number = 1) =>
+    api.get<{success: boolean, data: { data: CustomerPointLedgerItem[], current_page: number, last_page: number, total: number }}>(`/customers/${customerId}/points/ledger`, { params: { page } }).then(res => res.data),
+
+  adjustCustomerPoints: (customerId: number, points: number, reason: string) =>
+    api.post<{success: boolean, data: any}>(`/customers/${customerId}/points/adjust`, { points, reason }).then(res => res.data),
+
   getCurrentSession: () => 
     api.get<{success: boolean, data: PosSession}>('/pos/sessions/current').then(res => res.data),
     

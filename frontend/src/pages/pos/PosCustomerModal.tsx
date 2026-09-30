@@ -296,9 +296,14 @@ export const PosCustomerModal: React.FC<PosCustomerModalProps> = ({
                             ৳ {Number(c.current_balance ?? 0).toFixed(2)}
                           </span>
                         </div>
+                        {c.points_balance !== undefined && Number(c.points_balance) > 0 && (
+                          <div className="text-[10px] text-amber-700 font-bold flex items-center justify-end gap-1">
+                            <span>⭐ {Number(c.points_balance)} pts</span>
+                          </div>
+                        )}
                         {c.credit_limit && (
                           <div className="text-[10px] text-slate-500">
-                            Limit: ৳{Number(c.credit_limit).toFixed(2)}
+                            Limit: ৳ {Number(c.credit_limit).toFixed(2)}
                           </div>
                         )}
                         {isCurrent && (
