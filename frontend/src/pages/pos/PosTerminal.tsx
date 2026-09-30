@@ -34,12 +34,14 @@ import {
   CartItem,
   SalePaymentData,
   CompleteSaleData,
+  PosHeldSale,
 } from '../../api/pos';
 import { Customer, customersApi } from '../../api/customers';
 import { PosReceiptModal } from './PosReceiptModal';
 import { PosProductSearchModal } from './PosProductSearchModal';
 import { PosCustomerModal } from './PosCustomerModal';
 import { PosSessionModal } from './PosSessionModal';
+import { PosHoldModal } from './PosHoldModal';
 
 // Audio feedback helper for USB barcode scanner & counter actions
 function playSound(type: 'beep' | 'success' | 'error' | 'cash') {
@@ -190,7 +192,17 @@ export function PosTerminal() {
   const [productSearchModalOpen, setProductSearchModalOpen] = useState(false);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [holdModalOpen, setHoldModalOpen] = useState(false);
+  const [heldSalesCount, setHeldSalesCount] = useState(0);
   const [lastCompletedSale, setLastCompletedSale] = useState<any>(null);
+
+  // Live Product Search Dropdown state
+  const [searchResults, setSearchResults] = useState<PosProductVariant[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [highlightedSearchIndex, setHighlightedSearchIndex] = useState<number>(-1);
+  const searchTimeoutRef = useRef<any>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Real-time Clock
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -215,14 +227,43 @@ export function PosTerminal() {
     loadStaffUsers();
   }, []);
 
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Autofocus barcode input on mount and whenever modals close
   useEffect(() => {
-    if (!productSearchModalOpen && !customerModalOpen && !receiptModalOpen && !sessionModalOpen) {
+    if (!productSearchModalOpen && !customerModalOpen && !receiptModalOpen && !sessionModalOpen && !holdModalOpen) {
       setTimeout(() => {
         barcodeInputRef.current?.focus();
       }, 80);
     }
-  }, [productSearchModalOpen, customerModalOpen, receiptModalOpen, sessionModalOpen]);
+  }, [productSearchModalOpen, customerModalOpen, receiptModalOpen, sessionModalOpen, holdModalOpen]);
+
+  const refreshHeldSalesCount = async (sessionId?: number) => {
+    try {
+      const sid = sessionId ?? session?.id;
+      const res = await posApi.getHeldSales(sid);
+      if (res.success && Array.isArray(res.data)) {
+        setHeldSalesCount(res.data.length);
+      }
+    } catch {
+      // Ignore background error
+    }
+  };
+
+  useEffect(() => {
+    if (session?.id) {
+      refreshHeldSalesCount(session.id);
+    }
+  }, [session?.id]);
 
   const checkActiveSession = async () => {
     try {
@@ -333,10 +374,111 @@ export function PosTerminal() {
   }, [grandTotal]);
 
   // ----------------------------------------------------
-  // Barcode Scanning & Adding Product
+  // Barcode Scanning, Live Search & Adding Product
   // ----------------------------------------------------
+  const handleBarcodeInputTextChange = (value: string) => {
+    setBarcodeInput(value);
+    setScanStatus('idle');
+    setScanMessage(null);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    const trimmed = value.trim();
+    if (trimmed.length >= 2) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await posApi.searchProducts(trimmed);
+          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            setSearchResults(res.data);
+            setSearchDropdownOpen(true);
+            setHighlightedSearchIndex(0);
+          } else {
+            setSearchResults([]);
+            setSearchDropdownOpen(false);
+            setHighlightedSearchIndex(-1);
+          }
+        } catch {
+          setSearchResults([]);
+          setSearchDropdownOpen(false);
+          setHighlightedSearchIndex(-1);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 250);
+    } else {
+      setSearchResults([]);
+      setSearchDropdownOpen(false);
+      setHighlightedSearchIndex(-1);
+      setIsSearching(false);
+    }
+  };
+
+  const handleBarcodeInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!searchDropdownOpen || searchResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedSearchIndex((prev) => (prev + 1) % searchResults.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedSearchIndex((prev) => (prev - 1 + searchResults.length) % searchResults.length);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setSearchDropdownOpen(false);
+      setHighlightedSearchIndex(-1);
+    }
+  };
+
+  const validateAndAddProduct = (variant: PosProductVariant): boolean => {
+    const stock = Number(variant.available_stock ?? 0);
+    setLastScannedStock(stock);
+
+    // Stock validation: available stock must be >= 1
+    if (stock < 1) {
+      setScanStatus('error');
+      setScanMessage(`"${variant.product?.name || variant.sku}" is OUT OF STOCK (Stock: 0)`);
+      playSound('error');
+      barcodeInputRef.current?.select();
+      return false;
+    }
+
+    // Check if adding one more exceeds available stock
+    const existing = cart.find((i) => i.product_variant_id === variant.id);
+    const currentCartQty = existing ? existing.quantity : 0;
+    if (currentCartQty + 1 > stock) {
+      setScanStatus('error');
+      setScanMessage(
+        `Cannot add more. Insufficient stock for "${variant.product?.name || variant.sku}"! (Only ${stock} available, ${currentCartQty} in cart)`
+      );
+      playSound('error');
+      barcodeInputRef.current?.select();
+      return false;
+    }
+
+    addProductToCart(variant);
+    setBarcodeInput('');
+    setSearchResults([]);
+    setSearchDropdownOpen(false);
+    setHighlightedSearchIndex(-1);
+    setScanStatus('success');
+    setScanMessage(`Added "${variant.product?.name || variant.sku}" (Stock: ${stock})`);
+    playSound('beep');
+    barcodeInputRef.current?.focus();
+    return true;
+  };
+
   const handleBarcodeSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    // If live dropdown is active and an item is highlighted, select that item
+    if (searchDropdownOpen && highlightedSearchIndex >= 0 && searchResults[highlightedSearchIndex]) {
+      validateAndAddProduct(searchResults[highlightedSearchIndex]);
+      return;
+    }
+
     const code = barcodeInput.trim();
     if (!code) return;
 
@@ -345,16 +487,24 @@ export function PosTerminal() {
       setScanMessage(null);
       const res = await posApi.getBarcode(code);
       if (res.success && res.data) {
-        addProductToCart(res.data);
-        setBarcodeInput('');
-        setScanStatus('success');
-        playSound('beep');
+        validateAndAddProduct(res.data);
       }
     } catch (err: any) {
+      // Fallback: Check if search results already contain matching SKU or barcode
+      if (searchResults.length > 0) {
+        const exactMatch = searchResults.find(
+          (s) =>
+            s.sku.toLowerCase() === code.toLowerCase() ||
+            s.barcodes?.some((b) => b.barcode.toLowerCase() === code.toLowerCase())
+        );
+        if (exactMatch) {
+          validateAndAddProduct(exactMatch);
+          return;
+        }
+      }
       setScanStatus('error');
       setScanMessage(`Barcode / SKU "${code}" not found`);
       playSound('error');
-      // Highlight barcode input so next scan replaces it
       barcodeInputRef.current?.select();
     }
   };
@@ -429,15 +579,26 @@ export function PosTerminal() {
       removeItem(index);
       return;
     }
+
+    const item = cart[index];
+    if (item && item.available_stock > 0 && newQty > item.available_stock) {
+      setScanStatus('error');
+      setScanMessage(
+        `Cannot set quantity to ${newQty}. Only ${item.available_stock} available in stock for "${item.name}".`
+      );
+      playSound('error');
+      return;
+    }
+
     setCart((prev) => {
       const updated = [...prev];
-      const item = updated[index];
-      const lineDiscount = (item.unit_price * newQty * item.discount_percent) / 100;
-      const lineTax = applyVat ? ((item.unit_price * newQty - lineDiscount) * item.tax_rate) / 100 : 0;
-      const lineTotal = item.unit_price * newQty - lineDiscount + lineTax;
+      const target = updated[index];
+      const lineDiscount = (target.unit_price * newQty * target.discount_percent) / 100;
+      const lineTax = applyVat ? ((target.unit_price * newQty - lineDiscount) * target.tax_rate) / 100 : 0;
+      const lineTotal = target.unit_price * newQty - lineDiscount + lineTax;
 
       updated[index] = {
-        ...item,
+        ...target,
         quantity: newQty,
         discount_amount: lineDiscount,
         tax_amount: lineTax,
@@ -497,6 +658,101 @@ export function PosTerminal() {
     setCustomer(null);
     setCustomerMobileQuery('');
     setLastScannedStock(null);
+    barcodeInputRef.current?.focus();
+  };
+
+  // ----------------------------------------------------
+  // Hold & Resume Sale Actions (F6)
+  // ----------------------------------------------------
+  const handleHoldCurrentCart = async (): Promise<boolean> => {
+    if (cart.length === 0) return false;
+    try {
+      const payload = {
+        pos_session_id: session?.id,
+        customer_id: customer?.id || null,
+        items: cart.map((i) => ({
+          product_variant_id: i.product_variant_id,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          discount: i.discount_amount,
+          tax: i.tax_amount,
+        })),
+        sale_discount: specialDiscount,
+        discount_total: itemDiscountsTotal + specialDiscount,
+        tax_total: taxTotal,
+        grand_total: grandTotal,
+        notes: salesNote || undefined,
+      };
+
+      const res = await posApi.holdSale(payload);
+      if (res.success) {
+        clearSale();
+        playSound('beep');
+        setScanStatus('success');
+        setScanMessage(`Held current sale as ${res.data?.invoice_number || 'HELD'}`);
+        if (session?.id) {
+          refreshHeldSalesCount(session.id);
+        }
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'Failed to hold sale.');
+      playSound('error');
+      return false;
+    }
+  };
+
+  const handleResumeSale = async (heldSale: PosHeldSale, action: 'replace' | 'hold_and_replace') => {
+    if (action === 'hold_and_replace' && cart.length > 0) {
+      const ok = await handleHoldCurrentCart();
+      if (!ok) return;
+    }
+
+    // Convert heldSale.items into CartItem[]
+    const restoredItems: CartItem[] = (heldSale.items || []).map((item) => {
+      const unitPrice = Number(item.unit_price);
+      const qty = Number(item.quantity);
+      const discount = Number(item.discount || 0);
+      const tax = Number(item.tax || 0);
+      const lineTotal = Number(item.line_total || qty * unitPrice - discount + tax);
+      const discPct = qty * unitPrice > 0 ? (discount / (qty * unitPrice)) * 100 : 0;
+      const taxRate = qty * unitPrice - discount > 0 ? (tax / (qty * unitPrice - discount)) * 100 : 0;
+
+      return {
+        id: `${item.product_variant_id}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        product_variant_id: item.product_variant_id,
+        barcode: item.barcode_snapshot || item.sku_snapshot,
+        sku: item.sku_snapshot,
+        name: item.product_name_snapshot,
+        variant_name: item.variant_description_snapshot || '',
+        category_name: 'General',
+        quantity: qty,
+        unit_price: unitPrice,
+        discount_percent: Math.round(discPct * 100) / 100,
+        discount_amount: discount,
+        tax_rate: Math.round(taxRate * 100) / 100,
+        tax_amount: tax,
+        line_total: lineTotal,
+        available_stock: 999, // default stock placeholder
+      };
+    });
+
+    setCart(restoredItems);
+    setSelectedRowIndex(restoredItems.length > 0 ? 0 : null);
+    setCustomer(heldSale.customer || null);
+    setCustomerMobileQuery(heldSale.customer?.mobile || '');
+    setSalesNote(heldSale.notes || '');
+
+    // Discard the held record from backend so it cannot be double resumed
+    await posApi.deleteHeldSale(heldSale.id);
+    if (session?.id) {
+      refreshHeldSalesCount(session.id);
+    }
+
+    playSound('beep');
+    setScanStatus('success');
+    setScanMessage(`Resumed held invoice ${heldSale.invoice_number}`);
     barcodeInputRef.current?.focus();
   };
 
@@ -698,23 +954,18 @@ export function PosTerminal() {
         return;
       }
 
-      // F6: Hold Sale
+      // F5: Customer Quick Select / Mobile Focus
+      if (e.key === 'F5') {
+        e.preventDefault();
+        customerMobileInputRef.current?.focus();
+        customerMobileInputRef.current?.select();
+        return;
+      }
+
+      // F6: Hold / Resume Invoice Modal
       if (e.key === 'F6') {
         e.preventDefault();
-        // Trigger hold if cart has items
-        if (cart.length > 0) {
-          posApi.holdSale({
-            pos_session_id: session?.id,
-            customer_id: customer?.id,
-            items: cart.map((i) => ({
-              product_variant_id: i.product_variant_id,
-              quantity: i.quantity,
-              unit_price: i.unit_price,
-            })),
-          });
-          clearSale();
-          playSound('beep');
-        }
+        setHoldModalOpen(true);
         return;
       }
 
@@ -726,7 +977,7 @@ export function PosTerminal() {
         return;
       }
 
-      // F8: Customer Search Modal
+      // F8: Customer Search Directory Modal
       if (e.key === 'F8') {
         e.preventDefault();
         setCustomerModalOpen(true);
@@ -740,6 +991,14 @@ export function PosTerminal() {
         return;
       }
 
+      // F10: Pay / Tendered Amount Focus
+      if (e.key === 'F10') {
+        e.preventDefault();
+        tenderedInputRef.current?.focus();
+        tenderedInputRef.current?.select();
+        return;
+      }
+
       // F11: Card Type Selector
       if (e.key === 'F11') {
         e.preventDefault();
@@ -748,9 +1007,10 @@ export function PosTerminal() {
         return;
       }
 
-      // F12: Tendered / Paid Amount Focus
+      // F12: Cash Mode & Tendered Amount Focus
       if (e.key === 'F12') {
         e.preventDefault();
+        setPaymentMethod('CASH');
         tenderedInputRef.current?.focus();
         tenderedInputRef.current?.select();
         return;
@@ -771,15 +1031,17 @@ export function PosTerminal() {
       }
 
       // Delete key: Remove selected cart item
-      if (e.key === 'Delete' && selectedRowIndex !== null && !productSearchModalOpen && !customerModalOpen && !receiptModalOpen) {
+      if (e.key === 'Delete' && selectedRowIndex !== null && !productSearchModalOpen && !customerModalOpen && !receiptModalOpen && !holdModalOpen) {
         e.preventDefault();
         removeItem(selectedRowIndex);
         return;
       }
 
-      // Escape: Close modals
+      // Escape: Close modals & live dropdown
       if (e.key === 'Escape') {
-        if (productSearchModalOpen) setProductSearchModalOpen(false);
+        if (searchDropdownOpen) setSearchDropdownOpen(false);
+        else if (holdModalOpen) setHoldModalOpen(false);
+        else if (productSearchModalOpen) setProductSearchModalOpen(false);
         else if (customerModalOpen) setCustomerModalOpen(false);
         else if (receiptModalOpen) setReceiptModalOpen(false);
         else if (sessionModalOpen && sessionModalMode === 'close') setSessionModalOpen(false);
@@ -807,6 +1069,10 @@ export function PosTerminal() {
     receiptModalOpen,
     sessionModalOpen,
     sessionModalMode,
+    holdModalOpen,
+    searchDropdownOpen,
+    searchResults,
+    highlightedSearchIndex,
   ]);
 
   return (
@@ -921,39 +1187,270 @@ export function PosTerminal() {
       </header>
 
       {/* ==================================================== */}
+      {/* 1.1 TOP SHORTCUT MATRIX BAR (Strict Serial Order)    */}
+      {/* ==================================================== */}
+      <div className="bg-slate-800 text-slate-300 px-3 py-1 border-b border-slate-700 flex items-center justify-between text-[11px] overflow-x-auto whitespace-nowrap gap-1">
+        <div className="flex items-center gap-1.5 font-mono">
+          <button
+            type="button"
+            onClick={() => {
+              barcodeInputRef.current?.focus();
+              barcodeInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-emerald-400">F2</kbd> Scan
+          </button>
+          <button
+            type="button"
+            onClick={() => setProductSearchModalOpen(true)}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-blue-400">F3</kbd> Search
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              discountInputRef.current?.focus();
+              discountInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-amber-400">F4</kbd> Discount
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              customerMobileInputRef.current?.focus();
+              customerMobileInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-cyan-400">F5</kbd> Customer
+          </button>
+          <button
+            type="button"
+            onClick={() => setHoldModalOpen(true)}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors relative"
+          >
+            <kbd className="font-bold text-amber-300">F6</kbd> Hold
+            {heldSalesCount > 0 && (
+              <span className="ml-0.5 px-1 rounded-full bg-amber-500 text-slate-950 font-black text-[9px]">
+                {heldSalesCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              customerMobileInputRef.current?.focus();
+              customerMobileInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-indigo-400">F7</kbd> Mobile
+          </button>
+          <button
+            type="button"
+            onClick={() => setCustomerModalOpen(true)}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-purple-400">F8</kbd> Directory
+          </button>
+          <button
+            type="button"
+            onClick={() => staffSelectRef.current?.focus()}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-teal-400">F9</kbd> Staff
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              tenderedInputRef.current?.focus();
+              tenderedInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-emerald-400">F10</kbd> Pay
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPaymentMethod('CARD');
+              cardTypeSelectRef.current?.focus();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-blue-400">F11</kbd> Card
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPaymentMethod('CASH');
+              tenderedInputRef.current?.focus();
+              tenderedInputRef.current?.select();
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-green-400">F12</kbd> Cash
+          </button>
+          <button
+            type="button"
+            onClick={handleCompleteSale}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-emerald-300">Ctrl+Enter</kbd> Save
+          </button>
+          <button
+            type="button"
+            onClick={clearSale}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-rose-300">Ctrl+N</kbd> New
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setHoldModalOpen(false);
+              setProductSearchModalOpen(false);
+              setCustomerModalOpen(false);
+              setReceiptModalOpen(false);
+              setSearchDropdownOpen(false);
+            }}
+            className="px-1.5 py-0.5 bg-slate-700/80 hover:bg-slate-700 rounded text-slate-200 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <kbd className="font-bold text-slate-300">Esc</kbd> Close
+          </button>
+        </div>
+
+        {/* Auto-print checkbox toggle in shortcut bar */}
+        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer select-none font-sans shrink-0 ml-2">
+          <input
+            type="checkbox"
+            checked={autoPrint}
+            onChange={(e) => setAutoPrint(e.target.checked)}
+            className="rounded border-slate-600 text-emerald-500 focus:ring-0 w-3.5 h-3.5"
+          />
+          <Printer className="w-3.5 h-3.5 text-slate-400" />
+          <span>Auto-Print</span>
+        </label>
+      </div>
+
+      {/* ==================================================== */}
       {/* 2. SUB-HEADER: BARCODE SCANNER & CUSTOMER INFO       */}
       {/* ==================================================== */}
       <div className="bg-white px-3 py-2 border-b border-slate-300 grid grid-cols-12 gap-3 shrink-0 items-center">
-        {/* Barcode-First Input Box (Cols 1-7) */}
+        {/* Barcode-First Input Box with Live Dropdown (Cols 1-7) */}
         <div className="col-span-12 md:col-span-7 flex gap-2">
-          <form onSubmit={handleBarcodeSubmit} className="flex-1 flex gap-1.5">
-            <div className="relative flex-1">
-              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-500 font-mono text-[11px] font-bold">
-                <BarcodeIcon className="w-4 h-4 text-slate-600" />
-                <span className="hidden sm:inline">F2</span>
+          <div ref={searchContainerRef} className="relative flex-1">
+            <form onSubmit={handleBarcodeSubmit} className="flex gap-1.5">
+              <div className="relative flex-1">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-500 font-mono text-[11px] font-bold">
+                  <BarcodeIcon className="w-4 h-4 text-slate-600" />
+                  <span className="hidden sm:inline">F2</span>
+                </div>
+                <input
+                  ref={barcodeInputRef}
+                  type="text"
+                  value={barcodeInput}
+                  onChange={(e) => handleBarcodeInputTextChange(e.target.value)}
+                  onKeyDown={handleBarcodeInputKeyDown}
+                  placeholder="Scan Barcode / Enter SKU / Type Product Name..."
+                  className={`w-full pl-14 pr-3 py-1.5 text-sm font-mono font-bold border-2 rounded-md transition-all focus:outline-hidden ${
+                    scanStatus === 'error'
+                      ? 'border-rose-500 bg-rose-50 text-rose-900 focus:ring-2 focus:ring-rose-500'
+                      : scanStatus === 'success'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-900 focus:ring-2 focus:ring-emerald-500'
+                      : 'border-slate-800 bg-slate-900 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
               </div>
-              <input
-                ref={barcodeInputRef}
-                type="text"
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                placeholder="Scan Barcode / Enter SKU and Press Enter..."
-                className={`w-full pl-14 pr-3 py-1.5 text-sm font-mono font-bold border-2 rounded-md transition-all focus:outline-hidden ${
-                  scanStatus === 'error'
-                    ? 'border-rose-500 bg-rose-50 text-rose-900 focus:ring-2 focus:ring-rose-500'
-                    : scanStatus === 'success'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-900 focus:ring-2 focus:ring-emerald-500'
-                    : 'border-slate-800 bg-slate-900 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500'
-                }`}
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-md transition-colors"
-            >
-              Scan
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-md transition-colors"
+              >
+                Scan
+              </button>
+            </form>
+
+            {/* Live Search Floating Dropdown */}
+            {searchDropdownOpen && searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-md shadow-xl z-50 max-h-72 overflow-y-auto divide-y divide-slate-100">
+                <div className="px-3 py-1.5 bg-slate-100 text-[11px] font-bold text-slate-600 flex justify-between">
+                  <span>Found {searchResults.length} matching item(s)</span>
+                  <span className="text-slate-400">Use ↑↓ to navigate, Enter to select</span>
+                </div>
+                {searchResults.map((variant, idx) => {
+                  const isHighlighted = idx === highlightedSearchIndex;
+                  const stock = Number(variant.available_stock ?? 0);
+                  const isOutOfStock = stock <= 0;
+                  const primaryBarcode =
+                    variant.barcodes?.find((b) => b.is_primary)?.barcode ||
+                    variant.barcodes?.[0]?.barcode ||
+                    variant.sku;
+
+                  return (
+                    <div
+                      key={variant.id}
+                      onClick={() => validateAndAddProduct(variant)}
+                      onMouseEnter={() => setHighlightedSearchIndex(idx)}
+                      className={`px-3 py-2 cursor-pointer transition-colors flex items-center justify-between text-xs ${
+                        isHighlighted
+                          ? 'bg-blue-600 text-white'
+                          : isOutOfStock
+                          ? 'bg-rose-50/50 hover:bg-rose-50 text-slate-700'
+                          : 'hover:bg-slate-50 text-slate-800'
+                      }`}
+                    >
+                      <div className="space-y-0.5 flex-1 min-w-0 pr-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-bold truncate ${isHighlighted ? 'text-white' : 'text-slate-900'}`}>
+                            {variant.product?.name || variant.variant_name}
+                          </span>
+                          {variant.variant_name && variant.variant_name !== variant.sku && (
+                            <span className={`text-[10px] ${isHighlighted ? 'text-blue-100' : 'text-slate-500'}`}>
+                              ({variant.variant_name})
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className={`flex items-center gap-2 font-mono text-[10px] ${
+                            isHighlighted ? 'text-blue-200' : 'text-slate-500'
+                          }`}
+                        >
+                          <span>SKU: {variant.sku}</span>
+                          <span>•</span>
+                          <span>BC: {primaryBarcode}</span>
+                          <span>•</span>
+                          <span>{variant.product?.category?.name || 'General'}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0 flex items-center gap-3">
+                        <div className="font-mono font-bold text-sm">
+                          ৳ {Number(variant.selling_price || 0).toFixed(2)}
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            isHighlighted
+                              ? 'bg-white/20 text-white'
+                              : isOutOfStock
+                              ? 'bg-rose-100 text-rose-700'
+                              : stock < 5
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {isOutOfStock ? 'OUT OF STOCK' : `Stock: ${stock.toFixed(0)}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* F3 Product Search Button */}
           <button
@@ -1010,9 +1507,19 @@ export function PosTerminal() {
 
       {/* Non-intrusive Scan Feedback Banner */}
       {scanMessage && (
-        <div className="bg-rose-100 text-rose-800 text-xs px-3 py-1 font-semibold flex items-center justify-between border-b border-rose-200">
+        <div
+          className={`text-xs px-3 py-1 font-semibold flex items-center justify-between border-b ${
+            scanStatus === 'error'
+              ? 'bg-rose-100 text-rose-800 border-rose-200'
+              : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          }`}
+        >
           <div className="flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+            {scanStatus === 'error' ? (
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            )}
             <span>{scanMessage}</span>
           </div>
           <button onClick={() => setScanMessage(null)} className="p-0.5">
@@ -1049,21 +1556,26 @@ export function PosTerminal() {
                 </p>
 
                 {/* Keyboard Shortcut Cheat Sheet Table */}
-                <div className="mt-6 w-full max-w-md bg-slate-50 border border-slate-200 rounded-md p-3 text-xs">
-                  <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-200 pb-1 text-[11px] uppercase tracking-wider">
-                    Retail Keyboard Shortcut Matrix
+                <div className="mt-6 w-full max-w-lg bg-slate-50 border border-slate-200 rounded-md p-3.5 text-xs shadow-2xs">
+                  <h4 className="font-bold text-slate-700 mb-2 border-b border-slate-200 pb-1 text-[11px] uppercase tracking-wider flex items-center justify-between">
+                    <span>Retail Keyboard Shortcut Matrix</span>
+                    <span className="text-[10px] text-slate-400 font-mono">Serial Order F2–Esc</span>
                   </h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-left font-mono text-[11px]">
-                    <div><kbd className="font-bold text-blue-700">F2</kbd> Focus Barcode</div>
-                    <div><kbd className="font-bold text-blue-700">F3</kbd> Item Search</div>
-                    <div><kbd className="font-bold text-blue-700">F4</kbd> Discount %</div>
-                    <div><kbd className="font-bold text-blue-700">F6</kbd> Hold Sale</div>
-                    <div><kbd className="font-bold text-blue-700">F7</kbd> Client Mobile</div>
-                    <div><kbd className="font-bold text-blue-700">F8</kbd> Client Directory</div>
-                    <div><kbd className="font-bold text-blue-700">F11</kbd> Card Mode</div>
-                    <div><kbd className="font-bold text-blue-700">F12</kbd> Tendered Paid</div>
-                    <div><kbd className="font-bold text-emerald-700">Ctrl+Enter</kbd> Save Sale</div>
-                    <div><kbd className="font-bold text-slate-700">Ctrl+N</kbd> New Sale</div>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-left font-mono text-[11px]">
+                    <div><kbd className="font-bold text-emerald-700">F2</kbd> Focus Barcode Scan</div>
+                    <div><kbd className="font-bold text-blue-700">F3</kbd> Item Catalog Search</div>
+                    <div><kbd className="font-bold text-amber-700">F4</kbd> Overall Discount %</div>
+                    <div><kbd className="font-bold text-cyan-700">F5</kbd> Select Customer</div>
+                    <div><kbd className="font-bold text-amber-600">F6</kbd> Hold / Resume Invoices</div>
+                    <div><kbd className="font-bold text-indigo-700">F7</kbd> Client Mobile Lookup</div>
+                    <div><kbd className="font-bold text-purple-700">F8</kbd> Client Directory (Quick Add)</div>
+                    <div><kbd className="font-bold text-teal-700">F9</kbd> Cashier / Staff Select</div>
+                    <div><kbd className="font-bold text-emerald-700">F10</kbd> Pay / Tendered Focus</div>
+                    <div><kbd className="font-bold text-blue-700">F11</kbd> Card Payment Mode</div>
+                    <div><kbd className="font-bold text-green-700">F12</kbd> Cash Payment Mode</div>
+                    <div><kbd className="font-bold text-emerald-800">Ctrl+Enter</kbd> Save & Complete Sale</div>
+                    <div><kbd className="font-bold text-rose-700">Ctrl+N</kbd> New Sale / Clear Cart</div>
+                    <div><kbd className="font-bold text-slate-700">Esc</kbd> Close Modals / Cancel</div>
                   </div>
                 </div>
               </div>
@@ -1498,26 +2010,16 @@ export function PosTerminal() {
           {/* F6 Hold Sale */}
           <button
             type="button"
-            onClick={() => {
-              if (cart.length > 0) {
-                posApi.holdSale({
-                  pos_session_id: session?.id,
-                  customer_id: customer?.id,
-                  items: cart.map((i) => ({
-                    product_variant_id: i.product_variant_id,
-                    quantity: i.quantity,
-                    unit_price: i.unit_price,
-                  })),
-                });
-                clearSale();
-                playSound('beep');
-              }
-            }}
-            disabled={cart.length === 0}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold text-xs flex items-center gap-1.5 transition-colors border border-slate-700 disabled:opacity-50"
+            onClick={() => setHoldModalOpen(true)}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-bold text-xs flex items-center gap-1.5 transition-colors border border-slate-700 relative"
           >
             <Pause className="w-3.5 h-3.5" />
             <span>HOLD [F6]</span>
+            {heldSalesCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">
+                {heldSalesCount}
+              </span>
+            )}
           </button>
 
           {/* Ctrl+N New Sale */}
@@ -1575,6 +2077,17 @@ export function PosTerminal() {
         companyAddress={company?.address || 'Dhaka, Bangladesh'}
         companyPhone={company?.phone || '+880 1700-000000'}
         companyBin={company?.tax_number || 'BIN-0012345678-0101'}
+      />
+
+      <PosHoldModal
+        isOpen={holdModalOpen}
+        onClose={() => setHoldModalOpen(false)}
+        sessionId={session?.id}
+        currentCart={cart}
+        currentGrandTotal={grandTotal}
+        onHoldCurrentCart={handleHoldCurrentCart}
+        onResumeSale={handleResumeSale}
+        onCountUpdate={(count) => setHeldSalesCount(count)}
       />
 
       <PosSessionModal

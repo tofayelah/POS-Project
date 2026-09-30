@@ -220,8 +220,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('pos/barcode/{barcode}', [\App\Http\Controllers\Api\V1\PosProductController::class, 'barcode'])->middleware('permission:pos.view');
 
         Route::get('sales', [\App\Http\Controllers\Api\V1\SaleController::class, 'index'])->middleware('permission:sales.view');
+        Route::get('sales/held', [\App\Http\Controllers\Api\V1\SaleController::class, 'held'])->middleware('permission:pos.hold,pos.view,sales.view');
+        Route::delete('sales/held/{id}', [\App\Http\Controllers\Api\V1\SaleController::class, 'destroyHeld'])->middleware('permission:pos.hold,pos.view,sales.view');
         Route::get('sales/{id}', [\App\Http\Controllers\Api\V1\SaleController::class, 'show'])->middleware('permission:sales.view');
-        Route::post('sales/hold', [\App\Http\Controllers\Api\V1\SaleController::class, 'hold'])->middleware('permission:pos.hold');
+        Route::post('sales/hold', [\App\Http\Controllers\Api\V1\SaleController::class, 'hold'])->middleware('permission:pos.hold,pos.view');
         Route::post('sales/complete', [\App\Http\Controllers\Api\V1\SaleController::class, 'complete'])->middleware('permission:sales.complete');
         // SPRINT 07 — Sales Return & Exchange
         Route::get('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'index'])->middleware('permission:sales_return.view');

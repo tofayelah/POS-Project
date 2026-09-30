@@ -697,4 +697,86 @@ class SaleTest extends TestCase
         $allocation = PaymentAllocation::where('payment_id', $payment->id)->first();
         $this->assertEquals(1100.00, (float) $allocation->amount);
     }
+
+    public function test_hold_sale_stores_held_status_without_stock_or_gl_movements()
+    {
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 2,
+                    'unit_price' => 1000.00,
+                    'discount' => 100.00,
+                    'tax' => 142.50,
+                ],
+            ],
+            'discount_total' => 100.00,
+            'tax_total' => 142.50,
+            'grand_total' => 2042.50,
+            'notes' => 'Customer stepped out for wallet',
+        ];
+
+        $heldSale = $this->salesService->holdSale($this->company->id, $payload);
+
+        $this->assertEquals('HELD', $heldSale->status);
+        $this->assertEquals(2042.50, (float) $heldSale->grand_total);
+        $this->assertEquals(2000.00, (float) $heldSale->subtotal);
+        $this->assertEquals('Customer stepped out for wallet', $heldSale->notes);
+        $this->assertCount(1, $heldSale->items);
+        $this->assertEquals(2, $heldSale->items->first()->quantity);
+
+        // Assert NO inventory stock-out movement occurred (only the initial opening stock-in exists)
+        $this->assertEquals(0, StockMovement::where('company_id', $this->company->id)->where('movement_type', 'OUT')->count());
+        $this->assertEquals(1, StockMovement::where('company_id', $this->company->id)->count());
+
+        // Assert NO sale journal entry occurred
+        $this->assertEquals(0, JournalEntry::where('company_id', $this->company->id)->where('reference_type', 'Sale')->count());
+
+        // Assert NO payment was created
+        $this->assertEquals(0, Payment::where('company_id', $this->company->id)->count());
+    }
+
+    public function test_held_sales_api_list_and_discard()
+    {
+        $superAdminRole = \App\Models\Role::firstOrCreate(['name' => 'Super Admin']);
+        $this->user->roles()->syncWithoutDetaching([$superAdminRole->id]);
+
+        // 1. Create a held sale via service
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'items' => [
+                [
+                    'product_variant_id' => $this->variant->id,
+                    'quantity' => 1,
+                    'unit_price' => 1000.00,
+                ],
+            ],
+        ];
+        $held = $this->salesService->holdSale($this->company->id, $payload);
+
+        // 2. Query held sales list
+        $response = $this->actingAs($this->user)
+            ->withHeaders(['X-Company-ID' => $this->company->id])
+            ->getJson("/api/v1/sales/held?pos_session_id={$this->session->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals($held->id, $data[0]['id']);
+        $this->assertEquals('HELD', $data[0]['status']);
+
+        // 3. Discard held sale
+        $deleteRes = $this->actingAs($this->user)
+            ->withHeaders(['X-Company-ID' => $this->company->id])
+            ->deleteJson("/api/v1/sales/held/{$held->id}");
+
+        $deleteRes->assertStatus(200);
+        $deleteRes->assertJson(['success' => true]);
+        $this->assertDatabaseMissing('sales', ['id' => $held->id]);
+        $this->assertDatabaseMissing('sale_items', ['sale_id' => $held->id]);
+    }
 }

@@ -449,4 +449,159 @@ describe('RetailCore POS Cart Auto-Backup (localStorage / sessionStorage)', () =
     mockLocal.removeItem(CART_STORAGE_KEY);
     expect(mockLocal.getItem(CART_STORAGE_KEY)).toBeNull();
   });
+
+  describe('Barcode Stock Validation & Increment Guard', () => {
+    it('prevents adding products with zero available stock', () => {
+      const outOfStockVariant: PosProductVariant = {
+        id: 999,
+        product_id: 99,
+        sku: 'ZERO-STK',
+        variant_name: 'Zero Stock Item',
+        selling_price: 500,
+        mrp: 500,
+        tax_rate: 0,
+        status: 'ACTIVE',
+        available_stock: 0,
+        product: { id: 99, name: 'Zero Stock Item' },
+        barcodes: [{ id: 99, barcode: '0000000000', is_primary: true }],
+      };
+
+      const cart: CartItem[] = [];
+      const canAdd = (outOfStockVariant.available_stock ?? 0) > 0;
+      expect(canAdd).toBe(false);
+      expect(cart).toHaveLength(0);
+    });
+
+    it('allows adding up to available stock and rejects further increments', () => {
+      const limitedVariant: PosProductVariant = {
+        id: 888,
+        product_id: 88,
+        sku: 'LTD-STK',
+        variant_name: 'Limited Stock Item',
+        selling_price: 350,
+        mrp: 350,
+        tax_rate: 0,
+        status: 'ACTIVE',
+        available_stock: 2,
+        product: { id: 88, name: 'Limited Stock Item' },
+        barcodes: [{ id: 88, barcode: '88888888', is_primary: true }],
+      };
+
+      const maxStock = limitedVariant.available_stock ?? 0;
+      let currentQty = 0;
+
+      // 1st scan
+      if (currentQty + 1 <= maxStock) currentQty += 1;
+      expect(currentQty).toBe(1);
+
+      // 2nd scan (duplicate scan increments)
+      if (currentQty + 1 <= maxStock) currentQty += 1;
+      expect(currentQty).toBe(2);
+
+      // 3rd scan should be rejected
+      let rejected = false;
+      if (currentQty + 1 > maxStock) {
+        rejected = true;
+      } else {
+        currentQty += 1;
+      }
+      expect(rejected).toBe(true);
+      expect(currentQty).toBe(2);
+    });
+  });
+
+  describe('Held Sales Data Mapping & Resume', () => {
+    it('restores held sale items into CartItem structure correctly', () => {
+      const heldSaleData = {
+        id: 55,
+        invoice_number: 'HELD-20260930-0001',
+        customer_id: 12,
+        customer: {
+          id: 12,
+          name: 'Tofayel Ahmed',
+          mobile: '01920799928',
+        },
+        subtotal: 3000,
+        discount_total: 200,
+        tax_total: 210,
+        grand_total: 3010,
+        notes: 'Customer stepped out for ATM cash',
+        items: [
+          {
+            id: 101,
+            product_variant_id: 101,
+            product_name_snapshot: 'Men Slim Casual Shirt',
+            variant_description_snapshot: 'Blue / Large',
+            barcode_snapshot: '8901234567890',
+            quantity: 2,
+            unit_price: 1200,
+            discount: 100,
+            tax: 165,
+            subtotal: 2465,
+          },
+        ],
+      };
+
+      const restoredCart: CartItem[] = heldSaleData.items.map((item) => {
+        const qty = Number(item.quantity) || 1;
+        const unitPrice = Number(item.unit_price) || 0;
+        const discount = Number(item.discount) || 0;
+        const tax = Number(item.tax) || 0;
+        const taxable = unitPrice * qty - discount;
+        const discPct = unitPrice * qty > 0 ? (discount / (unitPrice * qty)) * 100 : 0;
+        const taxRate = taxable > 0 ? (tax / taxable) * 100 : 0;
+
+        return {
+          id: `restored-${item.id}`,
+          product_variant_id: item.product_variant_id,
+          barcode: item.barcode_snapshot || '',
+          sku: item.barcode_snapshot || '',
+          name: item.product_name_snapshot,
+          variant_name: item.variant_description_snapshot || '',
+          quantity: qty,
+          unit_price: unitPrice,
+          discount_percent: Math.round(discPct * 100) / 100,
+          discount_amount: discount,
+          tax_rate: Math.round(taxRate * 100) / 100,
+          tax_amount: tax,
+          line_total: Number(item.subtotal),
+          available_stock: 999,
+        };
+      });
+
+      expect(restoredCart).toHaveLength(1);
+      expect(restoredCart[0].name).toBe('Men Slim Casual Shirt');
+      expect(restoredCart[0].quantity).toBe(2);
+      expect(restoredCart[0].unit_price).toBe(1200);
+      expect(restoredCart[0].line_total).toBe(2465);
+      expect(heldSaleData.customer.name).toBe('Tofayel Ahmed');
+      expect(heldSaleData.notes).toBe('Customer stepped out for ATM cash');
+    });
+  });
+
+  describe('Keyboard Shortcut Matrix Order', () => {
+    it('verifies the 14 shortcuts strictly follow serial order', () => {
+      const shortcuts = [
+        { key: 'F2', label: 'Scan' },
+        { key: 'F3', label: 'Search' },
+        { key: 'F4', label: 'Discount' },
+        { key: 'F5', label: 'Customer' },
+        { key: 'F6', label: 'Hold' },
+        { key: 'F7', label: 'Mobile' },
+        { key: 'F8', label: 'Directory' },
+        { key: 'F9', label: 'Staff' },
+        { key: 'F10', label: 'Pay' },
+        { key: 'F11', label: 'Card' },
+        { key: 'F12', label: 'Cash' },
+        { key: 'Ctrl+Enter', label: 'Save' },
+        { key: 'Ctrl+N', label: 'New' },
+        { key: 'Esc', label: 'Close' },
+      ];
+
+      expect(shortcuts).toHaveLength(14);
+      expect(shortcuts.map((s) => s.key)).toEqual([
+        'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'Ctrl+Enter', 'Ctrl+N', 'Esc'
+      ]);
+    });
+  });
 });

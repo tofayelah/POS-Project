@@ -103,6 +103,41 @@ export interface PosStaffUser {
   role?: string;
 }
 
+export interface PosHeldSaleItem {
+  id: number;
+  sale_id: number;
+  product_id: number;
+  product_variant_id: number;
+  sku_snapshot: string;
+  barcode_snapshot?: string;
+  product_name_snapshot: string;
+  variant_description_snapshot?: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  tax: number;
+  line_total: number;
+  variant?: PosProductVariant;
+}
+
+export interface PosHeldSale {
+  id: number;
+  company_id: number;
+  pos_session_id?: number;
+  customer_id?: number | null;
+  invoice_number: string;
+  sale_date: string;
+  status: 'HELD';
+  subtotal: number;
+  discount_total: number;
+  tax_total: number;
+  grand_total: number;
+  notes?: string;
+  created_at: string;
+  customer?: Customer | null;
+  items: PosHeldSaleItem[];
+}
+
 export const posApi = {
   getTerminals: () => 
     api.get<{success: boolean, data: PosTerminal[]}>('/pos/terminals').then(res => res.data),
@@ -122,14 +157,20 @@ export const posApi = {
   searchProducts: (query: string) => 
     api.get<{success: boolean, data: PosProductVariant[]}>('/pos/products/search', { params: { q: query } }).then(res => res.data),
     
-  getBarcode: (barcode: string) => 
+  getBarcode: (barcode: string) =>
     api.get<{success: boolean, data: PosProductVariant}>(`/pos/barcode/${barcode}`).then(res => res.data),
-    
-  completeSale: (data: CompleteSaleData) => 
+
+  completeSale: (data: CompleteSaleData) =>
     api.post<{success: boolean, data: any}>('/sales/complete', data).then(res => res.data),
-    
-  holdSale: (data: Partial<CompleteSaleData>) => 
+
+  holdSale: (data: Partial<CompleteSaleData> & { notes?: string; discount_total?: number; tax_total?: number; grand_total?: number }) =>
     api.post<{success: boolean, data: any}>('/sales/hold', data).then(res => res.data),
+
+  getHeldSales: (sessionId?: number) =>
+    api.get<{success: boolean, data: PosHeldSale[]}>('/sales/held', { params: sessionId ? { pos_session_id: sessionId } : {} }).then(res => res.data),
+
+  deleteHeldSale: (id: number) =>
+    api.delete<{success: boolean, message?: string}>(`/sales/held/${id}`).then(res => res.data),
 
   getUsers: () =>
     api.get<{success: boolean, data: any}>('/users').then(res => {

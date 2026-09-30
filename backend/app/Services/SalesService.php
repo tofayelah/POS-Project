@@ -363,37 +363,83 @@ class SalesService
         return DB::transaction(function () use ($companyId, $data) {
             $invoiceNumber = $data['invoice_number'] ?? ('HLD-' . date('YmdHis') . '-' . rand(100, 999));
             
+            $session = null;
+            if (!empty($data['pos_session_id'])) {
+                $session = PosSession::where('company_id', $companyId)->find($data['pos_session_id']);
+            }
+
+            $subtotal = 0;
+            $itemsData = [];
+            foreach ($data['items'] as $item) {
+                $variant = ProductVariant::with(['product', 'barcodes'])->find($item['product_variant_id']);
+                if (!$variant) continue;
+
+                $qty = (float) $item['quantity'];
+                $unitPrice = (float) $item['unit_price'];
+                $discount = (float) ($item['discount'] ?? 0);
+                $tax = (float) ($item['tax'] ?? 0);
+                $lineTotal = ($qty * $unitPrice) - $discount + $tax;
+                $subtotal += ($qty * $unitPrice);
+
+                $primaryBarcode = $variant->barcodes ? $variant->barcodes->firstWhere('is_primary', true)?->barcode : null;
+                $barcodeSnapshot = $primaryBarcode ?? $variant->barcodes?->first()?->barcode ?? $variant->sku;
+
+                $itemsData[] = [
+                    'variant' => $variant,
+                    'quantity' => $qty,
+                    'unit_price' => $unitPrice,
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'line_total' => $lineTotal,
+                    'barcode_snapshot' => $barcodeSnapshot,
+                ];
+            }
+
+            $discountTotal = (float) ($data['discount_total'] ?? $data['sale_discount'] ?? 0);
+            $taxTotal = (float) ($data['tax_total'] ?? 0);
+            $grandTotal = (float) ($data['grand_total'] ?? ($subtotal - $discountTotal + $taxTotal));
+
             $sale = Sale::create([
                 'company_id' => $companyId,
-                'business_unit_id' => $data['business_unit_id'] ?? null,
-                'branch_id' => $data['branch_id'] ?? null,
-                'warehouse_id' => $data['warehouse_id'] ?? null,
-                'pos_terminal_id' => $data['pos_terminal_id'] ?? null,
-                'pos_session_id' => $data['pos_session_id'] ?? null,
+                'business_unit_id' => $data['business_unit_id'] ?? $session?->business_unit_id,
+                'branch_id' => $data['branch_id'] ?? $session?->branch_id,
+                'warehouse_id' => $data['warehouse_id'] ?? $session?->warehouse_id,
+                'pos_terminal_id' => $data['pos_terminal_id'] ?? $session?->pos_terminal_id,
+                'pos_session_id' => $session?->id ?? ($data['pos_session_id'] ?? null),
                 'customer_id' => $data['customer_id'] ?? null,
                 'invoice_number' => $invoiceNumber,
                 'sale_date' => now()->toDateString(),
                 'status' => 'HELD',
+                'subtotal' => $subtotal,
+                'discount_total' => $discountTotal,
+                'tax_total' => $taxTotal,
+                'grand_total' => $grandTotal,
+                'paid_amount' => 0,
+                'due_amount' => $grandTotal,
+                'payment_status' => 'DUE',
+                'notes' => $data['notes'] ?? null,
                 'cashier_id' => $data['cashier_id'],
                 'created_by' => $data['cashier_id']
             ]);
             
-            foreach ($data['items'] as $item) {
-                $variant = ProductVariant::with('product')->find($item['product_variant_id']);
-                if (!$variant) continue;
-                
+            foreach ($itemsData as $row) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
-                    'product_id' => $variant->product_id,
-                    'product_variant_id' => $variant->id,
-                    'sku_snapshot' => $variant->sku,
-                    'product_name_snapshot' => $variant->product->name,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'line_total' => $item['quantity'] * $item['unit_price']
+                    'product_id' => $row['variant']->product_id,
+                    'product_variant_id' => $row['variant']->id,
+                    'sku_snapshot' => $row['variant']->sku,
+                    'barcode_snapshot' => $row['barcode_snapshot'],
+                    'product_name_snapshot' => $row['variant']->product->name,
+                    'variant_description_snapshot' => $row['variant']->variant_name,
+                    'quantity' => $row['quantity'],
+                    'unit_price' => $row['unit_price'],
+                    'discount' => $row['discount'],
+                    'tax' => $row['tax'],
+                    'line_total' => $row['line_total']
                 ]);
             }
-            return $sale;
+
+            return $sale->load(['items.variant.product', 'customer', 'terminal']);
         });
     }
 }
