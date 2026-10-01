@@ -1,6 +1,7 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useCompany } from '../../contexts/CompanyContext';
+import { useLanguage } from '../../i18n';
 
 interface DashboardHeaderProps {
   dateRange: string;
@@ -11,20 +12,23 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ dateRange, setDateRange, onRefresh, isFetching }: DashboardHeaderProps) {
   const { company } = useCompany();
+  const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-extrabold text-slate-900">Commercial Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            {t('dashboard.title', 'Commercial Dashboard')}
+          </h1>
           {company?.name && (
             <span id="dashboard-company-badge" className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-full">
               {company.name}
             </span>
           )}
         </div>
-        <p className="text-sm text-slate-500 font-medium mt-1">
-          Real-time overview of metrics for {company?.name || 'your enterprise'}
+        <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+          {t('dashboard.subtitle', 'Real-time overview of metrics for {company}', { company: company?.name || 'RetailCore ERP' })}
         </p>
       </div>
 
@@ -32,23 +36,24 @@ export function DashboardHeader({ dateRange, setDateRange, onRefresh, isFetching
         <select
           value={dateRange}
           onChange={(e) => setDateRange(e.target.value)}
-          className="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block px-4 py-2.5 font-medium shadow-sm outline-none"
+          aria-label={t('dashboard.selectPeriod', 'Select Period')}
+          className="bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block px-3.5 py-2 font-semibold shadow-xs outline-none cursor-pointer"
         >
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="7days">Last 7 Days</option>
-          <option value="this_month">This Month</option>
-          <option value="last_month">Last Month</option>
-          <option value="this_year">This Year</option>
+          <option value="today">{t('dashboard.periodToday', 'Today')}</option>
+          <option value="yesterday">{t('dashboard.periodYesterday', 'Yesterday')}</option>
+          <option value="7days">{t('dashboard.period7Days', 'Last 7 Days')}</option>
+          <option value="this_month">{t('dashboard.periodThisMonth', 'This Month')}</option>
+          <option value="last_month">{t('dashboard.periodLastMonth', 'Last Month')}</option>
+          <option value="this_year">{t('dashboard.periodThisYear', 'This Year')}</option>
         </select>
-        
+
         <button
           onClick={onRefresh}
           disabled={isFetching}
-          className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-4 focus:ring-slate-100 font-medium rounded-lg text-sm px-4 py-2.5 shadow-sm inline-flex items-center gap-2 outline-none disabled:opacity-50"
+          className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500 font-semibold rounded-xl text-xs sm:text-sm px-3.5 py-2 shadow-xs inline-flex items-center gap-2 outline-none disabled:opacity-50 cursor-pointer transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <span>{t('common.refresh', 'Refresh')}</span>
         </button>
       </div>
     </div>

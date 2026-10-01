@@ -21,7 +21,7 @@ class DashboardReportController extends Controller
         $companyId = $request->attributes->get('company_id');
         $branchId = $request->query('branch_id');
         $warehouseId = $request->query('warehouse_id');
-        
+
         $startDate = $request->query('date_from', Carbon::today()->toDateString());
         $endDate = $request->query('date_to', Carbon::today()->toDateString());
 
@@ -32,7 +32,7 @@ class DashboardReportController extends Controller
         $saleQuery = Sale::where('company_id', $companyId)
             ->where('status', 'COMPLETED')
             ->whereBetween('sale_date', [$start->toDateString(), $end->toDateString()]);
-        
+
         $salesReturnQuery = SalesReturn::where('company_id', $companyId)
             ->where('status', 'COMPLETED')
             ->whereBetween('return_date', [$start->toDateString(), $end->toDateString()]);
@@ -44,7 +44,7 @@ class DashboardReportController extends Controller
         $expenseQuery = Expense::where('company_id', $companyId)
             ->where('status', 'COMPLETED')
             ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()]);
-            
+
         if ($branchId) {
             $saleQuery->where('branch_id', $branchId);
             $salesReturnQuery->where('branch_id', $branchId);
@@ -61,47 +61,47 @@ class DashboardReportController extends Controller
         // Today's Sales
         $grossSales = (float) $saleQuery->sum('grand_total');
         $salesReturns = (float) $salesReturnQuery->sum('refund_total');
-        
+
         // Wait, the gross sales usually means subtotal + tax or grand_total? The instruction says:
         // Net Sales = Gross Sales - Sales Returns
-        
+
         $netSales = $grossSales - $salesReturns;
-        
+
         $purchases = (float) $purchaseQuery->sum('grand_total');
         $expenses = (float) $expenseQuery->sum('total_amount');
-        
+
         // COGS from SaleItems
         $saleItemsQuery = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sales.company_id', $companyId)
             ->where('sales.status', 'COMPLETED')
             ->whereBetween('sales.sale_date', [$start->toDateString(), $end->toDateString()]);
-            
+
         if ($branchId) {
             $saleItemsQuery->where('sales.branch_id', $branchId);
         }
         if ($warehouseId) {
             $saleItemsQuery->where('sales.warehouse_id', $warehouseId);
         }
-        
+
         $cogs = (float) $saleItemsQuery->sum('total_cost_snapshot');
-        
-        // Gross Profit = Net Sales excluding tax - COGS. Wait, is tax excluded? 
+
+        // Gross Profit = Net Sales excluding tax - COGS. Wait, is tax excluded?
         // Let's assume net sales here includes tax. We should subtract tax to get GP.
         $taxTotal = (float) $saleQuery->sum('tax_total');
         $grossProfit = ($netSales - $taxTotal) - $cogs;
         $grossMargin = $netSales > 0 ? round(($grossProfit / $netSales) * 100, 2) : 0;
-        
+
         // Cash vs Credit Sales
         // In this system, payment_status is PAID, PARTIAL, DUE.
         // Paid amount is stored in paid_amount.
         $cashSales = (float) $saleQuery->sum('paid_amount');
         $creditSales = (float) $saleQuery->sum('due_amount');
-        
+
         // Receivables and Payables (Overall, not date bounded, or maybe up to date)
         $receivables = (float) CustomerLedger::where('company_id', $companyId)->sum(DB::raw('debit - credit'));
         $payables = (float) SupplierLedger::where('company_id', $companyId)->sum(DB::raw('credit - debit'));
-        
+
         // Inventory Value
         $inventoryQuery = Inventory::where('company_id', $companyId);
         if ($branchId) {
@@ -113,7 +113,7 @@ class DashboardReportController extends Controller
             $inventoryQuery->where('warehouse_id', $warehouseId);
         }
         $inventoryValue = (float) $inventoryQuery->sum('total_value');
-        
+
         // Chart: Sales Trend (last 7 days by default)
         // We'll group by date
         $trendStart = Carbon::parse($startDate)->subDays(7)->startOfDay();
@@ -124,7 +124,7 @@ class DashboardReportController extends Controller
             ->groupBy('sale_date')
             ->orderBy('sale_date')
             ->get();
-            
+
         // Top Products
         $topProducts = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -136,7 +136,7 @@ class DashboardReportController extends Controller
             ->orderBy('qty', 'desc')
             ->limit(5)
             ->get();
-            
+
         // Top Customers
         $topCustomers = DB::table('sales')
             ->join('customers', 'sales.customer_id', '=', 'customers.id')
@@ -149,7 +149,7 @@ class DashboardReportController extends Controller
             ->limit(5)
             ->get();
 
-        
+
         // --------------------------------------------------------------------
         // SPRINT 12.9 - COMMERCIAL DASHBOARD EXPANSION
         // --------------------------------------------------------------------
@@ -165,7 +165,7 @@ class DashboardReportController extends Controller
             ->join('products', 'inventories.product_id', '=', 'products.id')
             ->where('inventories.company_id', $companyId)
             ->whereColumn('inventories.available_quantity', '<=', 'products.reorder_level');
-            
+
         if ($branchId) {
             $lowStockQuery->join('warehouses', 'inventories.warehouse_id', '=', 'warehouses.id')
                           ->where('warehouses.branch_id', $branchId);
@@ -173,7 +173,7 @@ class DashboardReportController extends Controller
         if ($warehouseId) {
             $lowStockQuery->where('inventories.warehouse_id', $warehouseId);
         }
-        
+
         $lowStock = $lowStockQuery->count();
 
         // Low Stock Details
@@ -206,7 +206,7 @@ class DashboardReportController extends Controller
         $postedJournalsQuery = DB::table('journal_entries')
             ->where('company_id', $companyId)
             ->where('status', 'POSTED');
-            
+
         if ($branchId) {
             $postedJournalsQuery->whereExists(function ($query) use ($branchId) {
                 $query->select(DB::raw(1))
@@ -216,17 +216,17 @@ class DashboardReportController extends Controller
             });
         }
         $postedJournals = $postedJournalsQuery->count();
-            
+
         // Unbalanced journals (where sum debit != sum credit)
         $unbalancedJournalsQuery = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', $companyId)
             ->where('journal_entries.status', 'POSTED');
-            
+
         if ($branchId) {
             $unbalancedJournalsQuery->where('journal_entry_lines.branch_id', $branchId);
         }
-        
+
         $unbalancedJournals = $unbalancedJournalsQuery
             ->select('journal_entries.id')
             ->groupBy('journal_entries.id')
@@ -250,11 +250,11 @@ class DashboardReportController extends Controller
             ->where('journal_entries.status', 'POSTED')
             ->whereBetween('journal_entries.journal_date', [$start->toDateString(), $end->toDateString()])
             ->whereIn('accounts.account_type', ['REVENUE', 'EXPENSE']);
-            
+
         if ($branchId) {
             $pnlBalancesQuery->where('journal_entry_lines.branch_id', $branchId);
         }
-        
+
         $pnlBalances = $pnlBalancesQuery->select(
                 'accounts.account_type',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -286,11 +286,11 @@ class DashboardReportController extends Controller
                 $query->where('accounts.account_name', 'ilike', '%Cash%')
                       ->orWhere('accounts.account_name', 'ilike', '%Bank%');
             });
-            
+
         if ($branchId) {
             $assetBalancesQuery->where('journal_entry_lines.branch_id', $branchId);
         }
-        
+
         $assetBalances = $assetBalancesQuery->select(
                 'accounts.account_name',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -328,6 +328,32 @@ class DashboardReportController extends Controller
             ->select('payment_method', DB::raw('SUM(amount) as total'))
             ->groupBy('payment_method')
             ->orderBy('total', 'desc')
+            ->get();
+
+        // Category Sales (Sales by Category for Pie/Donut Chart)
+        $categorySalesQuery = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('sales.company_id', $companyId)
+            ->where('sales.status', 'COMPLETED')
+            ->whereBetween('sales.sale_date', [$start->toDateString(), $end->toDateString()]);
+
+        if ($branchId) {
+            $categorySalesQuery->where('sales.branch_id', $branchId);
+        }
+        if ($warehouseId) {
+            $categorySalesQuery->where('sales.warehouse_id', $warehouseId);
+        }
+
+        $categorySales = $categorySalesQuery
+            ->select(
+                DB::raw("COALESCE(categories.name, 'General') as category"),
+                DB::raw('SUM(sale_items.line_total) as total')
+            )
+            ->groupBy(DB::raw("COALESCE(categories.name, 'General')"))
+            ->orderBy('total', 'desc')
+            ->limit(6)
             ->get();
 
         // Recent Sales
@@ -371,7 +397,7 @@ class DashboardReportController extends Controller
                 'purchases.grand_total as amount',
                 DB::raw("{$paidSubquery} as paid"),
                 DB::raw("GREATEST(0, purchases.grand_total - {$paidSubquery}) as due"),
-                DB::raw("CASE 
+                DB::raw("CASE
                     WHEN (purchases.grand_total - {$paidSubquery}) <= 0.0001 THEN 'PAID'
                     WHEN {$paidSubquery} > 0 AND (purchases.grand_total - {$paidSubquery}) > 0.0001 THEN 'PARTIAL'
                     ELSE 'DUE'
@@ -417,6 +443,7 @@ return response()->json([
                 'payment_methods' => $paymentMethods,
                 'recent_sales' => $recentSales,
                 'recent_purchases' => $recentPurchases,
+                'category_sales' => $categorySales,
 
             ]
         ]);

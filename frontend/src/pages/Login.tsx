@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../i18n';
 
 export const loginSchema = z.object({
   email: z
@@ -25,7 +26,8 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading: authLoading, isAuthenticated } = useAuth();
-  
+  const { language, setLanguage } = useLanguage();
+
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -82,10 +84,43 @@ export function Login() {
   };
 
   return (
-    <div 
-      id="login-page-container" 
-      className="min-h-screen w-full bg-slate-100 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans"
+    <div
+      id="login-page-container"
+      className="min-h-screen w-full bg-slate-100 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans relative"
     >
+      {/* Top right language switcher */}
+      <div
+        id="login-language-switcher"
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs text-xs font-semibold z-10"
+      >
+        <button
+          type="button"
+          id="login-lang-en"
+          onClick={() => setLanguage('en')}
+          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            language === 'en'
+              ? 'bg-slate-900 text-white font-bold shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="English"
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          id="login-lang-bn"
+          onClick={() => setLanguage('bn')}
+          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            language === 'bn'
+              ? 'bg-emerald-600 text-white font-bold shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="বাংলা (Bengali)"
+        >
+          বাংলা
+        </button>
+      </div>
+
       <div className="w-full max-w-md">
         {/* Brand Header */}
         <div id="login-brand-header" className="text-center mb-8">
@@ -97,8 +132,8 @@ export function Login() {
         </div>
 
         {/* Login Card */}
-        <div 
-          id="login-card" 
+        <div
+          id="login-card"
           className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 sm:p-10 transition-all"
         >
           <div className="mb-6">
@@ -108,8 +143,8 @@ export function Login() {
 
           {/* Feedback Alerts */}
           {errorMessage && (
-            <div 
-              id="login-error-alert" 
+            <div
+              id="login-error-alert"
               className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-start gap-3 text-sm animate-in fade-in duration-200"
             >
               <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
@@ -118,8 +153,8 @@ export function Login() {
           )}
 
           {successMessage && (
-            <div 
-              id="login-success-alert" 
+            <div
+              id="login-success-alert"
               className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-start gap-3 text-sm animate-in fade-in duration-200"
             >
               <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500 mt-0.5" />
@@ -130,8 +165,8 @@ export function Login() {
           <form id="login-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label 
-                htmlFor="email-input" 
+              <label
+                htmlFor="email-input"
                 className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
               >
                 Email Address
@@ -164,8 +199,8 @@ export function Login() {
             {/* Password Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label 
-                  htmlFor="password-input" 
+                <label
+                  htmlFor="password-input"
                   className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
                 >
                   Password

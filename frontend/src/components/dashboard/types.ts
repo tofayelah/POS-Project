@@ -24,4 +24,6 @@ export interface DashboardSummary {
   payment_methods: Array<{ payment_method: string; total: string }>;
   recent_sales: Array<{ invoice: string; date: string; customer: string; branch: string; amount: string; paid: string; status: string }>;
   recent_purchases: Array<{ invoice: string; date: string; supplier: string; amount: string; paid: string; due: string; status: string }>;
+  category_sales?: Array<{ category: string; total: string | number }>;
+  today_sales?: number;
 }

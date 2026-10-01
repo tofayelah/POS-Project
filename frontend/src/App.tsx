@@ -33,21 +33,27 @@ import ExpenseIndex from "./pages/expenses/ExpenseIndex";
 import ExpenseCreate from "./pages/expenses/ExpenseCreate";
 import { PosTerminal } from './pages/pos/PosTerminal';
 import { PosTerminalManagement } from './pages/pos/PosTerminalManagement';
+import { PaymentMethodsList } from './pages/pos/PaymentMethodsList';
+import { LoyaltySettingsPage } from './pages/pos/LoyaltySettingsPage';
+import SalesReturnIndex from './pages/sales-returns/SalesReturnIndex';
+import SalesReturnCreate from './pages/sales-returns/SalesReturnCreate';
 import { CompanyPage } from './pages/organization/CompanyPage';
 import { BusinessUnitList } from './pages/organization/BusinessUnitList';
 import { BranchList } from './pages/organization/BranchList';
 import { WarehouseList } from './pages/organization/WarehouseList';
 import { StorageLocationList } from './pages/organization/StorageLocationList';
 import { UserList } from './pages/organization/UserList';
+import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CompanyProvider>
-          <Router>
+      <LanguageProvider>
+        <AuthProvider>
+          <CompanyProvider>
+            <Router>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
@@ -256,6 +262,34 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/pos/payment-methods" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PaymentMethodsList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/pos/loyalty-settings" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <LoyaltySettingsPage />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/sales-returns" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SalesReturnIndex />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/sales-returns/create" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SalesReturnCreate />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/pos-terminals" element={<Navigate to="/pos/terminals" replace />} />
             <Route path="/admin/pos/terminals" element={<Navigate to="/pos/terminals" replace />} />
             {/* Organization Routes */}
@@ -313,6 +347,7 @@ export default function App() {
         </Router>
         </CompanyProvider>
       </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
