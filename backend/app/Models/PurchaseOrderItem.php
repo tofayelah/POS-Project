@@ -36,4 +36,9 @@ class PurchaseOrderItem extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
 }

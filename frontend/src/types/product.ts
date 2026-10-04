@@ -142,6 +142,7 @@ export interface Product {
     id: number;
     name: string;
     short_code: string;
+    decimal_allowed?: boolean;
   };
   name: string;
   slug: string;

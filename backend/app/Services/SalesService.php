@@ -410,7 +410,7 @@ class SalesService
                         'allocatable_id' => $sale->id,
                         'amount' => $alloc,
                     ]
-                ], $data['cashier_id']);
+                ], $data['cashier_id'], ['from_pos_checkout' => true]);
 
                 // Session compatibility: also record SalePayment for cashier shift drawer audit
                 SalePayment::create([

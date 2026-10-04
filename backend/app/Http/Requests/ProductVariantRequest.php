@@ -15,6 +15,10 @@ class ProductVariantRequest extends FormRequest
     public function rules(): array
     {
         $variantId = $this->route('variant') ? (is_object($this->route('variant')) ? $this->route('variant')->id : $this->route('variant')) : null;
+        $companyId = $this->attributes->get('company_id')
+            ?? $this->user()?->company_id
+            ?? ($this->product_id ? \App\Models\Product::where('id', $this->product_id)->value('company_id') : null)
+            ?? ($variantId ? \App\Models\ProductVariant::where('id', $variantId)->value('company_id') : null);
 
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
@@ -22,7 +26,11 @@ class ProductVariantRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('product_variants', 'sku')->ignore($variantId),
+                Rule::unique('product_variants', 'sku')
+                    ->where(function ($q) use ($companyId) {
+                        return $companyId ? $q->where('company_id', $companyId) : $q;
+                    })
+                    ->ignore($variantId),
             ],
             'variant_name' => ['required', 'string', 'max:255'],
             'cost_price' => ['required', 'numeric', 'min:0'],

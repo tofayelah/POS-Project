@@ -16,6 +16,8 @@ class User extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
     protected $casts = ['email_verified_at' => 'datetime', 'password' => 'hashed', 'last_login_at' => 'datetime'];
 
+    public ?int $company_id = null;
+
     protected static function boot()
     {
         parent::boot();
@@ -25,6 +27,23 @@ class User extends Authenticatable
                 $model->uuid = (string) Str::uuid();
             }
         });
+
+        static::created(function ($model) {
+            if (!empty($model->company_id)) {
+                $model->companies()->syncWithoutDetaching([(int) $model->company_id]);
+            }
+        });
+    }
+
+    public function setCompanyIdAttribute($value): void
+    {
+        $this->company_id = $value ? (int) $value : null;
+    }
+
+    public function getCompanyIdAttribute(): ?int
+    {
+        return $this->company_id
+            ?? ($this->relationLoaded('companies') ? $this->companies->first()?->id : $this->companies()->first()?->id);
     }
 
     public function roles() { return $this->belongsToMany(Role::class); }
@@ -37,7 +56,7 @@ class User extends Authenticatable
     {
         $roles = $this->relationLoaded('roles') ? $this->roles : $this->roles()->get();
         if ($roles->isEmpty()) {
-            return true;
+            return strtolower($role) !== 'super admin';
         }
         return $roles->contains(fn($r) => strtolower($r->name) === strtolower($role));
     }
@@ -91,16 +110,22 @@ class User extends Authenticatable
 
     public function hasCompanyAccess(int|string|\Illuminate\Database\Eloquent\Model $companyId): bool
     {
-        if ($this->hasRole('Super Admin') || $this->hasRole('Admin')) {
+        $id = $companyId instanceof \Illuminate\Database\Eloquent\Model ? $companyId->getKey() : (int) $companyId;
+        if ($this->company_id && (int) $this->company_id === $id) {
             return true;
         }
 
-        $id = $companyId instanceof \Illuminate\Database\Eloquent\Model ? $companyId->getKey() : (int) $companyId;
         $companies = $this->relationLoaded('companies') ? $this->companies : $this->companies()->get();
-        if ($companies->isEmpty()) {
+        if ($companies->isNotEmpty() && $companies->contains('id', $id)) {
             return true;
         }
-        return $companies->contains('id', $id);
+
+        $roles = $this->relationLoaded('roles') ? $this->roles : $this->roles()->get();
+        if ($roles->isNotEmpty() && $roles->contains(fn($r) => strtolower($r->name) === 'super admin')) {
+            return true;
+        }
+
+        return false;
     }
 
     public function hasBusinessUnitAccess(int|string|\Illuminate\Database\Eloquent\Model $businessUnitId): bool

@@ -10,13 +10,34 @@ class CategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $userCompanyId = $this->attributes->get('company_id') ?? $this->user()?->company_id;
+        $category = $this->route('category');
+        if ($category) {
+            $cat = is_object($category) ? $category : Category::find($category);
+            if ($cat && $userCompanyId && (int) $cat->company_id !== (int) $userCompanyId) {
+                return false;
+            }
+        }
+
+        if ($this->has('company_id') && $userCompanyId && (int) $this->input('company_id') !== (int) $userCompanyId) {
+            return false;
+        }
+
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $userCompanyId = $this->attributes->get('company_id') ?? $this->user()?->company_id;
+        if (!$this->has('company_id') && $userCompanyId) {
+            $this->merge(['company_id' => $userCompanyId]);
+        }
     }
 
     public function rules(): array
     {
         $categoryId = $this->route('category') ? (is_object($this->route('category')) ? $this->route('category')->id : $this->route('category')) : null;
-        $companyId = $this->input('company_id', $this->user()?->company_ids[0] ?? 1);
+        $companyId = $this->input('company_id', $this->attributes->get('company_id') ?? $this->user()?->company_id ?? 1);
 
         return [
             'company_id' => ['required', 'integer', 'exists:companies,id'],

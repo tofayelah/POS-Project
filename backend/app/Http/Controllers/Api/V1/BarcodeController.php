@@ -17,7 +17,12 @@ class BarcodeController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $companyId = $request->attributes->get('company_id') ?? $request->user()?->company_id;
         $query = Barcode::with(['variant.product']);
+
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
 
         if ($request->filled('product_variant_id')) {
             $query->where('product_variant_id', $request->input('product_variant_id'));
@@ -54,10 +59,16 @@ class BarcodeController extends Controller
      */
     public function lookup(Request $request, string $code): JsonResponse
     {
-        $barcode = Barcode::with(['variant.product.category', 'variant.product.unit', 'variant.attributeValues.attribute'])
+        $companyId = $request->attributes->get('company_id') ?? $request->user()?->company_id;
+        $query = Barcode::with(['variant.product.category', 'variant.product.unit', 'variant.attributeValues.attribute'])
             ->where('barcode', trim($code))
-            ->where('status', 'active')
-            ->first();
+            ->where('status', 'active');
+
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
+
+        $barcode = $query->first();
 
         if (! $barcode) {
             return response()->json([
@@ -78,6 +89,9 @@ class BarcodeController extends Controller
             $data = $request->validated();
             $data['created_by'] = $request->user()?->id;
             $data['updated_by'] = $request->user()?->id;
+
+            $variant = ProductVariant::find($data['product_variant_id']);
+            $data['company_id'] = $request->attributes->get('company_id') ?? $request->user()?->company_id ?? $variant?->company_id;
 
             if (! empty($data['is_primary'])) {
                 Barcode::where('product_variant_id', $data['product_variant_id'])

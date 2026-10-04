@@ -4,20 +4,14 @@ import {
   FileText, 
   Plus, 
   Search, 
-  Filter, 
   RefreshCw, 
   CheckCircle2, 
   Clock, 
   XCircle, 
-  ChevronRight, 
   Printer, 
   Eye, 
-  Building2, 
-  Warehouse as WarehouseIcon,
-  DollarSign,
   AlertCircle,
   X,
-  Calendar,
   Package
 } from 'lucide-react';
 import { PurchaseOrder, PurchaseOrderStatus } from '../../types/purchase';
@@ -28,8 +22,11 @@ import {
   cancelPurchaseOrder 
 } from '../../api/purchaseOrders';
 import { formatCurrency } from '../../utils/currency';
+import { useLanguage } from '../../i18n';
+import { PageHeader, TableContainer, StatusBadge, LoadingState, EmptyState } from '../../components/common';
 
 export function PurchaseOrderList() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +35,15 @@ export function PurchaseOrderList() {
   const [successMessage, setSuccessMessage] = useState<string | null>(
     (location.state as any)?.successMessage || null
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedPo, setSelectedPo] = useState<PurchaseOrder | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Confirmation Modals
+  const [approvingPo, setApprovingPo] = useState<PurchaseOrder | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
+  const [cancellingPo, setCancellingPo] = useState<PurchaseOrder | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -47,14 +51,15 @@ export function PurchaseOrderList() {
 
   const loadOrders = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const res = await getPurchaseOrders({
-        search,
+        search: search.trim() || undefined,
         status: statusFilter,
       });
       setOrders(res.data);
-    } catch (err) {
-      console.error('Failed to load purchase orders:', err);
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'Failed to load purchase orders.');
     } finally {
       setLoading(false);
     }
@@ -65,30 +70,43 @@ export function PurchaseOrderList() {
     loadOrders();
   };
 
-  const handleApprove = async (id: number) => {
+  const handleApproveConfirm = async () => {
+    if (!approvingPo) return;
+    setIsApproving(true);
     try {
-      await approvePurchaseOrder(id);
-      setSuccessMessage(`Purchase order approved successfully.`);
+      await approvePurchaseOrder(approvingPo.id);
+      setSuccessMessage(t('purchaseOrders.approveSuccess'));
+      setApprovingPo(null);
       loadOrders();
-      if (selectedPo && selectedPo.id === id) {
+      if (selectedPo && selectedPo.id === approvingPo.id) {
         setSelectedPo({ ...selectedPo, status: 'APPROVED' });
       }
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
-      alert(err.message || 'Failed to approve purchase order.');
+      setErrorMessage(err.response?.data?.message || 'Failed to approve purchase order.');
+      setApprovingPo(null);
+    } finally {
+      setIsApproving(false);
     }
   };
 
-  const handleCancel = async (id: number) => {
-    if (!window.confirm('Are you sure you want to cancel this purchase order?')) return;
+  const handleCancelConfirm = async () => {
+    if (!cancellingPo) return;
+    setIsCancelling(true);
     try {
-      await cancelPurchaseOrder(id);
-      setSuccessMessage(`Purchase order marked as cancelled.`);
+      await cancelPurchaseOrder(cancellingPo.id);
+      setSuccessMessage(t('purchaseOrders.cancelSuccess'));
+      setCancellingPo(null);
       loadOrders();
-      if (selectedPo && selectedPo.id === id) {
+      if (selectedPo && selectedPo.id === cancellingPo.id) {
         setSelectedPo({ ...selectedPo, status: 'CANCELLED' });
       }
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel purchase order.');
+      setErrorMessage(err.response?.data?.message || 'Failed to cancel purchase order.');
+      setCancellingPo(null);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -98,70 +116,23 @@ export function PurchaseOrderList() {
   const draftCount = orders.filter((o) => o.status === 'DRAFT').length;
   const totalAmount = orders.reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0);
 
-  const getStatusBadge = (status: PurchaseOrderStatus) => {
-    switch (status) {
-      case 'APPROVED':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md flex items-center gap-1 w-fit">
-            <CheckCircle2 className="w-3 h-3" /> Approved
-          </span>
-        );
-      case 'DRAFT':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-1 w-fit">
-            <Clock className="w-3 h-3" /> Draft
-          </span>
-        );
-      case 'PARTIALLY_RECEIVED':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-1 w-fit">
-            Partially Received
-          </span>
-        );
-      case 'FULLY_RECEIVED':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-md flex items-center gap-1 w-fit">
-            Completed
-          </span>
-        );
-      case 'CANCELLED':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-md flex items-center gap-1 w-fit">
-            <XCircle className="w-3 h-3" /> Cancelled
-          </span>
-        );
-      default:
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-slate-600 bg-slate-100 rounded-md w-fit">
-            {status}
-          </span>
-        );
-    }
-  };
-
   return (
     <div id="purchase-order-list-page" className="max-w-7xl mx-auto space-y-6 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <h1 id="purchase-orders-heading" className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-indigo-600" />
-            <span>Purchase Orders</span>
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Create, track, and approve procurement orders across vendors and regional stock warehouses.
-          </p>
-        </div>
-
-        <Link
-          to="/purchases/orders/new"
-          id="btn-create-new-po"
-          className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs hover:shadow flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Purchase Order</span>
-        </Link>
-      </div>
+      <PageHeader
+        title={t('purchaseOrders.title')}
+        subtitle={t('purchaseOrders.subtitle')}
+        actions={
+          <Link
+            to="/purchases/orders/new"
+            id="btn-create-new-po"
+            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs hover:shadow flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('purchaseOrders.newOrder')}</span>
+          </Link>
+        }
+      />
 
       {/* Success Notification Banner */}
       {successMessage && (
@@ -176,25 +147,38 @@ export function PurchaseOrderList() {
         </div>
       )}
 
+      {/* Error Banner */}
+      {errorMessage && (
+        <div id="po-error-banner" className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span className="font-semibold">{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* KPI Metrics Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-[11px] font-semibold text-slate-500 block">Total Orders</span>
+          <span className="text-[11px] font-semibold text-slate-500 block">{t('purchaseOrders.totalOrders')}</span>
           <span className="text-xl font-bold text-slate-900 mt-1 block">{totalCount}</span>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-[11px] font-semibold text-emerald-600 block">Approved Orders</span>
+          <span className="text-[11px] font-semibold text-emerald-600 block">{t('purchaseOrders.approvedOrders')}</span>
           <span className="text-xl font-bold text-emerald-700 mt-1 block">{approvedCount}</span>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-[11px] font-semibold text-amber-600 block">Draft / Pending</span>
+          <span className="text-[11px] font-semibold text-amber-600 block">{t('purchaseOrders.draftOrders')}</span>
           <span className="text-xl font-bold text-amber-700 mt-1 block">{draftCount}</span>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-[11px] font-semibold text-indigo-600 block">Total Procurement Value</span>
+          <span className="text-[11px] font-semibold text-indigo-600 block">{t('purchaseOrders.totalValue')}</span>
           <span className="text-xl font-bold font-mono text-indigo-700 mt-1 block">{formatCurrency(totalAmount)}</span>
         </div>
       </div>
@@ -209,14 +193,14 @@ export function PurchaseOrderList() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search PO #, supplier, warehouse..."
+            placeholder={t('purchaseOrders.searchPlaceholder')}
             className="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
         </form>
 
         {/* Status Filters */}
         <div className="flex items-center gap-2 overflow-x-auto text-xs">
-          {['ALL', 'DRAFT', 'APPROVED', 'PARTIALLY_RECEIVED', 'FULLY_RECEIVED'].map((st) => (
+          {['ALL', 'DRAFT', 'APPROVED', 'PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CANCELLED'].map((st) => (
             <button
               key={st}
               type="button"
@@ -227,13 +211,13 @@ export function PurchaseOrderList() {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {st === 'ALL' ? 'All Orders' : st.replace('_', ' ')}
+              {st === 'ALL' ? t('purchaseOrders.allStatuses') : t(`purchaseOrders.status.${st.toLowerCase()}` as any)}
             </button>
           ))}
           <button
             type="button"
             onClick={loadOrders}
-            title="Refresh list"
+            title={t('common.refresh')}
             className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-500 shrink-0 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -242,34 +226,40 @@ export function PurchaseOrderList() {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
-                <th className="py-3 px-4">PO Reference</th>
-                <th className="py-3 px-4">Order Date</th>
-                <th className="py-3 px-4">Supplier / Vendor</th>
-                <th className="py-3 px-4">Warehouse</th>
-                <th className="py-3 px-4 text-center">Items</th>
-                <th className="py-3 px-4 text-right">Grand Total</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading purchase orders...</span>
-                    </div>
-                  </td>
+      <TableContainer>
+        {loading ? (
+          <LoadingState message={t('common.loading')} />
+        ) : orders.length === 0 ? (
+          <EmptyState
+            title={t('purchaseOrders.noOrdersFound')}
+            description={t('purchaseOrders.noOrdersFoundDesc')}
+            action={
+              <Link
+                to="/purchases/orders/new"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> {t('purchaseOrders.newOrder')}
+              </Link>
+            }
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
+                  <th className="py-3 px-4">{t('purchaseOrders.poNumber')}</th>
+                  <th className="py-3 px-4">{t('purchaseOrders.orderDate')}</th>
+                  <th className="py-3 px-4">{t('purchaseOrders.supplier')}</th>
+                  <th className="py-3 px-4">{t('purchaseOrders.warehouse')}</th>
+                  <th className="py-3 px-4 text-center">{t('purchaseOrders.items')}</th>
+                  <th className="py-3 px-4 text-right">{t('purchaseOrders.grandTotal')}</th>
+                  <th className="py-3 px-4">{t('purchaseOrders.status')}</th>
+                  <th className="py-3 px-4 text-right">{t('common.actions')}</th>
                 </tr>
-              ) : orders.length > 0 ? (
-                orders.map((po) => (
-                  <tr key={po.id} className="hover:bg-slate-50/70 transition-colors">
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-800">
+                {orders.map((po) => (
+                  <tr key={po.id} id={`po-row-${po.id}`} className="hover:bg-slate-50/70 transition-colors">
                     {/* PO Reference */}
                     <td className="py-3 px-4 font-semibold text-slate-900">
                       <button
@@ -318,64 +308,71 @@ export function PurchaseOrderList() {
                     </td>
 
                     {/* Status */}
-                    <td className="py-3 px-4">{getStatusBadge(po.status)}</td>
+                    <td className="py-3 px-4">
+                      <StatusBadge status={po.status} />
+                    </td>
 
                     {/* Actions */}
                     <td className="py-3 px-4 text-right space-x-1">
+                      {/* View Details */}
                       <button
+                        id={`btn-view-po-${po.id}`}
                         type="button"
                         onClick={() => {
                           setSelectedPo(po);
                           setIsDetailModalOpen(true);
                         }}
-                        title="View Details"
+                        title={t('common.view')}
                         className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* Approve button for DRAFT */}
                       {po.status === 'DRAFT' && (
                         <button
+                          id={`btn-approve-po-${po.id}`}
                           type="button"
-                          onClick={() => handleApprove(po.id)}
-                          title="Approve Order"
+                          onClick={() => setApprovingPo(po)}
+                          title={t('purchaseOrders.approve')}
                           className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                         </button>
                       )}
 
+                      {/* Receive Goods link for APPROVED / PARTIALLY_RECEIVED */}
                       {(po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED') && (
                         <Link
+                          id={`btn-grn-po-${po.id}`}
                           to={`/purchases/goods-receipts/create?po_id=${po.id}`}
-                          title="Receive Goods"
+                          title={t('purchaseOrders.receiveGoods')}
                           className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer inline-flex items-center"
                         >
                           <Package className="w-3.5 h-3.5" />
                         </Link>
                       )}
+
+                      {/* Cancel button */}
+                      {po.status !== 'CANCELLED' && po.status !== 'FULLY_RECEIVED' && (
+                        <button
+                          id={`btn-cancel-po-${po.id}`}
+                          type="button"
+                          onClick={() => setCancellingPo(po)}
+                          title={t('purchaseOrders.cancel')}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                    <p className="font-semibold text-slate-600">No purchase orders found</p>
-                    <p className="text-xs text-slate-400 mt-1">Get started by creating your first purchase order.</p>
-                    <Link
-                      to="/purchases/orders/new"
-                      className="inline-flex items-center gap-1.5 mt-3 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Create Purchase Order
-                    </Link>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </TableContainer>
 
       {/* PO Detail & Inspection Modal */}
       {isDetailModalOpen && selectedPo && (
@@ -385,11 +382,11 @@ export function PurchaseOrderList() {
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-slate-900">Purchase Order: {selectedPo.po_number}</h3>
-                  {getStatusBadge(selectedPo.status)}
+                  <h3 className="text-lg font-bold text-slate-900">{t('purchaseOrders.title')}: {selectedPo.po_number}</h3>
+                  <StatusBadge status={selectedPo.status} />
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Ordered on {selectedPo.order_date} &bull; Warehouse: {selectedPo.warehouse?.name}
+                  {t('purchaseOrders.orderDate')}: {selectedPo.order_date} &bull; {t('purchaseOrders.warehouse')}: {selectedPo.warehouse?.name}
                 </p>
               </div>
               <button
@@ -412,7 +409,7 @@ export function PurchaseOrderList() {
               {/* Supplier & Delivery Info Grid */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
                 <div>
-                  <span className="text-slate-400 block font-semibold mb-1">Vendor Details</span>
+                  <span className="text-slate-400 block font-semibold mb-1">{t('purchaseOrders.supplier')}</span>
                   <div className="font-bold text-slate-900 text-sm">{selectedPo.supplier?.name}</div>
                   <div className="text-slate-600 mt-0.5">Code: {selectedPo.supplier?.supplier_code}</div>
                   <div className="text-slate-600">Mobile: {selectedPo.supplier?.mobile}</div>
@@ -422,26 +419,26 @@ export function PurchaseOrderList() {
                 </div>
 
                 <div>
-                  <span className="text-slate-400 block font-semibold mb-1">Logistics & Warehouse</span>
+                  <span className="text-slate-400 block font-semibold mb-1">{t('purchaseOrders.warehouse')}</span>
                   <div className="font-bold text-slate-900 text-sm">{selectedPo.warehouse?.name}</div>
                   <div className="text-slate-600 mt-0.5">Code: {selectedPo.warehouse?.code}</div>
                   <div className="text-slate-600 mt-1">
-                    Expected Delivery: <span className="font-medium text-slate-800">{selectedPo.expected_date || 'Standard'}</span>
+                    {t('purchaseOrders.expectedDate')}: <span className="font-medium text-slate-800">{selectedPo.expected_date || 'Standard'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Items Table */}
               <div>
-                <h4 className="font-bold text-slate-900 mb-2">Itemized Order Breakdown</h4>
+                <h4 className="font-bold text-slate-900 mb-2">{t('purchaseOrders.items')}</h4>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
-                        <th className="py-2 px-3">Product</th>
-                        <th className="py-2 px-3 text-center">Qty</th>
-                        <th className="py-2 px-3 text-right">Unit Cost</th>
-                        <th className="py-2 px-3 text-right">Line Total</th>
+                        <th className="py-2 px-3">{t('purchaseOrders.product')}</th>
+                        <th className="py-2 px-3 text-center">{t('purchaseOrders.quantity')}</th>
+                        <th className="py-2 px-3 text-right">{t('purchaseOrders.unitCost')}</th>
+                        <th className="py-2 px-3 text-right">{t('purchaseOrders.lineTotal')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -475,29 +472,29 @@ export function PurchaseOrderList() {
               <div className="flex justify-end pt-2">
                 <div className="w-64 space-y-1.5 text-right">
                   <div className="flex justify-between text-slate-500">
-                    <span>Subtotal:</span>
+                    <span>{t('purchaseOrders.subtotal')}:</span>
                     <span className="font-mono text-slate-800">{formatCurrency(selectedPo.subtotal)}</span>
                   </div>
                   {Number(selectedPo.discount_total) > 0 && (
                     <div className="flex justify-between text-slate-500">
-                      <span>Discount:</span>
+                      <span>{t('purchaseOrders.discountTotal')}:</span>
                       <span className="font-mono text-slate-800">- {formatCurrency(selectedPo.discount_total)}</span>
                     </div>
                   )}
                   {Number(selectedPo.shipping_cost) > 0 && (
                     <div className="flex justify-between text-slate-500">
-                      <span>Shipping:</span>
+                      <span>{t('purchaseOrders.shippingCost')}:</span>
                       <span className="font-mono text-slate-800">+{formatCurrency(selectedPo.shipping_cost)}</span>
                     </div>
                   )}
                   {Number(selectedPo.tax_total) > 0 && (
                     <div className="flex justify-between text-slate-500">
-                      <span>Tax / VAT:</span>
+                      <span>{t('purchaseOrders.taxTotal')}:</span>
                       <span className="font-mono text-slate-800">+{formatCurrency(selectedPo.tax_total)}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm text-slate-900">
-                    <span>Grand Total:</span>
+                    <span>{t('purchaseOrders.grandTotal')}:</span>
                     <span className="font-mono text-indigo-600">{formatCurrency(selectedPo.grand_total)}</span>
                   </div>
                 </div>
@@ -505,7 +502,7 @@ export function PurchaseOrderList() {
 
               {selectedPo.notes && (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <span className="font-bold text-slate-700 block mb-1">Order Notes:</span>
+                  <span className="font-bold text-slate-700 block mb-1">{t('purchaseOrders.notes')}:</span>
                   <p className="text-slate-600">{selectedPo.notes}</p>
                 </div>
               )}
@@ -518,17 +515,19 @@ export function PurchaseOrderList() {
                 onClick={() => window.print()}
                 className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
               >
-                <Printer className="w-3.5 h-3.5" /> Print PO
+                <Printer className="w-3.5 h-3.5" /> {t('common.print')}
               </button>
 
               <div className="flex items-center gap-2">
                 {selectedPo.status === 'DRAFT' && (
                   <button
                     type="button"
-                    onClick={() => handleApprove(selectedPo.id)}
+                    onClick={() => {
+                      setApprovingPo(selectedPo);
+                    }}
                     className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Approve PO
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {t('purchaseOrders.approve')}
                   </button>
                 )}
                 {(selectedPo.status === 'APPROVED' || selectedPo.status === 'PARTIALLY_RECEIVED') && (
@@ -536,16 +535,18 @@ export function PurchaseOrderList() {
                     to={`/purchases/goods-receipts/create?po_id=${selectedPo.id}`}
                     className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                   >
-                    <Package className="w-3.5 h-3.5" /> Receive Goods
+                    <Package className="w-3.5 h-3.5" /> {t('purchaseOrders.receiveGoods')}
                   </Link>
                 )}
-                {selectedPo.status !== 'CANCELLED' && (
+                {selectedPo.status !== 'CANCELLED' && selectedPo.status !== 'FULLY_RECEIVED' && (
                   <button
                     type="button"
-                    onClick={() => handleCancel(selectedPo.id)}
+                    onClick={() => {
+                      setCancellingPo(selectedPo);
+                    }}
                     className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
                   >
-                    Cancel Order
+                    {t('purchaseOrders.cancel')}
                   </button>
                 )}
                 <button
@@ -553,9 +554,67 @@ export function PurchaseOrderList() {
                   onClick={() => setIsDetailModalOpen(false)}
                   className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/70 rounded-lg cursor-pointer"
                 >
-                  Close
+                  {t('common.close')}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Confirmation Modal */}
+      {approvingPo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-slate-200">
+            <h3 className="text-base font-bold text-slate-900">{t('purchaseOrders.approveConfirm')}</h3>
+            <p className="text-sm text-slate-500 mt-2">
+              {t('purchaseOrders.approveConfirmDesc', { number: approvingPo.po_number })}
+            </p>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setApprovingPo(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={isApproving}
+                onClick={handleApproveConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors cursor-pointer"
+              >
+                {isApproving ? t('common.loading') : t('purchaseOrders.approve')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {cancellingPo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-slate-200">
+            <h3 className="text-base font-bold text-slate-900">{t('purchaseOrders.cancelConfirm')}</h3>
+            <p className="text-sm text-slate-500 mt-2">
+              {t('purchaseOrders.cancelConfirmDesc', { number: cancellingPo.po_number })}
+            </p>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setCancellingPo(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={handleCancelConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-lg transition-colors cursor-pointer"
+              >
+                {isCancelling ? t('common.loading') : t('purchaseOrders.cancel')}
+              </button>
             </div>
           </div>
         </div>

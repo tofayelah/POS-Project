@@ -13,7 +13,10 @@ class SalesReportController extends Controller
 {
     public function sales(Request $request)
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
         
         $query = Sale::where('company_id', $companyId)
             ->with(['customer', 'branch', 'warehouse', 'posTerminal', 'cashier']);
@@ -33,13 +36,21 @@ class SalesReportController extends Controller
         
         // Aggregate totals for the filtered set
         $totalsQuery = clone $query;
+        $totalGross = (float) $totalsQuery->sum('grand_total');
+        $totalTax = (float) $totalsQuery->sum('tax_total');
+        $totalDiscount = (float) $totalsQuery->sum('discount_total');
+        $totalSubtotal = (float) $totalsQuery->sum('subtotal');
+        $totalNetSales = round($totalGross - $totalTax, 4);
+
         $totals = [
             'total_sales' => $totalsQuery->count(),
-            'total_gross_sales' => $totalsQuery->sum('grand_total'),
-            'total_tax' => $totalsQuery->sum('tax_total'),
-            'total_discount' => $totalsQuery->sum('discount_total'),
-            'total_paid' => $totalsQuery->sum('paid_amount'),
-            'total_due' => $totalsQuery->sum('due_amount'),
+            'total_gross_sales' => $totalGross,
+            'total_subtotal' => $totalSubtotal,
+            'total_net_sales' => $totalNetSales,
+            'total_tax' => $totalTax,
+            'total_discount' => $totalDiscount,
+            'total_paid' => (float) $totalsQuery->sum('paid_amount'),
+            'total_due' => (float) $totalsQuery->sum('due_amount'),
         ];
         
         return response()->json([
@@ -57,7 +68,10 @@ class SalesReportController extends Controller
 
     public function salesReturns(Request $request)
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
         
         $query = SalesReturn::where('company_id', $companyId)
             ->with(['customer', 'branch', 'warehouse', 'cashier', 'originalSale']);

@@ -26,6 +26,12 @@ class Purchase extends Model
         'posted_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'paid_amount',
+        'due_amount',
+        'payment_status',
+    ];
+
     protected static function boot()
     {
         parent::boot();
@@ -40,6 +46,11 @@ class Purchase extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function supplier(): BelongsTo
@@ -62,6 +73,16 @@ class Purchase extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseItem::class);
@@ -72,6 +93,9 @@ class Purchase extends Model
 
     public function getPaidAmountAttribute(): float
     {
+        if ($this->relationLoaded('paymentAllocations')) {
+            return round((float) $this->paymentAllocations->sum('amount'), 4);
+        }
         return round((float) $this->paymentAllocations()->sum('amount'), 4);
     }
 

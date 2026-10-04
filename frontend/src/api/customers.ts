@@ -74,4 +74,25 @@ export const customersApi = {
     api.post<{success: boolean, data: CustomerLedger}>(`/customers/${id}/opening-balance`, data).then(res => res.data),
   addAdjustment: (id: number, data: { amount: number; direction: 'DEBIT' | 'CREDIT'; date: string; notes: string; reference_number?: string }) =>
     api.post<{success: boolean, data: CustomerLedger}>(`/customers/${id}/ledger/adjustment`, data).then(res => res.data),
+  getBalance: (id: number) =>
+    api.get<{ success: boolean; data: CustomerBalance }>(`/customers/${id}/balance`).then(res => res.data),
 };
+
+export interface CustomerBalance {
+  customer_id: number;
+  customer_code: string;
+  name: string;
+  credit_limit: number;
+  opening_balance: number;
+  total_sales: number;
+  total_paid: number;
+  balance: number;
+}
+
+export const getCustomerBalance = async (
+  id: number
+): Promise<{ success: boolean; data: CustomerBalance }> => {
+  const res = await api.get(`/customers/${id}/balance`);
+  return res.data;
+};
+

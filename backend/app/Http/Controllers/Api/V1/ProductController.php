@@ -134,6 +134,7 @@ class ProductController extends Controller
 
     public function activate(Request $request, Product $product): JsonResponse
     {
+        abort_if($product->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $product->update(['status' => 'active', 'updated_by' => $request->user()?->id]);
         $product->variants()->update(['status' => 'active', 'updated_by' => $request->user()?->id]);
 
@@ -156,6 +157,7 @@ class ProductController extends Controller
 
     public function deactivate(Request $request, Product $product): JsonResponse
     {
+        abort_if($product->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $product->update(['status' => 'inactive', 'updated_by' => $request->user()?->id]);
         $product->variants()->update(['status' => 'inactive', 'updated_by' => $request->user()?->id]);
 

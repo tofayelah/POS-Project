@@ -13,7 +13,7 @@ const STORAGE_KEY = 'retailcore_lang';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, fallback?: string, params?: Record<string, string | number>) => string;
+  t: (key: string, fallbackOrParams?: string | Record<string, string | number>, params?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -45,10 +45,18 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     document.documentElement.lang = language;
   }, [language]);
 
-  const t = useCallback((key: string, fallback?: string, params?: Record<string, string | number>): string => {
+  const t = useCallback((key: string, fallbackOrParams?: string | Record<string, string | number>, params?: Record<string, string | number>): string => {
+    let fallback: string | undefined;
+    let effectiveParams = params;
+    if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+      effectiveParams = fallbackOrParams;
+    } else if (typeof fallbackOrParams === 'string') {
+      fallback = fallbackOrParams;
+    }
+
     let text = translations[language]?.[key] || translations.en?.[key] || fallback || key;
-    if (params) {
-      Object.entries(params).forEach(([pKey, pVal]) => {
+    if (effectiveParams) {
+      Object.entries(effectiveParams).forEach(([pKey, pVal]) => {
         text = text.replace(new RegExp(`{${pKey}}`, 'g'), String(pVal));
       });
     }

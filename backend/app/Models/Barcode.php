@@ -26,7 +26,16 @@ class Barcode extends Model
             if (empty($model->uuid)) {
                 $model->uuid = (string) Str::uuid();
             }
+            if (empty($model->company_id) && $model->product_variant_id) {
+                $variant = $model->variant ?? \App\Models\ProductVariant::with('product')->find($model->product_variant_id);
+                $model->company_id = $variant?->company_id ?? $variant?->product?->company_id;
+            }
         });
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function variant(): BelongsTo

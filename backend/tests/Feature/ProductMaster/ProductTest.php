@@ -9,6 +9,7 @@ use App\Models\BusinessUnit;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -251,5 +252,114 @@ class ProductTest extends TestCase
         ];
 
         $this->actingAs($this->user)->postJson('/api/v1/products', $payload2)->assertStatus(201);
+    }
+
+    public function test_allows_same_sku_across_different_companies()
+    {
+        $company2 = Company::create(['name' => 'Second Company']);
+        $user2 = User::create([
+            'name' => 'Admin 2',
+            'email' => 'admin2@test.com',
+            'password' => bcrypt('password'),
+            'company_id' => $company2->id,
+        ]);
+        $category2 = Category::create(['name' => 'Cat 2', 'slug' => 'cat-2', 'company_id' => $company2->id]);
+        $unit2 = Unit::create(['name' => 'Unit 2', 'short_code' => 'u2', 'company_id' => $company2->id]);
+
+        // Company 1 creates SKU-UNIQUE-101
+        $payload1 = [
+            'company_id' => $this->company->id,
+            'category_id' => $this->category->id,
+            'unit_id' => $this->unit->id,
+            'name' => 'Prod Company 1',
+            'product_type' => 'simple',
+            'has_variants' => false,
+            'variants' => [
+                [
+                    'sku' => 'SKU-CROSS-TENANT',
+                    'variant_name' => 'Default',
+                    'cost_price' => 10,
+                    'selling_price' => 20,
+                ]
+            ]
+        ];
+        $this->actingAs($this->user)->postJson('/api/v1/products', $payload1)->assertStatus(201);
+
+        // Company 2 creates exact same SKU
+        $payload2 = [
+            'company_id' => $company2->id,
+            'category_id' => $category2->id,
+            'unit_id' => $unit2->id,
+            'name' => 'Prod Company 2',
+            'product_type' => 'simple',
+            'has_variants' => false,
+            'variants' => [
+                [
+                    'sku' => 'SKU-CROSS-TENANT',
+                    'variant_name' => 'Default',
+                    'cost_price' => 15,
+                    'selling_price' => 30,
+                ]
+            ]
+        ];
+        $this->actingAs($user2)->postJson('/api/v1/products', $payload2)->assertStatus(201);
+
+        $this->assertEquals(2, ProductVariant::where('sku', 'SKU-CROSS-TENANT')->count());
+    }
+
+    public function test_company_a_cannot_activate_company_b_product()
+    {
+        $companyB = Company::create(['name' => 'Company B']);
+        $userB = User::create([
+            'name' => 'Admin B',
+            'email' => 'adminb@test.com',
+            'password' => bcrypt('password'),
+            'company_id' => $companyB->id,
+        ]);
+        $categoryB = Category::create(['name' => 'Cat B', 'slug' => 'cat-b', 'company_id' => $companyB->id]);
+        $unitB = Unit::create(['name' => 'Unit B', 'short_code' => 'ub', 'company_id' => $companyB->id]);
+
+        $productB = Product::create([
+            'company_id' => $companyB->id,
+            'category_id' => $categoryB->id,
+            'unit_id' => $unitB->id,
+            'name' => 'Product B',
+            'slug' => 'product-b',
+            'status' => 'inactive',
+            'product_type' => 'simple',
+            'has_variants' => false,
+        ]);
+
+        // User A (Company A) tries to activate Company B product
+        $response = $this->actingAs($this->user)->postJson("/api/v1/products/{$productB->id}/activate");
+        $response->assertStatus(403);
+    }
+
+    public function test_company_a_cannot_deactivate_company_b_product()
+    {
+        $companyB = Company::create(['name' => 'Company B']);
+        $userB = User::create([
+            'name' => 'Admin B',
+            'email' => 'adminb@test.com',
+            'password' => bcrypt('password'),
+            'company_id' => $companyB->id,
+        ]);
+        $categoryB = Category::create(['name' => 'Cat B', 'slug' => 'cat-b', 'company_id' => $companyB->id]);
+        $unitB = Unit::create(['name' => 'Unit B', 'short_code' => 'ub', 'company_id' => $companyB->id]);
+
+        $productB = Product::create([
+            'company_id' => $companyB->id,
+            'category_id' => $categoryB->id,
+            'unit_id' => $unitB->id,
+            'name' => 'Product B',
+            'slug' => 'product-b',
+            'status' => 'active',
+            'product_type' => 'simple',
+            'has_variants' => false,
+        ]);
+
+        // User A (Company A) tries to deactivate Company B product
+        $response = $this->actingAs($this->user)->postJson("/api/v1/products/{$productB->id}/deactivate");
+        $response->assertStatus(403);
     }
 }

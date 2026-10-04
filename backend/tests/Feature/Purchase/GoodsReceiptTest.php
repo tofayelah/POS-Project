@@ -144,4 +144,128 @@ class GoodsReceiptTest extends TestCase
         
         $postResponse->assertStatus(409); // Conflict HTTP Exception
     }
+
+    public function test_can_get_next_receipt_number()
+    {
+        $response = $this->actingAs($this->user)->getJson('/api/v1/goods-receipts/next-number', [
+            'X-Company-ID' => $this->company->id
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $nextNumber = $response->json('data.receipt_number');
+        $year = date('Y');
+        $this->assertMatchesRegularExpression("/^GR-{$year}-\\d{4}$/", $nextNumber);
+    }
+
+    public function test_can_get_goods_receipt_details()
+    {
+        $receipt = GoodsReceipt::create([
+            'company_id' => $this->company->id,
+            'supplier_id' => $this->po->supplier_id,
+            'warehouse_id' => $this->po->warehouse_id,
+            'purchase_order_id' => $this->po->id,
+            'receipt_number' => 'GR-DETAIL-001',
+            'receipt_date' => '2024-01-05',
+            'status' => 'DRAFT',
+            'created_by' => $this->user->id,
+        ]);
+
+        GoodsReceiptItem::create([
+            'goods_receipt_id' => $receipt->id,
+            'purchase_order_item_id' => $this->poItem->id,
+            'product_id' => $this->poItem->product_id,
+            'product_variant_id' => $this->poItem->product_variant_id,
+            'received_quantity' => 4,
+            'unit_cost' => 100,
+            'total_cost' => 400,
+        ]);
+
+        $response = $this->actingAs($this->user)->getJson("/api/v1/goods-receipts/{$receipt->id}", [
+            'X-Company-ID' => $this->company->id
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', $receipt->id)
+            ->assertJsonPath('data.receipt_number', 'GR-DETAIL-001')
+            ->assertJsonPath('data.items.0.received_quantity', '4.0000');
+    }
+
+    public function test_can_cancel_draft_goods_receipt()
+    {
+        $receipt = GoodsReceipt::create([
+            'company_id' => $this->company->id,
+            'supplier_id' => $this->po->supplier_id,
+            'warehouse_id' => $this->po->warehouse_id,
+            'purchase_order_id' => $this->po->id,
+            'receipt_number' => 'GR-CANCEL-001',
+            'receipt_date' => '2024-01-05',
+            'status' => 'DRAFT',
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson("/api/v1/goods-receipts/{$receipt->id}/cancel", [], [
+            'X-Company-ID' => $this->company->id
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'CANCELLED');
+
+        $this->assertDatabaseHas('goods_receipts', [
+            'id' => $receipt->id,
+            'status' => 'CANCELLED',
+        ]);
+    }
+
+    public function test_cannot_receive_against_draft_or_cancelled_po()
+    {
+        $draftPo = PurchaseOrder::create([
+            'company_id' => $this->company->id,
+            'supplier_id' => $this->po->supplier_id,
+            'warehouse_id' => $this->po->warehouse_id,
+            'po_number' => 'PO-DRAFT-999',
+            'order_date' => '2024-01-01',
+            'status' => 'DRAFT'
+        ]);
+
+        $draftItem = PurchaseOrderItem::create([
+            'purchase_order_id' => $draftPo->id,
+            'product_id' => $this->poItem->product_id,
+            'product_variant_id' => $this->poItem->product_variant_id,
+            'quantity' => 10,
+            'unit_cost' => 100,
+            'line_total' => 1000,
+            'pending_quantity' => 10
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson('/api/v1/goods-receipts', [
+            'purchase_order_id' => $draftPo->id,
+            'receipt_number' => 'GR-FAIL-001',
+            'receipt_date' => '2024-01-02',
+            'items' => [
+                [
+                    'purchase_order_item_id' => $draftItem->id,
+                    'received_quantity' => 5
+                ]
+            ]
+        ], ['X-Company-ID' => $this->company->id]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_cross_company_goods_receipt_isolation()
+    {
+        $otherCompany = Company::factory()->create();
+        $otherUser = User::factory()->create();
+        $otherUser->companies()->attach($otherCompany->id);
+
+        $response = $this->actingAs($otherUser)->getJson("/api/v1/goods-receipts/{$this->po->id}", [
+            'X-Company-ID' => $otherCompany->id
+        ]);
+
+        $response->assertStatus(404);
+    }
 }

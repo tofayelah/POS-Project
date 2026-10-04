@@ -31,8 +31,8 @@ class SetCurrentCompanyScope
                 }
                 $companyId = $requestedCompanyId;
             } else {
-                // Default to first available company if no explicit ID is provided
-                $companyId = $user->companies()->first()?->id ?? Company::first()?->id ?? 1;
+                // Default to user's assigned company or first available company
+                $companyId = $user->company_id ?? $user->companies()->first()?->id ?? Company::first()?->id ?? 1;
             }
         } else {
             // For unauthenticated requests (like login), we don't enforce user access, 

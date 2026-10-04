@@ -83,4 +83,52 @@ class BarcodeTest extends TestCase
         $response = $this->actingAs($this->user)->postJson('/api/v1/barcodes', $payload);
         $response->assertStatus(422);
     }
+
+    public function test_allows_same_barcode_across_different_companies()
+    {
+        $company2 = Company::create(['name' => 'Company 2']);
+        $user2 = User::create([
+            'name' => 'Admin 2',
+            'email' => 'admin2@test.com',
+            'password' => bcrypt('password'),
+            'company_id' => $company2->id,
+        ]);
+        $category2 = Category::create(['name' => 'Cat 2', 'slug' => 'cat-2', 'company_id' => $company2->id]);
+        $unit2 = Unit::create(['name' => 'Unit 2', 'short_code' => 'u2', 'company_id' => $company2->id]);
+        $product2 = Product::create([
+            'company_id' => $company2->id,
+            'category_id' => $category2->id,
+            'unit_id' => $unit2->id,
+            'name' => 'Prod 2',
+            'slug' => 'prod-2',
+        ]);
+        $variant2 = ProductVariant::create([
+            'product_id' => $product2->id,
+            'sku' => 'SKU-COMP-2',
+            'variant_name' => 'Var 2',
+            'attribute_signature' => ''
+        ]);
+
+        // Company 1 creates barcode
+        $payload1 = [
+            'company_id' => $this->company->id,
+            'product_variant_id' => $this->variant->id,
+            'barcode' => 'SHARED-BARCODE-999',
+            'barcode_type' => 'UPC',
+            'is_primary' => true,
+        ];
+        $this->actingAs($this->user)->postJson('/api/v1/barcodes', $payload1)->assertStatus(201);
+
+        // Company 2 creates identical barcode
+        $payload2 = [
+            'company_id' => $company2->id,
+            'product_variant_id' => $variant2->id,
+            'barcode' => 'SHARED-BARCODE-999',
+            'barcode_type' => 'UPC',
+            'is_primary' => true,
+        ];
+        $this->actingAs($user2)->postJson('/api/v1/barcodes', $payload2)->assertStatus(201);
+
+        $this->assertEquals(2, Barcode::where('barcode', 'SHARED-BARCODE-999')->count());
+    }
 }

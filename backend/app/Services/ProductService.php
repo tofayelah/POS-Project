@@ -115,8 +115,9 @@ class ProductService
             }
             $seenCombinations[$comboKey] = true;
 
-            // Check SKU uniqueness in database
-            $existingVariantQuery = ProductVariant::where('sku', $sku);
+            // Check SKU uniqueness in database (company-scoped)
+            $existingVariantQuery = ProductVariant::where('company_id', $product->company_id)
+                ->where('sku', $sku);
             if (! empty($vData['id'])) {
                 $existingVariantQuery->where('id', '!=', $vData['id']);
             }
@@ -136,6 +137,7 @@ class ProductService
 
             // Save variant
             $variantAttributes = [
+                'company_id' => $product->company_id,
                 'sku' => $sku,
                 'variant_name' => $vData['variant_name'],
                 'attribute_signature' => $comboKey,
@@ -173,8 +175,9 @@ class ProductService
                     $bCode = trim($bData['barcode'] ?? '');
                     if (empty($bCode)) continue;
 
-                    // Barcode conflict check
-                    $existingBarcode = Barcode::where('barcode', $bCode);
+                    // Barcode conflict check (company-scoped)
+                    $existingBarcode = Barcode::where('company_id', $product->company_id)
+                        ->where('barcode', $bCode);
                     if (! empty($bData['id'])) {
                         $existingBarcode->where('id', '!=', $bData['id']);
                     }
@@ -189,6 +192,7 @@ class ProductService
                     Barcode::updateOrCreate(
                         ['product_variant_id' => $variant->id, 'barcode' => $bCode],
                         [
+                            'company_id' => $product->company_id,
                             'barcode_type' => $bData['barcode_type'] ?? 'EAN',
                             'is_primary' => ! empty($bData['is_primary']),
                             'status' => $bData['status'] ?? 'active',

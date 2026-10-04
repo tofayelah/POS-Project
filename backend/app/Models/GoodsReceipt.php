@@ -54,4 +54,14 @@ class GoodsReceipt extends Model
     {
         return $this->hasMany(GoodsReceiptItem::class);
     }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
+    }
 }

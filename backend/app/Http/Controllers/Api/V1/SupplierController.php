@@ -130,18 +130,19 @@ class SupplierController extends Controller
             'status' => 'nullable|in:ACTIVE,INACTIVE,active,inactive',
         ]);
         
-        // Supplier code is required; system automatically generates unique non-duplicate code
+        // Supplier code is required; system automatically generates unique non-duplicate code if not provided
         if (empty($validated['supplier_code'])) {
             $validated['supplier_code'] = self::generateUniqueSupplierCode($companyId);
         } else {
             $candidate = strtoupper(trim($validated['supplier_code']));
             // Verify if candidate already exists in company (including soft deleted)
             if (Supplier::withTrashed()->where('company_id', $companyId)->where('supplier_code', $candidate)->exists()) {
-                // Auto-generate next unique code to ensure no duplicate collision
-                $validated['supplier_code'] = self::generateUniqueSupplierCode($companyId);
-            } else {
-                $validated['supplier_code'] = $candidate;
+                return response()->json([
+                    'success' => false,
+                    'message' => "Supplier code '{$candidate}' already exists. Codes must be unique."
+                ], 422);
             }
+            $validated['supplier_code'] = $candidate;
         }
 
         $validated['company_id'] = $companyId;
@@ -194,7 +195,7 @@ class SupplierController extends Controller
         
         $validated = $request->validate([
             'supplier_code' => 'nullable|string|max:50',
-            'name' => 'required|string|max:255',
+            'name' => 'sometimes|required|string|max:255',
             'short_name' => 'nullable|string|max:50',
             'business_unit_id' => 'nullable|integer',
             'contact_person' => 'nullable|string|max:255',
@@ -248,6 +249,47 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Supplier deleted successfully'
+        ]);
+    }
+
+    public function balance(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
+
+        $supplier = Supplier::where('company_id', $companyId)->findOrFail($id);
+
+        $purchasesTotal = (float) \App\Models\Purchase::where('supplier_id', $supplier->id)
+            ->where('company_id', $companyId)
+            ->where('status', 'POSTED')
+            ->sum('grand_total');
+
+        $paidTotal = (float) \App\Models\PaymentAllocation::join('purchases', 'purchases.id', '=', 'payment_allocations.allocatable_id')
+            ->where(function ($q) {
+                $q->where('payment_allocations.allocatable_type', 'Purchase')
+                  ->orWhere('payment_allocations.allocatable_type', \App\Models\Purchase::class);
+            })
+            ->where('purchases.supplier_id', $supplier->id)
+            ->where('purchases.company_id', $companyId)
+            ->where('purchases.status', 'POSTED')
+            ->sum('payment_allocations.amount');
+
+        $openingBalance = (float) ($supplier->opening_balance ?? 0);
+        $balance = round($openingBalance + $purchasesTotal - $paidTotal, 4);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'supplier_id' => $supplier->id,
+                'supplier_code' => $supplier->supplier_code,
+                'name' => $supplier->name,
+                'opening_balance' => $openingBalance,
+                'total_purchases' => $purchasesTotal,
+                'total_paid' => $paidTotal,
+                'balance' => $balance,
+            ]
         ]);
     }
 }

@@ -15,15 +15,20 @@ import {
   Building2,
   Calendar,
   Layers,
-  DollarSign
+  DollarSign,
+  Plus,
+  XCircle
 } from 'lucide-react';
 import { PurchaseInvoice, PurchaseInvoiceStatus, PurchasePaymentStatus } from '../../types/purchase';
-import { getPurchases, postPurchaseInvoice } from '../../api/purchases';
+import { getPurchases, postPurchaseInvoice, cancelPurchaseInvoice } from '../../api/purchases';
 import { formatCurrency } from '../../utils/currency';
 import { SupplierPaymentModal } from '../../components/purchase/SupplierPaymentModal';
 import { DocumentHeader } from '../../components/common/DocumentHeader';
+import { PageHeader } from '../../components/common/PageHeader';
+import { useLanguage } from '../../i18n';
 
 export function PurchaseList() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +45,7 @@ export function PurchaseList() {
   const [selectedInvoice, setSelectedInvoice] = useState<PurchaseInvoice | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [postingId, setPostingId] = useState<number | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   // Payment Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -90,6 +96,27 @@ export function PurchaseList() {
       setErrorMessage(err.message || 'Failed to post Purchase Invoice.');
     } finally {
       setPostingId(null);
+    }
+  };
+
+  const handleCancelInvoice = async (id: number) => {
+    if (!window.confirm('Are you sure you want to cancel this draft purchase invoice?')) {
+      return;
+    }
+
+    setCancellingId(id);
+    setErrorMessage(null);
+    try {
+      await cancelPurchaseInvoice(id);
+      setSuccessMessage('Purchase Invoice cancelled successfully.');
+      loadInvoices();
+      if (selectedInvoice && selectedInvoice.id === id) {
+        setSelectedInvoice({ ...selectedInvoice, status: 'CANCELLED' });
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to cancel Purchase Invoice.');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -159,24 +186,32 @@ export function PurchaseList() {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-indigo-600" />
-            Purchase Invoices (AP Bills)
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage vendor bills, AP Clearing offsets, Accounts Payable liabilities, and settlements.
-          </p>
-        </div>
-
-        <Link
-          to="/purchases/payables"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs w-fit"
-        >
-          <CreditCard className="w-4 h-4 text-purple-600" /> View Supplier Payables
-        </Link>
-      </div>
+      <PageHeader
+        breadcrumbs={[
+          { label: t('purchases.title', 'Purchases'), to: '/purchases/invoices' },
+          { label: t('purchases.invoicesTitle', 'Invoices') },
+        ]}
+        title={t('purchases.invoicesTitle', 'Purchase Invoices (AP Bills)')}
+        subtitle={t('purchases.invoicesSubtitle', 'Manage vendor bills, AP Clearing offsets, Accounts Payable liabilities, and settlements.')}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              to="/purchases/payables"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-xs"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-purple-600" />
+              {t('purchases.payables', 'Supplier Payables')}
+            </Link>
+            <Link
+              to="/purchases/invoices/create"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t('purchases.newInvoice', 'New Invoice')}
+            </Link>
+          </div>
+        }
+      />
 
       {/* Messages */}
       {successMessage && (
@@ -232,7 +267,7 @@ export function PurchaseList() {
         </form>
 
         <div className="flex items-center gap-2 overflow-x-auto text-xs">
-          {['ALL', 'DRAFT', 'POSTED'].map((st) => (
+          {['ALL', 'DRAFT', 'POSTED', 'CANCELLED'].map((st) => (
             <button
               key={st}
               type="button"
@@ -357,22 +392,33 @@ export function PurchaseList() {
                             setSelectedInvoice(inv);
                             setIsDetailModalOpen(true);
                           }}
-                          title="View Details"
+                          title="Quick View Details"
                           className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
 
                         {inv.status === 'DRAFT' && (
-                          <button
-                            type="button"
-                            disabled={postingId === inv.id}
-                            onClick={() => handlePostInvoice(inv.id)}
-                            title="Post Invoice"
-                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              disabled={postingId === inv.id}
+                              onClick={() => handlePostInvoice(inv.id)}
+                              title="Post Invoice"
+                              className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={cancellingId === inv.id}
+                              onClick={() => handleCancelInvoice(inv.id)}
+                              title="Cancel Draft Invoice"
+                              className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
 
                         {inv.status === 'POSTED' && due > 0 && (

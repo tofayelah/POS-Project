@@ -5,8 +5,12 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Models\Customer;
+use App\Models\CustomerLedger;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\Supplier;
+use App\Models\SupplierLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -15,10 +19,15 @@ use Carbon\Carbon;
 
 class PaymentService
 {
+    protected CustomerLedgerService $customerLedgerService;
+
     public function __construct(
         protected AccountingService $accountingService,
-        protected AccountMappingService $accountMappingService
-    ) {}
+        protected AccountMappingService $accountMappingService,
+        ?CustomerLedgerService $customerLedgerService = null
+    ) {
+        $this->customerLedgerService = $customerLedgerService ?? app(CustomerLedgerService::class);
+    }
 
     /**
      * Calculate SHA-256 hash of canonical payment parameters.
@@ -210,9 +219,9 @@ class PaymentService
      * Allocate an existing payment to invoices (Sale or Purchase).
      * Subledger-only operation; NO duplicate General Ledger entry is posted.
      */
-    public function allocatePayment(int $companyId, int $paymentId, array $allocationsData, ?int $userId = null): array
+    public function allocatePayment(int $companyId, int $paymentId, array $allocationsData, ?int $userId = null, array $options = []): array
     {
-        return DB::transaction(function () use ($companyId, $paymentId, $allocationsData, $userId) {
+        return DB::transaction(function () use ($companyId, $paymentId, $allocationsData, $userId, $options) {
             $payment = Payment::where('company_id', $companyId)
                 ->lockForUpdate()
                 ->findOrFail($paymentId);
@@ -272,6 +281,59 @@ class PaymentService
                     'allocatable_id' => $model->id,
                     'amount' => $amount,
                 ]);
+
+                // If Purchase, record settlement in SupplierLedger
+                if ($model instanceof Purchase) {
+                    $supplier = Supplier::where('id', $model->supplier_id)
+                        ->where('company_id', $companyId)
+                        ->first();
+                    if ($supplier) {
+                        $balanceBefore = SupplierLedger::where('supplier_id', $supplier->id)
+                            ->where('company_id', $companyId)
+                            ->orderBy('id', 'desc')
+                            ->value('balance_after') ?? $supplier->opening_balance;
+                        
+                        $balanceAfter = $balanceBefore - $amount;
+
+                        SupplierLedger::create([
+                            'uuid' => (string) Str::uuid(),
+                            'company_id' => $companyId,
+                            'supplier_id' => $supplier->id,
+                            'transaction_type' => 'PAYMENT',
+                            'reference_type' => 'PaymentAllocation',
+                            'reference_id' => $allocation->id,
+                            'reference_number' => $payment->payment_number,
+                            'debit' => $amount,
+                            'credit' => 0,
+                            'balance_before' => $balanceBefore,
+                            'balance_after' => $balanceAfter,
+                            'transaction_date' => $payment->created_at ? $payment->created_at->format('Y-m-d') : date('Y-m-d'),
+                            'created_by' => $userId,
+                        ]);
+                    }
+                }
+
+                // If Sale post-checkout settlement, record settlement in CustomerLedger
+                if ($model instanceof Sale && empty($options['from_pos_checkout']) && $model->customer_id) {
+                    $customer = Customer::where('id', $model->customer_id)
+                        ->where('company_id', $companyId)
+                        ->first();
+                    if ($customer) {
+                        $this->customerLedgerService->postTransaction(
+                            $companyId,
+                            $customer->id,
+                            'PAYMENT',
+                            0,
+                            $amount,
+                            $payment->payment_date ? (is_string($payment->payment_date) ? $payment->payment_date : $payment->payment_date->format('Y-m-d')) : date('Y-m-d'),
+                            'PaymentAllocation',
+                            $allocation->id,
+                            $payment->payment_number,
+                            "Settlement for invoice {$model->invoice_number}",
+                            $userId
+                        );
+                    }
+                }
 
                 $createdAllocations[] = $allocation;
                 $currentAllocated += $amount;

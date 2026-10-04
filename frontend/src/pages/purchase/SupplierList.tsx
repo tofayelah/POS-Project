@@ -10,20 +10,24 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  CreditCard, 
   Eye, 
   X, 
   CheckCircle2, 
   AlertCircle,
   FileText,
-  BadgeDollarSign
+  BadgeCheck,
+  Ban
 } from 'lucide-react';
-import { getSuppliers, deleteSupplier } from '../../api/suppliers';
+import { getSuppliers, deleteSupplier, updateSupplier } from '../../api/suppliers';
 import { getBusinessUnits } from '../../api/organization';
 import { Supplier } from '../../types/supplier';
 import { BusinessUnit } from '../../types/organization';
+import { formatCurrency } from '../../utils/currency';
+import { useLanguage } from '../../i18n';
+import { PageHeader, TableContainer, StatusBadge, LoadingState, EmptyState } from '../../components/common';
 
 export function SupplierList() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
@@ -37,10 +41,13 @@ export function SupplierList() {
   // Quick View Detail Modal
   const [viewSupplier, setViewSupplier] = useState<Supplier | null>(null);
 
+  // Status Toggle Modal
+  const [statusToggleSupplier, setStatusToggleSupplier] = useState<Supplier | null>(null);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+
   // Delete Confirmation State
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -62,7 +69,6 @@ export function SupplierList() {
 
       setSuppliers(listData);
       setBusinessUnits(buRes.data || []);
-      setIsFallbackMode(Boolean((suppRes as any)?.isFallback));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load suppliers.');
     } finally {
@@ -77,12 +83,30 @@ export function SupplierList() {
     return () => clearTimeout(timer);
   }, [fetchSuppliers]);
 
+  const handleToggleStatus = async () => {
+    if (!statusToggleSupplier) return;
+    setTogglingStatus(true);
+    const nextStatus = statusToggleSupplier.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await updateSupplier(statusToggleSupplier.id, { status: nextStatus });
+      setSuccessMessage(t('suppliers.statusUpdated'));
+      setStatusToggleSupplier(null);
+      fetchSuppliers();
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update supplier status.');
+      setStatusToggleSupplier(null);
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deletingSupplier) return;
     setDeleting(true);
     try {
       await deleteSupplier(deletingSupplier.id);
-      setSuccessMessage(`Supplier "${deletingSupplier.name}" was successfully deleted.`);
+      setSuccessMessage(t('suppliers.deleteSuccess'));
       setDeletingSupplier(null);
       fetchSuppliers();
       setTimeout(() => setSuccessMessage(null), 4000);
@@ -103,190 +127,147 @@ export function SupplierList() {
   return (
     <div id="supplier-list-page" className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-600" />
-            <h1 id="suppliers-page-title" className="text-2xl font-bold text-slate-900 tracking-tight">
-              Suppliers & Vendors
-            </h1>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Maintain procurement vendor directories, credit terms, and purchase accounts.
-          </p>
-        </div>
-
-        <Link
-          to="/purchases/suppliers/new"
-          id="btn-new-supplier"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Supplier Entry</span>
-        </Link>
-      </div>
+      <PageHeader
+        title={t('suppliers.title')}
+        subtitle={t('suppliers.subtitle')}
+        actions={
+          <Link
+            to="/purchases/suppliers/new"
+            id="btn-create-supplier"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('suppliers.addSupplier')}</span>
+          </Link>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div id="kpi-total-suppliers" className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Suppliers</span>
-            <Users className="w-5 h-5 text-indigo-500" />
-          </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">{totalCount}</p>
-          <p className="text-xs text-slate-500 mt-1">Registered procurement partners</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+          <span className="text-xs font-medium text-slate-500">{t('suppliers.totalSuppliers')}</span>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{totalCount}</p>
         </div>
-
-        <div id="kpi-active-suppliers" className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Active Suppliers</span>
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-700 mt-2">{activeCount}</p>
-          <p className="text-xs text-slate-500 mt-1">Ready for purchase orders</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+          <span className="text-xs font-medium text-slate-500">{t('suppliers.activeSuppliers')}</span>
+          <p className="text-2xl font-bold text-emerald-600 mt-1">{activeCount}</p>
         </div>
-
-        <div id="kpi-opening-balance" className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Opening Payables</span>
-            <BadgeDollarSign className="w-5 h-5 text-amber-500" />
-          </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">
-            ৳{totalOpeningBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+          <span className="text-xs font-medium text-slate-500">{t('suppliers.totalBalance')}</span>
+          <p className="text-2xl font-bold text-indigo-700 mt-1">
+            {formatCurrency(totalOpeningBalance)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Carried forward supplier dues</p>
         </div>
-
-        <div id="kpi-credit-facility" className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Credit Limit</span>
-            <CreditCard className="w-5 h-5 text-blue-500" />
-          </div>
-          <p className="text-2xl font-bold text-blue-900 mt-2">
-            ৳{totalCreditLimit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+          <span className="text-xs font-medium text-slate-500">{t('suppliers.totalCreditLimit')}</span>
+          <p className="text-2xl font-bold text-slate-700 mt-1">
+            {formatCurrency(totalCreditLimit)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Maximum allowed credit facility</p>
         </div>
       </div>
 
-      {/* Notifications */}
-      {successMessage && (
-        <div id="suppliers-success-alert" className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{successMessage}</span>
-        </div>
-      )}
-
+      {/* Feedback Messages */}
       {error && (
-        <div id="suppliers-error-alert" className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-800 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {isFallbackMode && !error && (
-        <div id="suppliers-fallback-notice" className="px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+        <div id="supplier-error-alert" className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-rose-700 text-sm">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
-            <span>Local Resilient Storage active &bull; Auto-generated unique codes & full supplier management are enabled.</span>
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
-          <span className="text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded">Offline-Ready</span>
+          <button onClick={() => setError(null)} className="p-1 hover:bg-rose-100 rounded">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Search & Filter Toolbar */}
-      <div className="bg-white p-4 border border-slate-200 rounded-xl shadow-xs flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {successMessage && (
+        <div id="supplier-success-alert" className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-700 text-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+          <button onClick={() => setSuccessMessage(null)} className="p-1 hover:bg-emerald-100 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Search and Filters */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             id="supplier-search-input"
             type="text"
-            placeholder="Search suppliers by name, short name (e.g. TMI), code, contact..."
+            placeholder={t('suppliers.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3">
           {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Status:</span>
-            <select
-              id="supplier-status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-white text-slate-700"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
+          <select
+            id="supplier-status-filter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="border border-slate-300 rounded-lg text-sm py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 bg-white"
+          >
+            <option value="ALL">{t('suppliers.allStatuses')}</option>
+            <option value="ACTIVE">{t('status.active')}</option>
+            <option value="INACTIVE">{t('status.inactive')}</option>
+          </select>
 
           {/* Business Unit Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase">BU:</span>
-            <select
-              id="supplier-bu-filter"
-              value={buFilter}
-              onChange={(e) => setBuFilter(e.target.value)}
-              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-white text-slate-700"
-            >
-              <option value="ALL">All Business Units</option>
-              {businessUnits.map((bu) => (
-                <option key={bu.id} value={bu.id}>
-                  {bu.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            id="supplier-bu-filter"
+            value={buFilter}
+            onChange={(e) => setBuFilter(e.target.value)}
+            className="border border-slate-300 rounded-lg text-sm py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 bg-white"
+          >
+            <option value="ALL">{t('suppliers.allBus')}</option>
+            {businessUnits.map((bu) => (
+              <option key={bu.id} value={bu.id}>
+                {bu.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Supplier Data Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+      <TableContainer>
         {loading ? (
-          <div id="suppliers-loading" className="flex items-center justify-center p-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-slate-500 font-medium">Loading suppliers...</span>
-            </div>
-          </div>
+          <LoadingState message={t('common.loading')} />
         ) : suppliers.length === 0 ? (
-          <div id="suppliers-empty-state" className="p-12 text-center">
-            <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800">No suppliers found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-              {search || statusFilter !== 'ALL' || buFilter !== 'ALL'
-                ? 'Try adjusting your search query or status filter.'
-                : 'Get started by creating your first supplier entry in the system.'}
-            </p>
-            <div className="mt-5">
+          <EmptyState
+            title={t('suppliers.noSuppliersFound')}
+            description={t('suppliers.noSuppliersFoundDesc')}
+            action={
               <Link
                 to="/purchases/suppliers/new"
                 id="btn-empty-new-supplier"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add First Supplier</span>
+                <span>{t('suppliers.addSupplier')}</span>
               </Link>
-            </div>
-          </div>
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table id="suppliers-table" className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase tracking-wider">
-                  <th className="px-5 py-3.5">Supplier Name & Code</th>
-                  <th className="px-5 py-3.5">Contact Person</th>
-                  <th className="px-5 py-3.5">Contact Info</th>
-                  <th className="px-5 py-3.5">Location</th>
-                  <th className="px-5 py-3.5">Business Unit</th>
-                  <th className="px-5 py-3.5">Payment Terms</th>
-                  <th className="px-5 py-3.5">Opening / Credit</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-3.5">{t('suppliers.supplierName')} & {t('suppliers.supplierCode')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.contactPerson')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.mobile')} / {t('suppliers.email')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.city')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.businessUnit')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.paymentTerms')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.openingBalance')} / {t('suppliers.creditLimit')}</th>
+                  <th className="px-5 py-3.5">{t('suppliers.status')}</th>
+                  <th className="px-5 py-3.5 text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -373,54 +354,64 @@ export function SupplierList() {
                     {/* Opening / Credit */}
                     <td className="px-5 py-4 text-xs">
                       <div className="text-slate-900 font-semibold">
-                        Due: ৳{Number(s.opening_balance).toLocaleString()}
+                        {formatCurrency(s.opening_balance)}
                       </div>
                       <div className="text-slate-500 text-[11px]">
-                        Limit: ৳{Number(s.credit_limit).toLocaleString()}
+                        Limit: {formatCurrency(s.credit_limit)}
                       </div>
                     </td>
 
                     {/* Status */}
                     <td className="px-5 py-4">
-                      <span
-                        id={`supplier-status-${s.id}`}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          s.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${s.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                        {s.status}
-                      </span>
+                      <StatusBadge status={s.status} />
                     </td>
 
                     {/* Actions */}
                     <td className="px-5 py-4 text-right space-x-1 whitespace-nowrap">
+                      {/* View */}
                       <button
                         id={`btn-view-supplier-${s.id}`}
                         type="button"
                         onClick={() => setViewSupplier(s)}
                         className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
-                        title="View Supplier Profile"
+                        title={t('common.view')}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+
+                      {/* Edit */}
                       <button
                         id={`btn-edit-supplier-${s.id}`}
                         type="button"
                         onClick={() => navigate(`/purchases/suppliers/${s.id}/edit`)}
                         className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
-                        title="Edit Supplier"
+                        title={t('common.edit')}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
+
+                      {/* Toggle Status (Activate / Deactivate) */}
+                      <button
+                        id={`btn-toggle-status-supplier-${s.id}`}
+                        type="button"
+                        onClick={() => setStatusToggleSupplier(s)}
+                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                          s.status === 'ACTIVE'
+                            ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                            : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'
+                        }`}
+                        title={s.status === 'ACTIVE' ? t('products.deactivate') : t('products.activate')}
+                      >
+                        {s.status === 'ACTIVE' ? <Ban className="w-4 h-4" /> : <BadgeCheck className="w-4 h-4" />}
+                      </button>
+
+                      {/* Delete */}
                       <button
                         id={`btn-delete-supplier-${s.id}`}
                         type="button"
                         onClick={() => setDeletingSupplier(s)}
                         className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                        title="Delete Supplier"
+                        title={t('common.delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -431,7 +422,7 @@ export function SupplierList() {
             </table>
           </div>
         )}
-      </div>
+      </TableContainer>
 
       {/* Quick View Profile Drawer/Modal */}
       {viewSupplier && (
@@ -459,45 +450,30 @@ export function SupplierList() {
               <button
                 type="button"
                 onClick={() => setViewSupplier(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-5 text-sm">
-              {/* Status and Terms */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <div>
-                  <span className="text-xs text-slate-500 block">Operational Status</span>
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 mt-1 rounded text-xs font-semibold ${
-                    viewSupplier.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {viewSupplier.status}
-                  </span>
+              {/* Financial Status Summary */}
+              <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">{t('suppliers.status')}</span>
+                  <StatusBadge status={viewSupplier.status} />
                 </div>
-                <div>
-                  <span className="text-xs text-slate-500 block">Payment Terms</span>
-                  <span className="font-semibold text-slate-800 mt-1 block">
-                    {viewSupplier.payment_terms || 'Net 30 Days'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Financial Profile */}
-              <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Financial Dues & Limit</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-white border border-slate-200 rounded-lg">
-                    <span className="text-xs text-slate-500">Opening Balance (Payable)</span>
-                    <p className="text-lg font-bold text-slate-900 mt-0.5">
-                      ৳{Number(viewSupplier.opening_balance).toLocaleString()}
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <span className="text-xs text-slate-500 font-medium">{t('suppliers.openingBalance')}</span>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatCurrency(viewSupplier.opening_balance)}
                     </p>
                   </div>
-                  <div className="p-3 bg-white border border-slate-200 rounded-lg">
-                    <span className="text-xs text-slate-500">Credit Limit</span>
-                    <p className="text-lg font-bold text-blue-700 mt-0.5">
-                      ৳{Number(viewSupplier.credit_limit).toLocaleString()}
+                  <div>
+                    <span className="text-xs text-slate-500 font-medium">{t('suppliers.creditLimit')}</span>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatCurrency(viewSupplier.credit_limit)}
                     </p>
                   </div>
                 </div>
@@ -505,28 +481,28 @@ export function SupplierList() {
 
               {/* Contact Information */}
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Contact Details</h3>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('suppliers.contactPerson')}</h3>
                 <div className="space-y-2 text-slate-700 bg-white border border-slate-200 rounded-lg p-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500 w-28">Contact Person:</span>
+                    <span className="text-xs font-medium text-slate-500 w-28">{t('suppliers.contactPerson')}:</span>
                     <span className="font-semibold text-slate-800">{viewSupplier.contact_person || '—'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500 w-28">Mobile:</span>
+                    <span className="text-xs font-medium text-slate-500 w-28">{t('suppliers.mobile')}:</span>
                     <span className="font-mono">{viewSupplier.mobile || '—'}</span>
                   </div>
                   {viewSupplier.alternate_mobile && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-slate-500 w-28">Alternate Phone:</span>
+                      <span className="text-xs font-medium text-slate-500 w-28">{t('suppliers.alternateMobile')}:</span>
                       <span className="font-mono">{viewSupplier.alternate_mobile}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500 w-28">Email:</span>
+                    <span className="text-xs font-medium text-slate-500 w-28">{t('suppliers.email')}:</span>
                     <span>{viewSupplier.email || '—'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500 w-28">Tax BIN / VAT:</span>
+                    <span className="text-xs font-medium text-slate-500 w-28">{t('suppliers.taxNumber')}:</span>
                     <span className="font-mono">{viewSupplier.tax_number || '—'}</span>
                   </div>
                 </div>
@@ -534,7 +510,7 @@ export function SupplierList() {
 
               {/* Address */}
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Location & Dispatch</h3>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('suppliers.address')}</h3>
                 <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-1 text-slate-700">
                   <p>{viewSupplier.address || 'No street address provided'}</p>
                   <p className="text-xs text-slate-500">
@@ -546,7 +522,7 @@ export function SupplierList() {
               {/* Notes */}
               {viewSupplier.notes && (
                 <div>
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Notes & Instructions</h3>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('suppliers.notes')}</h3>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 whitespace-pre-line">
                     {viewSupplier.notes}
                   </div>
@@ -558,21 +534,69 @@ export function SupplierList() {
               <button
                 type="button"
                 onClick={() => setViewSupplier(null)}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 bg-white hover:bg-slate-100"
+                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 cursor-pointer"
               >
-                Close
+                {t('common.close')}
+              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/purchases/suppliers/${viewSupplier.id}/ledger`}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-medium cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{t('suppliers.viewLedger')}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = viewSupplier.id;
+                    setViewSupplier(null);
+                    navigate(`/purchases/suppliers/${id}/edit`);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-xs cursor-pointer"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>{t('suppliers.editSupplier')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Toggle Modal */}
+      {statusToggleSupplier && (
+        <div id="modal-status-toggle-supplier" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-slate-200">
+            <h3 className="text-base font-bold text-slate-900">
+              {statusToggleSupplier.status === 'ACTIVE'
+                ? t('suppliers.deactivateConfirm')
+                : t('suppliers.activateConfirm')}
+            </h3>
+            <p className="text-sm text-slate-500 mt-2">
+              {statusToggleSupplier.status === 'ACTIVE'
+                ? t('suppliers.deactivateConfirmDesc', { name: statusToggleSupplier.name })
+                : t('suppliers.activateConfirmDesc', { name: statusToggleSupplier.name })}
+            </p>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setStatusToggleSupplier(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const id = viewSupplier.id;
-                  setViewSupplier(null);
-                  navigate(`/purchases/suppliers/${id}/edit`);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-xs cursor-pointer"
+                disabled={togglingStatus}
+                onClick={handleToggleStatus}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${
+                  statusToggleSupplier.status === 'ACTIVE'
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
               >
-                <Edit className="w-3.5 h-3.5" />
-                <span>Edit Full Profile</span>
+                {togglingStatus ? t('common.loading') : t('common.confirm')}
               </button>
             </div>
           </div>
@@ -583,9 +607,9 @@ export function SupplierList() {
       {deletingSupplier && (
         <div id="modal-delete-supplier" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
           <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-slate-200">
-            <h3 className="text-base font-bold text-slate-900">Delete Supplier?</h3>
+            <h3 className="text-base font-bold text-slate-900">{t('suppliers.deleteConfirm')}</h3>
             <p className="text-sm text-slate-500 mt-2">
-              Are you sure you want to delete <span className="font-semibold text-slate-800">{deletingSupplier.name}</span> ({deletingSupplier.supplier_code})?
+              {t('suppliers.deleteConfirmDesc', { name: deletingSupplier.name })}
             </p>
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
@@ -594,7 +618,7 @@ export function SupplierList() {
                 onClick={() => setDeletingSupplier(null)}
                 className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 id="btn-confirm-delete-supplier"
@@ -603,7 +627,7 @@ export function SupplierList() {
                 onClick={handleDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-lg transition-colors cursor-pointer"
               >
-                {deleting ? 'Deleting...' : 'Delete'}
+                {deleting ? t('common.loading') : t('common.delete')}
               </button>
             </div>
           </div>

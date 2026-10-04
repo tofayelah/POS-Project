@@ -21,6 +21,7 @@ import { createSupplier, getSupplier, updateSupplier, getNextSupplierCode } from
 import { getBusinessUnits } from '../../api/organization';
 import { BusinessUnit } from '../../types/organization';
 import { SupplierPayload } from '../../types/supplier';
+import { useLanguage } from '../../i18n';
 
 const STANDARD_PAYMENT_TERMS = [
   'Immediate / COD',
@@ -32,6 +33,7 @@ const STANDARD_PAYMENT_TERMS = [
 ];
 
 export function SupplierForm() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -99,13 +101,9 @@ export function SupplierForm() {
       const res = await getNextSupplierCode();
       if (res?.data?.supplier_code) {
         setSupplierCode(res.data.supplier_code);
-      } else {
-        // Fallback default format if backend response structure differs
-        setSupplierCode((prev) => prev || 'SUP-0001');
       }
     } catch {
-      // Fallback unique candidate on network error
-      setSupplierCode((prev) => prev || `SUP-${Math.floor(1000 + Math.random() * 9000)}`);
+      // Leave empty if backend unreachable; backend store() generates it reliably
     } finally {
       setCodeLoading(false);
     }
@@ -150,12 +148,7 @@ export function SupplierForm() {
   const handleSubmit = async (e: React.FormEvent, stayOnPage = false) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Supplier name is required.');
-      return;
-    }
-
-    if (!supplierCode.trim()) {
-      setError('Supplier code is required. Please click refresh to auto-generate a unique code.');
+      setError(t('suppliers.supplierName') + ' ' + t('common.required'));
       return;
     }
 
@@ -165,7 +158,7 @@ export function SupplierForm() {
     const payload: SupplierPayload = {
       name: name.trim(),
       short_name: shortName.trim() || null,
-      supplier_code: supplierCode.trim(),
+      supplier_code: supplierCode.trim() || undefined,
       business_unit_id: businessUnitId ? Number(businessUnitId) : null,
       status,
       contact_person: contactPerson.trim() || null,
@@ -185,14 +178,14 @@ export function SupplierForm() {
     try {
       if (isEdit && id) {
         await updateSupplier(Number(id), payload);
-        setSuccessMessage('Supplier updated successfully.');
+        setSuccessMessage(t('suppliers.saveSuccess'));
         setTimeout(() => {
           navigate('/purchases/suppliers');
         }, 1200);
       } else {
         const res = await createSupplier(payload);
         const assignedCode = res.data?.supplier_code || supplierCode;
-        setSuccessMessage(`Supplier "${res.data.name}" registered successfully with Code [${assignedCode}].`);
+        setSuccessMessage(t('suppliers.saveSuccess'));
         if (stayOnPage) {
           // Reset form for next entry and fetch new unique code
           setName('');

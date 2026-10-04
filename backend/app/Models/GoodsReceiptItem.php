@@ -39,6 +39,11 @@ class GoodsReceiptItem extends Model
         return $this->belongsTo(ProductVariant::class);
     }
 
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
     public function storageLocation(): BelongsTo
     {
         return $this->belongsTo(StorageLocation::class);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router';
+import { useParams, Link, useNavigate, useLocation } from 'react-router';
 import { 
   Package, 
   ArrowLeft, 
@@ -8,26 +8,34 @@ import {
   Send, 
   Printer, 
   AlertCircle, 
-  FileText, 
   Building2, 
   Warehouse as WarehouseIcon,
-  Layers,
   Calendar,
-  Boxes
+  Boxes,
+  Ban,
+  X
 } from 'lucide-react';
 import { GoodsReceipt } from '../../types/purchase';
-import { getGoodsReceipt, postGoodsReceipt } from '../../api/goodsReceipts';
+import { getGoodsReceipt, postGoodsReceipt, cancelGoodsReceipt } from '../../api/goodsReceipts';
 import { formatCurrency } from '../../utils/currency';
 import { DocumentHeader } from '../../components/common/DocumentHeader';
+import { useLanguage } from '../../i18n';
 
 export function GoodsReceiptDetail() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [receipt, setReceipt] = useState<GoodsReceipt | null>(null);
   const [loading, setLoading] = useState(true);
-  const [posting, setPosting] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    (location.state as any)?.successMessage || null
+  );
+
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -42,7 +50,7 @@ export function GoodsReceiptDetail() {
       const res = await getGoodsReceipt(receiptId);
       setReceipt(res.data);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to load goods receipt.');
+      setErrorMessage(err.message || t('goodsReceipts.notFoundDesc'));
     } finally {
       setLoading(false);
     }
@@ -50,20 +58,33 @@ export function GoodsReceiptDetail() {
 
   const handlePost = async () => {
     if (!receipt) return;
-    if (!window.confirm('Are you sure you want to permanently post this Goods Receipt to inventory and AP clearing?')) {
-      return;
-    }
-
-    setPosting(true);
+    setActionLoading(true);
     setErrorMessage(null);
     try {
       await postGoodsReceipt(receipt.id);
-      setSuccessMessage('Goods Receipt posted successfully. Inventory increased and AP Clearing accrued.');
+      setSuccessMessage(t('goodsReceipts.successPost'));
+      setIsPostModalOpen(false);
       loadReceipt(receipt.id);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to post Goods Receipt.');
     } finally {
-      setPosting(false);
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!receipt) return;
+    setActionLoading(true);
+    setErrorMessage(null);
+    try {
+      await cancelGoodsReceipt(receipt.id);
+      setSuccessMessage(t('goodsReceipts.successCancel'));
+      setIsCancelModalOpen(false);
+      loadReceipt(receipt.id);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to cancel Goods Receipt.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -71,7 +92,7 @@ export function GoodsReceiptDetail() {
     return (
       <div className="p-12 text-center text-slate-400">
         <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-        <span>Loading Goods Receipt details...</span>
+        <span>{t('common.loading')}</span>
       </div>
     );
   }
@@ -80,13 +101,13 @@ export function GoodsReceiptDetail() {
     return (
       <div className="p-12 text-center space-y-3">
         <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-800">Goods Receipt Not Found</h2>
-        <p className="text-xs text-slate-500">The requested receipt #{id} does not exist or could not be loaded.</p>
+        <h2 className="text-lg font-bold text-slate-800">{t('goodsReceipts.notFound')}</h2>
+        <p className="text-xs text-slate-500">{t('goodsReceipts.notFoundDesc')}</p>
         <Link
           to="/purchases/goods-receipts"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Goods Receipts
+          <ArrowLeft className="w-3.5 h-3.5" /> {t('goodsReceipts.backToList')}
         </Link>
       </div>
     );
@@ -99,9 +120,9 @@ export function GoodsReceiptDetail() {
   const totalQty = (receipt.items || []).reduce((sum, it) => sum + Number(it.received_quantity), 0);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Top Navigation */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 print:p-0 print:m-0 print:max-w-none">
+      {/* Top Navigation / Actions */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4 print:hidden">
         <div className="flex items-center gap-3">
           <Link
             to="/purchases/goods-receipts"
@@ -116,16 +137,20 @@ export function GoodsReceiptDetail() {
               </h1>
               {receipt.status === 'POSTED' ? (
                 <span className="px-2 py-0.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> POSTED
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t('goodsReceipts.statusPosted')}
+                </span>
+              ) : receipt.status === 'CANCELLED' ? (
+                <span className="px-2 py-0.5 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-md flex items-center gap-1">
+                  <Ban className="w-3.5 h-3.5" /> {t('goodsReceipts.statusCancelled')}
                 </span>
               ) : (
                 <span className="px-2 py-0.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> DRAFT
+                  <Clock className="w-3.5 h-3.5" /> {t('goodsReceipts.statusDraft')}
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Goods Receipt &bull; Date: {receipt.receipt_date} &bull; Warehouse: {receipt.warehouse?.name}
+              {t('goodsReceipts.receiptDate')}: {receipt.receipt_date} &bull; {t('goodsReceipts.warehouse')}: {receipt.warehouse?.name}
             </p>
           </div>
         </div>
@@ -134,24 +159,33 @@ export function GoodsReceiptDetail() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
-            <Printer className="w-3.5 h-3.5" /> Print
+            <Printer className="w-3.5 h-3.5" /> {t('goodsReceipts.print')}
           </button>
+
           {receipt.status === 'DRAFT' && (
-            <button
-              type="button"
-              disabled={posting}
-              onClick={handlePost}
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5" /> Post to Stock
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsCancelModalOpen(true)}
+                className="px-3 py-1.5 border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              >
+                <Ban className="w-3.5 h-3.5" /> {t('goodsReceipts.cancelReceipt')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPostModalOpen(true)}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" /> {t('goodsReceipts.post')}
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {/* Authoritative Multi-Tenant Company Master Header */}
+      {/* Authoritative Document Header */}
       <DocumentHeader 
         title="GOODS RECEIPT NOTE (GRN)" 
         docNumber={receipt.receipt_number} 
@@ -160,46 +194,66 @@ export function GoodsReceiptDetail() {
 
       {/* Alerts */}
       {successMessage && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{successMessage}</span>
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center justify-between print:hidden">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+          <button onClick={() => setSuccessMessage(null)} className="text-emerald-500 hover:text-emerald-800">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       {errorMessage && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMessage}</span>
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center justify-between print:hidden">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage(null)} className="text-rose-500 hover:text-rose-800">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {/* Info Header Card */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
         <div>
-          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">Supplier / Vendor</span>
+          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">
+            {t('goodsReceipts.supplier')}
+          </span>
           <div className="font-bold text-slate-900 text-sm">{receipt.supplier?.name}</div>
           <div className="text-slate-600 mt-0.5">Code: {receipt.supplier?.supplier_code}</div>
           {receipt.supplier?.mobile && <div className="text-slate-500">Tel: {receipt.supplier.mobile}</div>}
         </div>
 
         <div>
-          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">Procurement Reference</span>
+          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">
+            {t('goodsReceipts.purchaseOrder')}
+          </span>
           <div className="font-mono font-bold text-indigo-700 text-sm">
-            {receipt.purchase_order?.po_number || receipt.purchaseOrder?.po_number || `PO #${receipt.purchase_order_id}`}
+            {receipt.purchaseOrder?.po_number || receipt.purchase_order?.po_number || `PO #${receipt.purchase_order_id}`}
           </div>
           <Link
             to="/purchases/orders"
-            className="text-indigo-600 hover:underline text-[11px] mt-1 inline-block"
+            className="text-indigo-600 hover:underline text-[11px] mt-1 inline-block print:hidden"
           >
             View Purchase Order &rarr;
           </Link>
         </div>
 
         <div>
-          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">Destination & Audit</span>
+          <span className="text-slate-400 block font-semibold uppercase text-[10px] mb-1">
+            {t('goodsReceipts.warehouse')} & Audit
+          </span>
           <div className="font-bold text-slate-800">{receipt.warehouse?.name}</div>
-          <div className="text-slate-500 mt-0.5">Status: <span className="font-semibold text-slate-700">{receipt.status}</span></div>
+          <div className="text-slate-500 mt-0.5">
+            {t('goodsReceipts.status')}: <span className="font-semibold text-slate-700">{receipt.status}</span>
+          </div>
           {receipt.posted_at && (
-            <div className="text-slate-400 text-[10px] mt-0.5">Posted: {receipt.posted_at}</div>
+            <div className="text-slate-400 text-[10px] mt-0.5">
+              {t('goodsReceipts.postedAt')}: {receipt.posted_at}
+            </div>
           )}
         </div>
       </div>
@@ -207,9 +261,9 @@ export function GoodsReceiptDetail() {
       {/* Items Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-sm">Received Items Breakdown</h3>
+          <h3 className="font-bold text-slate-900 text-sm">{t('goodsReceipts.items')}</h3>
           <span className="text-xs text-slate-500">
-            Total Qty: <strong className="text-indigo-600 font-mono">{totalQty}</strong> units
+            {t('goodsReceipts.totalQuantity')}: <strong className="text-indigo-600 font-mono">{totalQty}</strong> units
           </span>
         </div>
 
@@ -217,13 +271,13 @@ export function GoodsReceiptDetail() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
-                <th className="py-3 px-4">Product / SKU</th>
-                <th className="py-3 px-4 text-center">Received Qty</th>
-                <th className="py-3 px-4 text-right">Unit Cost</th>
-                <th className="py-3 px-4 text-right">Total Cost</th>
-                <th className="py-3 px-4">Batch Number</th>
-                <th className="py-3 px-4">Expiry Date</th>
-                <th className="py-3 px-4">Storage Location</th>
+                <th className="py-3 px-4">{t('goodsReceipts.product')} / {t('goodsReceipts.sku')}</th>
+                <th className="py-3 px-4 text-center">{t('goodsReceipts.receiveNow')}</th>
+                <th className="py-3 px-4 text-right">{t('goodsReceipts.unitCost')}</th>
+                <th className="py-3 px-4 text-right">{t('goodsReceipts.lineTotal')}</th>
+                <th className="py-3 px-4">{t('goodsReceipts.batchNumber')}</th>
+                <th className="py-3 px-4">{t('goodsReceipts.expiryDate')}</th>
+                <th className="py-3 px-4">{t('goodsReceipts.storageLocation')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -235,136 +289,147 @@ export function GoodsReceiptDetail() {
                         {it.product?.name || `Product #${it.product_id}`}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono">
-                        SKU: {it.product_variant?.sku || 'N/A'}
+                        SKU: {it.productVariant?.sku || it.product_variant?.sku || it.product?.code || 'N/A'}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center font-mono font-bold text-indigo-700">
-                      {it.received_quantity}
+                      {Number(it.received_quantity).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-slate-600">
-                      {formatCurrency(it.unit_cost)}
+                      {formatCurrency(Number(it.unit_cost))}
                     </td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                      {formatCurrency(it.total_cost || Number(it.received_quantity) * Number(it.unit_cost))}
+                      {formatCurrency(Number(it.total_cost || Number(it.received_quantity) * Number(it.unit_cost)))}
                     </td>
                     <td className="py-3 px-4 font-mono font-medium text-slate-800">
-                      {it.batch_number || <span className="text-slate-400 italic">None</span>}
+                      {it.batch_number || '—'}
                     </td>
                     <td className="py-3 px-4 text-slate-600 font-mono">
-                      {it.expiry_date || <span className="text-slate-400 italic">None</span>}
+                      {it.expiry_date || '—'}
                     </td>
                     <td className="py-3 px-4 text-slate-600">
-                      {it.storage_location?.name || (it.storage_location_id ? `Bin #${it.storage_location_id}` : 'General Bin')}
+                      {it.storage_location?.name || (it as any).storageLocation?.name || '—'}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
-                    No item records attached to this receipt.
+                  <td colSpan={7} className="p-4 text-center text-slate-400">
+                    No line items found on this Goods Receipt.
                   </td>
                 </tr>
               )}
             </tbody>
+            <tfoot className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
+              <tr>
+                <td className="py-3 px-4 text-right">{t('common.total')}:</td>
+                <td className="py-3 px-4 text-center font-mono text-indigo-700">{totalQty.toLocaleString()}</td>
+                <td className="py-3 px-4"></td>
+                <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 text-sm">
+                  {formatCurrency(totalCost)}
+                </td>
+                <td colSpan={3}></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
-
-        {/* Valuation Total Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-xs text-slate-500">Valuation reflects moving average unit cost.</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">Total Receipt Value:</span>
-            <span className="text-lg font-bold font-mono text-indigo-600">
-              {formatCurrency(totalCost)}
-            </span>
-          </div>
-        </div>
       </div>
 
-      {/* Accounting & Inventory Traceability Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Double-Entry Journal Entry */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center gap-2 text-indigo-700 font-bold text-sm">
-            <Layers className="w-4 h-4" />
-            <span>Accounting Journal Entry</span>
-          </div>
-          {receipt.status === 'POSTED' ? (
-            <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 font-mono text-[11px] flex justify-between">
-                <span>Journal Key:</span>
-                <span className="font-bold text-indigo-600">PURCHASE-GR-{receipt.id}</span>
-              </div>
-              <div className="border border-slate-200 rounded-lg overflow-hidden text-[11px]">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-100 text-slate-600 font-semibold">
-                    <tr>
-                      <th className="py-1.5 px-3">Account</th>
-                      <th className="py-1.5 px-3 text-right">Debit</th>
-                      <th className="py-1.5 px-3 text-right">Credit</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="py-2 px-3">
-                        <span className="font-semibold text-slate-800">Merchandise Inventory Asset</span>
-                        <span className="block text-[10px] text-slate-400">Account #1500 (Asset)</span>
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
-                        {formatCurrency(totalCost)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3">
-                        <span className="font-semibold text-slate-800">AP Clearing / GRNI</span>
-                        <span className="block text-[10px] text-slate-400">Account #2000 (Liability)</span>
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-indigo-700">
-                        {formatCurrency(totalCost)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-[10px] text-slate-400 italic">
-                * Accrues inventory asset and Goods Received Not Invoiced liability.
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">
-              Journal entry will be automatically generated upon posting.
-            </p>
-          )}
+      {/* Notes / Footer */}
+      {receipt.notes && (
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs text-xs space-y-1">
+          <span className="font-semibold text-slate-700 block">{t('goodsReceipts.notes')}:</span>
+          <p className="text-slate-600 leading-relaxed">{receipt.notes}</p>
         </div>
+      )}
 
-        {/* Inventory Movement Traceability */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
-            <Boxes className="w-4 h-4" />
-            <span>Warehouse Stock Ledger</span>
-          </div>
-          {receipt.status === 'POSTED' ? (
-            <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 font-mono text-[11px] flex justify-between">
-                <span>Operation:</span>
-                <span className="font-bold text-emerald-700">STOCK_IN</span>
+      {/* Post Confirmation Modal */}
+      {isPostModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150 print:hidden">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-emerald-600">
+              <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                <Send className="w-6 h-6" />
               </div>
-              <ul className="space-y-1.5 text-slate-600 text-[11px] pl-1">
-                <li>&bull; Handled via authoritative <code className="font-mono bg-slate-100 px-1 rounded">InventoryService::stockIn()</code></li>
-                <li>&bull; Recalculated moving-average unit valuation</li>
-                <li>&bull; Updated warehouse inventory counts & batch records</li>
-                <li>&bull; Created immutable <code className="font-mono bg-slate-100 px-1 rounded">StockMovement</code> ledger records</li>
-              </ul>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">
+                  {t('goodsReceipts.postConfirmTitle')}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {receipt.receipt_number}
+                </p>
+              </div>
             </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">
-              Stock movement ledger records will be immutably written upon posting.
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {t('goodsReceipts.postConfirmMessage')}
             </p>
-          )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setIsPostModalOpen(false)}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={handlePost}
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {actionLoading ? t('goodsReceipts.posting') : t('goodsReceipts.post')}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150 print:hidden">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="p-2 bg-rose-50 rounded-xl border border-rose-200">
+                <Ban className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">
+                  {t('goodsReceipts.cancelConfirmTitle')}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {receipt.receipt_number}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {t('goodsReceipts.cancelConfirmMessage')}
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setIsCancelModalOpen(false)}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={handleCancel}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {actionLoading ? t('goodsReceipts.cancelling') : t('goodsReceipts.cancelReceipt')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

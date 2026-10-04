@@ -311,4 +311,47 @@ class CustomerController extends Controller
             'data' => $customers
         ]);
     }
+
+    public function balance(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
+
+        $customer = Customer::where('company_id', $companyId)->findOrFail($id);
+
+        $salesTotal = (float) \App\Models\Sale::where('customer_id', $customer->id)
+            ->where('company_id', $companyId)
+            ->where('status', 'COMPLETED')
+            ->sum('grand_total');
+
+        $paidTotal = (float) \App\Models\PaymentAllocation::join('sales', 'sales.id', '=', 'payment_allocations.allocatable_id')
+            ->where(function ($q) {
+                $q->where('payment_allocations.allocatable_type', 'Sale')
+                  ->orWhere('payment_allocations.allocatable_type', \App\Models\Sale::class);
+            })
+            ->where('sales.customer_id', $customer->id)
+            ->where('sales.company_id', $companyId)
+            ->where('sales.status', 'COMPLETED')
+            ->sum('payment_allocations.amount');
+
+        $openingBalance = (float) ($customer->opening_balance ?? 0);
+        $balance = round($openingBalance + $salesTotal - $paidTotal, 4);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'customer_id' => $customer->id,
+                'customer_code' => $customer->customer_code,
+                'name' => $customer->name,
+                'credit_limit' => (float) ($customer->credit_limit ?? 0),
+                'opening_balance' => $openingBalance,
+                'total_sales' => $salesTotal,
+                'total_paid' => $paidTotal,
+                'balance' => $balance,
+            ]
+        ]);
+    }
 }
+

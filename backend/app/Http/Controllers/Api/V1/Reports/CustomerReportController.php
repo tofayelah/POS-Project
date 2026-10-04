@@ -12,28 +12,50 @@ class CustomerReportController extends Controller
 {
     public function receivables(Request $request)
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
         
-        $query = Customer::where('company_id', $companyId);
+        $salesSub = '(SELECT COALESCE(SUM(s.grand_total), 0) FROM sales s WHERE s.customer_id = customers.id AND s.company_id = customers.company_id AND s.status = \'COMPLETED\')';
+        $paidSub = '(SELECT COALESCE(SUM(pa.amount), 0) FROM payment_allocations pa JOIN sales s ON s.id = pa.allocatable_id WHERE (pa.allocatable_type = \'Sale\' OR pa.allocatable_type LIKE \'%Sale\') AND s.customer_id = customers.id AND s.company_id = customers.company_id AND s.status = \'COMPLETED\')';
+        $balanceExpr = '(COALESCE(customers.opening_balance, 0) + ' . $salesSub . ' - ' . $paidSub . ')';
+
+        $query = Customer::where('company_id', $companyId)
+            ->select('customers.*')
+            ->selectRaw("{$salesSub} as total_sales")
+            ->selectRaw("{$salesSub} as total_purchases")
+            ->selectRaw("{$paidSub} as total_paid")
+            ->selectRaw("{$balanceExpr} as balance");
             
         // Apply filters
         if ($request->filled('customer_group_id')) {
             $query->where('customer_group_id', $request->customer_group_id);
         }
+
+        if ($request->filled('search')) {
+            $search = '%' . $request->search . '%';
+            $likeOperator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, $search)
+                  ->orWhere('customer_code', $likeOperator, $search)
+                  ->orWhere('mobile', $likeOperator, $search);
+            });
+        }
         
         $sortBy = $request->query('sort_by', 'name');
         $sortDirection = $request->query('sort_direction', 'asc');
         
-        if (in_array($sortBy, ['name', 'balance', 'total_purchases', 'total_paid'])) {
+        if (in_array($sortBy, ['name', 'balance', 'total_sales', 'total_purchases', 'total_paid', 'customer_code'])) {
             $query->orderBy($sortBy, $sortDirection === 'asc' ? 'asc' : 'desc');
         }
 
         $perPage = (int) $request->query('per_page', 50);
         $paginator = $query->paginate(in_array($perPage, [25, 50, 100, 250]) ? $perPage : 50);
         
-        $totalsQuery = clone $query;
+        $totalsQuery = DB::query()->fromSub($query->clone()->reorder(), 'filtered_customers');
         $totals = [
-            'total_receivables' => (float) $totalsQuery->sum('balance'),
+            'total_receivables' => (float) ($totalsQuery->sum('balance') ?? 0),
         ];
         
         return response()->json([
@@ -51,7 +73,10 @@ class CustomerReportController extends Controller
 
     public function ledger(Request $request, $id)
     {
-        $companyId = $request->attributes->get('company_id');
+        $companyId = $request->attributes->get('company_id')
+            ?? $request->header('X-Company-ID')
+            ?? $request->header('X-Company-Id')
+            ?? ($request->user() ? $request->user()->companies()->first()?->id : null);
         
         $customer = Customer::where('company_id', $companyId)->findOrFail($id);
         

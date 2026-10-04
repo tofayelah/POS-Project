@@ -315,10 +315,10 @@ export function VariantBuilder({
                 <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-600">
                   <th className="py-2.5 px-3 font-semibold">SKU *</th>
                   <th className="py-2.5 px-3 font-semibold">Variant Name *</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Cost</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Selling *</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Wholesale</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">MRP</th>
+                  <th className="py-2.5 px-2 font-semibold w-24">Cost (৳)</th>
+                  <th className="py-2.5 px-2 font-semibold w-24">Selling (৳) *</th>
+                  <th className="py-2.5 px-2 font-semibold w-24">Wholesale (৳)</th>
+                  <th className="py-2.5 px-2 font-semibold w-24">MRP (৳)</th>
                   <th className="py-2.5 px-3 font-semibold w-36">Barcode</th>
                   <th className="py-2.5 px-2 font-semibold text-center w-12">Action</th>
                 </tr>

@@ -40,7 +40,8 @@ class InventoryService
             $companyId, $warehouseId, $productVariantId, $movementType, $quantity, $unitCost,
             $referenceType, $referenceId, $referenceNumber, $reason, $notes, $userId, $allowNegative
         ) {
-            $variant = ProductVariant::findOrFail($productVariantId);
+            $variant = ProductVariant::with(['product.unit'])->findOrFail($productVariantId);
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             // Determine if movement is incoming or outgoing
@@ -298,10 +299,11 @@ class InventoryService
             }
 
             // 2. ProductVariant belongs to the correct product/company scope
-            $variant = ProductVariant::with('product')->find($productVariantId);
+            $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
                 throw new ConflictHttpException("Product variant not found or does not belong to company.");
             }
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             // 3. If stockBatchId is supplied:
@@ -492,19 +494,20 @@ class InventoryService
             }
 
             // 4. Product Variant & Product validation
-            $variant = ProductVariant::with('product')
+            $variant = ProductVariant::with(['product.unit'])
                 ->find($productVariantId);
 
             if (
                 !$variant ||
                 !$variant->product ||
-                $variant->product->company_id !== $companyId
+                (int) $variant->product->company_id !== (int) $companyId
             ) {
                 throw new ConflictHttpException(
                     "Product variant does not belong to the specified company."
                 );
             }
 
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             // 5. Storage Location validation
@@ -517,13 +520,13 @@ class InventoryService
                     );
                 }
 
-                if ($location->company_id !== $companyId) {
+                if ((int) $location->company_id !== (int) $companyId) {
                     throw new ConflictHttpException(
                         "Storage location does not belong to the specified company."
                     );
                 }
 
-                if ($location->warehouse_id !== $warehouseId) {
+                if ((int) $location->warehouse_id !== (int) $warehouseId) {
                     throw new ConflictHttpException(
                         "Storage location does not belong to the specified warehouse."
                     );
@@ -873,10 +876,11 @@ class InventoryService
             }
 
             // 4. Product Variant & Product validation
-            $variant = ProductVariant::with('product')->find($productVariantId);
+            $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
                 throw new ConflictHttpException("Product variant does not belong to the specified company.");
             }
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             // 5. Source storage location validation
@@ -1227,10 +1231,11 @@ class InventoryService
                 throw new ConflictHttpException("Warehouse does not belong to the specified company.");
             }
 
-            $variant = ProductVariant::with('product')->find($productVariantId);
+            $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
                 throw new ConflictHttpException("Product variant does not belong to the specified company.");
             }
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             if ($storageLocationId !== null) {
@@ -1477,10 +1482,11 @@ class InventoryService
                 throw new ConflictHttpException("Warehouse does not belong to the specified company.");
             }
 
-            $variant = ProductVariant::with('product')->find($productVariantId);
+            $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
                 throw new ConflictHttpException("Product variant does not belong to the specified company.");
             }
+            $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
 
             if ($storageLocationId !== null) {
@@ -1622,5 +1628,20 @@ class InventoryService
 
             return $movement;
         });
+    }
+
+    protected function validateQuantityPrecision(ProductVariant $variant, float $quantity): void
+    {
+        $unit = $variant->product?->unit;
+        if (!$unit && $variant->product_id) {
+            $product = \App\Models\Product::with('unit')->find($variant->product_id);
+            $unit = $product?->unit;
+        }
+
+        if ($unit && !$unit->decimal_allowed) {
+            if (abs($quantity - round($quantity)) > 0.00001) {
+                throw new ConflictHttpException("Fractional quantities are not allowed for unit '{$unit->name}'.");
+            }
+        }
     }
 }

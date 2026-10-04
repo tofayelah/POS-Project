@@ -22,6 +22,7 @@ Route::get('v1/health', function () {
     ]);
 });
 
+Route::middleware('web')->get('v1/sanctum/csrf-cookie', [\Laravel\Sanctum\Http\Controllers\CsrfCookieController::class, 'show']);
 Route::post('v1/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -169,24 +170,38 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('suppliers/next-code', [\App\Http\Controllers\Api\V1\SupplierController::class, 'nextCode'])->middleware('permission:suppliers.view');
         Route::post('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'store'])->middleware('permission:suppliers.create');
         Route::get('suppliers/{id}', [\App\Http\Controllers\Api\V1\SupplierController::class, 'show'])->middleware('permission:suppliers.view');
+        Route::get('suppliers/{id}/balance', [\App\Http\Controllers\Api\V1\SupplierController::class, 'balance'])->middleware('permission:suppliers.view');
         Route::put('suppliers/{id}', [\App\Http\Controllers\Api\V1\SupplierController::class, 'update'])->middleware('permission:suppliers.update');
         Route::delete('suppliers/{id}', [\App\Http\Controllers\Api\V1\SupplierController::class, 'destroy'])->middleware('permission:suppliers.delete');
         
         // Purchase Orders
+        Route::get('purchase-orders/next-number', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'nextNumber'])->middleware('permission:purchase_orders.view');
         Route::get('purchase-orders', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'index'])->middleware('permission:purchase_orders.view');
         Route::post('purchase-orders', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'store'])->middleware('permission:purchase_orders.create');
         Route::get('purchase-orders/{id}', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'show'])->middleware('permission:purchase_orders.view');
         Route::post('purchase-orders/{id}/approve', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'approve'])->middleware('permission:purchase_orders.approve');
+        Route::post('purchase-orders/{id}/cancel', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'cancel'])->middleware('permission:purchase_orders.create');
         
         // Goods Receipts
+        Route::get('goods-receipts/next-number', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'nextNumber'])->middleware('permission:goods_receipts.create');
         Route::get('goods-receipts', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'index'])->middleware('permission:goods_receipts.view');
         Route::post('goods-receipts', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'store'])->middleware('permission:goods_receipts.create');
+        Route::get('goods-receipts/{id}', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'show'])->middleware('permission:goods_receipts.view');
         Route::post('goods-receipts/{id}/post', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'postReceipt'])->middleware('permission:goods_receipts.post');
+        Route::post('goods-receipts/{id}/cancel', [\App\Http\Controllers\Api\V1\GoodsReceiptController::class, 'cancel'])->middleware('permission:goods_receipts.cancel');
         
-        // Purchases
+        // Purchases & Invoices
         Route::get('purchases', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'index'])->middleware('permission:purchases.view');
         Route::post('purchases', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'store'])->middleware('permission:purchases.create');
+        Route::get('purchases/{id}', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'show'])->middleware('permission:purchases.view');
         Route::post('purchases/{id}/post', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'postPurchase'])->middleware('permission:purchases.create');
+        Route::post('purchases/{id}/cancel', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'cancel'])->middleware('permission:purchases.create');
+
+        Route::get('purchase-invoices', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'index'])->middleware('permission:purchases.view');
+        Route::post('purchase-invoices', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'store'])->middleware('permission:purchases.create');
+        Route::get('purchase-invoices/{id}', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'show'])->middleware('permission:purchases.view');
+        Route::post('purchase-invoices/{id}/post', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'postPurchase'])->middleware('permission:purchases.create');
+        Route::post('purchase-invoices/{id}/cancel', [\App\Http\Controllers\Api\V1\PurchaseController::class, 'cancel'])->middleware('permission:purchases.create');
         
         // SPRINT 05 — Customers & Ledger
         Route::get('customer-groups', [\App\Http\Controllers\Api\V1\CustomerGroupController::class, 'index'])->middleware('permission:customer_groups.view');
@@ -200,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('customers', [\App\Http\Controllers\Api\V1\CustomerController::class, 'index'])->middleware('permission:customers.view');
         Route::post('customers', [\App\Http\Controllers\Api\V1\CustomerController::class, 'store'])->middleware('permission:customers.create,pos.view');
         Route::get('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'show'])->middleware('permission:customers.view');
+        Route::get('customers/{id}/balance', [\App\Http\Controllers\Api\V1\CustomerController::class, 'balance'])->middleware('permission:customers.view,pos.view');
         Route::put('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'update'])->middleware('permission:customers.update');
         Route::delete('customers/{id}', [\App\Http\Controllers\Api\V1\CustomerController::class, 'destroy'])->middleware('permission:customers.delete');
 

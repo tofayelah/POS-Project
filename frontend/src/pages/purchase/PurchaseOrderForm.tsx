@@ -35,9 +35,10 @@ import { getProducts } from '../../api/products';
 import { 
   createPurchaseOrder, 
   getPurchaseOrder, 
-  generateNextPoNumber 
+  getNextPoNumber 
 } from '../../api/purchaseOrders';
 import { formatCurrency } from '../../utils/currency';
+import { useLanguage } from '../../i18n';
 
 interface FormLineItem {
   tempId: string;
@@ -52,81 +53,8 @@ interface FormLineItem {
   tax: number;
 }
 
-// Resilient default products catalog matching customer business verticals
-const FALLBACK_PRODUCTS = [
-  {
-    id: 1,
-    name: 'Samsung Galaxy A55 5G (8GB/256GB)',
-    sku: 'SAM-A55-256',
-    category_name: 'Mobile & Electronics',
-    variant_id: 1,
-    variant_name: 'Awesome Navy (IMEI Tracking)',
-    cost_price: 34500,
-    selling_price: 42000,
-  },
-  {
-    id: 2,
-    name: 'iPhone 15 Pro Max (256GB Dual SIM)',
-    sku: 'APP-IP15PM-256',
-    category_name: 'Mobile & Electronics',
-    variant_id: 2,
-    variant_name: 'Natural Titanium',
-    cost_price: 135000,
-    selling_price: 152000,
-  },
-  {
-    id: 3,
-    name: 'LEGO City High-Speed Train Set 60197',
-    sku: 'TOY-LEGO-TRN',
-    category_name: 'Toys & Kids',
-    variant_id: 3,
-    variant_name: 'Full Building Set 677 Pcs',
-    cost_price: 11200,
-    selling_price: 14500,
-  },
-  {
-    id: 4,
-    name: 'Remote Control Monster Truck 4WD',
-    sku: 'TOY-RC-TRK',
-    category_name: 'Toys & Kids',
-    variant_id: 4,
-    variant_name: '1:12 Scale Red / 2.4GHz',
-    cost_price: 3200,
-    selling_price: 4800,
-  },
-  {
-    id: 5,
-    name: 'Men 100% Combed Cotton Boxer Brief (Pack of 3)',
-    sku: 'APP-BX-03',
-    category_name: 'Undergarments & Apparel',
-    variant_id: 5,
-    variant_name: 'Size L / Multi-Color Navy-Black-Grey',
-    cost_price: 650,
-    selling_price: 1100,
-  },
-  {
-    id: 6,
-    name: 'Seamless Stretch Thermal Base Undergarment Set',
-    sku: 'APP-THM-SET',
-    category_name: 'Undergarments & Apparel',
-    variant_id: 6,
-    variant_name: 'Size XL / Charcoal Grey',
-    cost_price: 950,
-    selling_price: 1650,
-  },
-  {
-    id: 7,
-    name: 'Aroma Miniket Premium Rice (50kg Bag)',
-    sku: 'GRO-MNK-50',
-    category_name: 'Supermarket & FMCG',
-    variant_id: 7,
-    variant_name: 'Standard 50kg Polythene Lined',
-    cost_price: 3600,
-    selling_price: 4100,
-  },
-];
-
 export function PurchaseOrderForm() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
@@ -134,7 +62,7 @@ export function PurchaseOrderForm() {
   // Core Lookup States
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [availableProducts, setAvailableProducts] = useState<any[]>(FALLBACK_PRODUCTS);
+  const [availableProducts, setAvailableProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,7 +97,14 @@ export function PurchaseOrderForm() {
     try {
       // 1. Generate PO Number
       if (!isEditMode) {
-        setPoNumber(generateNextPoNumber());
+        try {
+          const nextRes = await getNextPoNumber();
+          if (nextRes?.data?.po_number) {
+            setPoNumber(nextRes.data.po_number);
+          }
+        } catch {
+          // Backend store() will generate sequential PO number if empty
+        }
       }
 
       // 2. Fetch Suppliers
@@ -194,8 +129,13 @@ export function PurchaseOrderForm() {
 
       // 4. Fetch Products
       try {
-        const prodRes: any = await getProducts();
-        const apiProds: any[] = Array.isArray(prodRes) ? prodRes : (prodRes?.data || []);
+        const prodRes: any = await getProducts({ per_page: 250 });
+        const apiProds: any[] = Array.isArray(prodRes?.data) 
+          ? prodRes.data 
+          : Array.isArray(prodRes) 
+          ? prodRes 
+          : (prodRes?.data?.data || []);
+
         if (apiProds.length > 0) {
           const mapped: any[] = [];
           apiProds.forEach((p: any) => {
@@ -208,8 +148,8 @@ export function PurchaseOrderForm() {
                   category_name: p.category?.name || 'General',
                   variant_id: v.id || 1,
                   variant_name: v.variant_name || 'Standard',
-                  cost_price: Number(v.cost_price) || 0,
-                  selling_price: Number(v.selling_price) || 0,
+                  cost_price: Number(v.cost_price || p.cost_price || 0),
+                  selling_price: Number(v.selling_price || p.selling_price || 0),
                 });
               });
             } else {
@@ -220,8 +160,8 @@ export function PurchaseOrderForm() {
                 category_name: p.category?.name || 'General',
                 variant_id: 1,
                 variant_name: 'Standard',
-                cost_price: 0,
-                selling_price: 0,
+                cost_price: Number(p.cost_price || 0),
+                selling_price: Number(p.selling_price || 0),
               });
             }
           });
@@ -230,7 +170,7 @@ export function PurchaseOrderForm() {
           }
         }
       } catch {
-        // Fallback to FALLBACK_PRODUCTS
+        // Handled silently
       }
 
       // 5. If edit mode, load existing PO
@@ -265,25 +205,6 @@ export function PurchaseOrderForm() {
               }))
             );
           }
-        }
-      } else {
-        // Add 1 default sample item if empty
-        if (items.length === 0 && FALLBACK_PRODUCTS.length > 0) {
-          const sample = FALLBACK_PRODUCTS[0];
-          setItems([
-            {
-              tempId: `temp-${Date.now()}-1`,
-              product_id: sample.id,
-              product_variant_id: sample.variant_id,
-              product_name: sample.name,
-              sku: sample.sku,
-              variant_name: sample.variant_name,
-              quantity: 20,
-              unit_cost: sample.cost_price,
-              discount: 0,
-              tax: 0,
-            },
-          ]);
         }
       }
     } catch (err: any) {
@@ -346,14 +267,11 @@ export function PurchaseOrderForm() {
 
   // Add Blank Row
   const handleAddBlankRow = () => {
-    const defaultProd = availableProducts[0] || {
-      id: 1,
-      variant_id: 1,
-      name: 'Custom Ordered Item',
-      sku: 'CUSTOM-01',
-      variant_name: 'Standard',
-      cost_price: 1000,
-    };
+    if (availableProducts.length === 0) {
+      setError('No products available in catalog. Please create products in Product Master first.');
+      return;
+    }
+    const defaultProd = availableProducts[0];
 
     setItems([
       ...items,
@@ -458,11 +376,12 @@ export function PurchaseOrderForm() {
       };
 
       const res = await createPurchaseOrder(payload);
+      const assignedPoNumber = res.data?.po_number || poNumber;
       navigate('/purchases/orders', {
-        state: { successMessage: `Purchase Order ${poNumber} created successfully.` },
+        state: { successMessage: `Purchase Order ${assignedPoNumber} created successfully.` },
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to save purchase order. Please verify required fields.');
+      setError(err.response?.data?.message || err.message || 'Failed to save purchase order. Please verify required fields.');
     } finally {
       setSaving(false);
     }
@@ -576,7 +495,12 @@ export function PurchaseOrderForm() {
                 />
                 <button
                   type="button"
-                  onClick={() => setPoNumber(generateNextPoNumber())}
+                  onClick={async () => {
+                    try {
+                      const res = await getNextPoNumber();
+                      if (res?.data?.po_number) setPoNumber(res.data.po_number);
+                    } catch {}
+                  }}
                   title="Generate Next Sequence Number"
                   className="p-2 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer shrink-0"
                 >
@@ -930,18 +854,20 @@ export function PurchaseOrderForm() {
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
                       Use the search bar above to select products from your catalog or click quick add below.
                     </p>
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      {FALLBACK_PRODUCTS.slice(0, 3).map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => handleAddProduct(p)}
-                          className="px-2.5 py-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition-colors"
-                        >
-                          + Add {p.name.split(' ')[0]}
-                        </button>
-                      ))}
-                    </div>
+                    {availableProducts.length > 0 && (
+                      <div className="flex items-center justify-center gap-2 mt-4">
+                        {availableProducts.slice(0, 3).map((p) => (
+                          <button
+                            key={`${p.id}-${p.variant_id}`}
+                            type="button"
+                            onClick={() => handleAddProduct(p)}
+                            className="px-2.5 py-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition-colors cursor-pointer"
+                          >
+                            + Add {p.name.split(' ')[0]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </td>
                 </tr>
               )}

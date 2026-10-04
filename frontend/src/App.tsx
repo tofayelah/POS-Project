@@ -16,12 +16,15 @@ import { UnitList } from './pages/products/UnitList';
 import { AttributeList } from './pages/products/AttributeList';
 import { InventoryDashboard } from './pages/inventory/InventoryDashboard';
 import { StockMovements } from './pages/inventory/StockMovements';
+import { StockAdjustments } from './pages/inventory/StockAdjustments';
 import { StockTransfers } from './pages/inventory/StockTransfers';
 import { SupplierList } from './pages/purchase/SupplierList';
 import { SupplierForm } from './pages/purchase/SupplierForm';
 import { PurchaseOrderList } from './pages/purchase/PurchaseOrderList';
 import { PurchaseOrderForm } from './pages/purchase/PurchaseOrderForm';
 import { PurchaseList } from './pages/purchase/PurchaseList';
+import { PurchaseInvoiceForm } from './pages/purchase/PurchaseInvoiceForm';
+import { PurchaseInvoiceDetail } from './pages/purchase/PurchaseInvoiceDetail';
 import { GoodsReceiptList } from './pages/purchase/GoodsReceiptList';
 import { GoodsReceiptForm } from './pages/purchase/GoodsReceiptForm';
 import { GoodsReceiptDetail } from './pages/purchase/GoodsReceiptDetail';
@@ -142,6 +145,13 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/inventory/adjustments" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StockAdjustments />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/inventory/transfers" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -149,6 +159,9 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
+            <Route path="/suppliers/new" element={<Navigate to="/purchases/suppliers/new" replace />} />
+            <Route path="/suppliers/:id/edit" element={<Navigate to="/purchases/suppliers/:id/edit" replace />} />
             <Route path="/purchases/suppliers" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -195,6 +208,41 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <PurchaseList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/new" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseInvoiceForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseInvoiceDetail />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/invoices" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/invoices/create" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseInvoiceForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/invoices/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseInvoiceDetail />
                 </AdminLayout>
               </ProtectedRoute>
             } />

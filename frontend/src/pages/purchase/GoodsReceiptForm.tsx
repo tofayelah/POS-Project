@@ -18,10 +18,11 @@ import {
 import { PurchaseOrder, CreateGoodsReceiptPayload } from '../../types/purchase';
 import { StorageLocation, Warehouse } from '../../types/organization';
 import { getPurchaseOrders, getPurchaseOrder } from '../../api/purchaseOrders';
-import { createGoodsReceipt, postGoodsReceipt, generateNextGrNumber } from '../../api/goodsReceipts';
+import { createGoodsReceipt, postGoodsReceipt, getNextGrNumber } from '../../api/goodsReceipts';
 import { getWarehouses, getStorageLocations } from '../../api/organization';
 import { getProducts } from '../../api/products';
 import { formatCurrency } from '../../utils/currency';
+import { useLanguage } from '../../i18n';
 
 interface ReceivingLineItem {
   purchase_order_item_id: number;
@@ -41,6 +42,7 @@ interface ReceivingLineItem {
 }
 
 export function GoodsReceiptForm() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPoId = searchParams.get('po_id');
@@ -53,30 +55,33 @@ export function GoodsReceiptForm() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | ''>('');
   const [storageLocations, setStorageLocations] = useState<StorageLocation[]>([]);
   
-  const [receiptNumber, setReceiptNumber] = useState(generateNextGrNumber());
+  const [receiptNumber, setReceiptNumber] = useState('');
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
   
   const [items, setItems] = useState<ReceivingLineItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitMode, setSubmitMode] = useState<'DRAFT' | 'POST'>('DRAFT');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [productsList, setProductsList] = useState<any[]>([]);
 
-  // Load available approved/partially received POs & warehouses
+  // Load available approved/partially received POs & warehouses & next receipt number
   useEffect(() => {
     loadInitialData();
   }, []);
 
   const loadInitialData = async () => {
     try {
-      const [poRes, whRes, prodRes] = await Promise.all([
-        getPurchaseOrders(),
+      const [poRes, whRes, prodRes, nextNumber] = await Promise.all([
+        getPurchaseOrders({ per_page: 100 }),
         getWarehouses(),
         getProducts({ per_page: 250 }).catch(() => ({ data: [] })),
+        getNextGrNumber(),
       ]);
+
+      setReceiptNumber(nextNumber);
 
       const validPos = (poRes.data || []).filter(
         (po) => po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED'
@@ -106,7 +111,7 @@ export function GoodsReceiptForm() {
       setSelectedPo(po);
       setSelectedWarehouseId(po.warehouse_id);
 
-      // Load storage locations for the warehouse
+      // Load storage locations for the destination warehouse
       if (po.warehouse_id) {
         loadLocations(po.warehouse_id);
       }
@@ -157,7 +162,6 @@ export function GoodsReceiptForm() {
   const handleWarehouseChange = (whId: number) => {
     setSelectedWarehouseId(whId);
     loadLocations(whId);
-    // Reset locations if changed
     setItems((prev) => prev.map((item) => ({ ...item, storage_location_id: null })));
   };
 
@@ -172,7 +176,7 @@ export function GoodsReceiptForm() {
         target.error = 'Quantity must be at least 0';
       } else if (num > target.pending_quantity) {
         target.received_quantity = num;
-        target.error = `Receive quantity cannot exceed pending quantity (${target.pending_quantity})`;
+        target.error = t('goodsReceipts.overReceiveError', { pending: target.pending_quantity });
       } else {
         target.received_quantity = num;
         target.error = null;
@@ -204,7 +208,7 @@ export function GoodsReceiptForm() {
     setErrorMessage(null);
 
     if (!selectedPoId || !selectedPo) {
-      setErrorMessage('Please select an approved Purchase Order.');
+      setErrorMessage(t('goodsReceipts.poRequired'));
       return;
     }
 
@@ -214,12 +218,11 @@ export function GoodsReceiptForm() {
     }
 
     if (hasZeroTotal) {
-      setErrorMessage('At least one item must have a receive quantity greater than 0.');
+      setErrorMessage(t('goodsReceipts.atLeastOneItem'));
       return;
     }
 
     if (isPost) {
-      setSubmitMode('POST');
       setIsConfirmModalOpen(true);
       return;
     }
@@ -234,7 +237,7 @@ export function GoodsReceiptForm() {
 
     const payload: CreateGoodsReceiptPayload = {
       purchase_order_id: Number(selectedPoId),
-      receipt_number: receiptNumber,
+      receipt_number: receiptNumber.trim() || undefined as any,
       receipt_date: receiptDate,
       items: items
         .filter((it) => it.received_quantity > 0)
@@ -253,14 +256,12 @@ export function GoodsReceiptForm() {
 
       if (isPost) {
         await postGoodsReceipt(receiptId);
-        setSuccessMessage('Goods Receipt posted successfully. Stock and accounting updated.');
         navigate(`/purchases/goods-receipts/${receiptId}`, {
-          state: { successMessage: 'Goods Receipt posted successfully.' }
+          state: { successMessage: t('goodsReceipts.successPost') }
         });
       } else {
-        setSuccessMessage('Goods Receipt saved as DRAFT successfully.');
         navigate('/purchases/goods-receipts', {
-          state: { successMessage: 'Goods Receipt draft saved successfully.' }
+          state: { successMessage: t('goodsReceipts.successCreate') }
         });
       }
     } catch (err: any) {
@@ -285,10 +286,10 @@ export function GoodsReceiptForm() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Package className="w-6 h-6 text-indigo-600" />
-              Create Goods Receipt
+              {t('goodsReceipts.createTitle')}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Receive procured items into warehouse inventory with batch, expiry, and location tracking.
+              {t('goodsReceipts.createSubtitle')}
             </p>
           </div>
         </div>
@@ -298,17 +299,17 @@ export function GoodsReceiptForm() {
             type="button"
             disabled={submitting || hasErrors || hasZeroTotal || !selectedPo}
             onClick={() => handleSubmit(false)}
-            className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
-            <Save className="w-3.5 h-3.5" /> Save Draft
+            <Save className="w-3.5 h-3.5" /> {submitting ? t('goodsReceipts.saving') : t('goodsReceipts.saveDraft')}
           </button>
           <button
             type="button"
             disabled={submitting || hasErrors || hasZeroTotal || !selectedPo}
             onClick={() => handleSubmit(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
-            <Send className="w-3.5 h-3.5" /> Post Goods Receipt
+            <Send className="w-3.5 h-3.5" /> {t('goodsReceipts.post')}
           </button>
         </div>
       </div>
@@ -332,14 +333,14 @@ export function GoodsReceiptForm() {
         {/* Select Purchase Order */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Purchase Order <span className="text-rose-500">*</span>
+            {t('goodsReceipts.purchaseOrder')} <span className="text-rose-500">*</span>
           </label>
           <select
             value={selectedPoId}
             onChange={(e) => handlePoSelect(Number(e.target.value))}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white font-medium"
           >
-            <option value="">-- Select Approved PO --</option>
+            <option value="">-- {t('goodsReceipts.selectPo')} --</option>
             {availablePos.map((po) => (
               <option key={po.id} value={po.id}>
                 {po.po_number} ({po.supplier?.name} • {po.status})
@@ -355,11 +356,11 @@ export function GoodsReceiptForm() {
 
         {/* Supplier (Read Only from PO) */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Supplier / Vendor</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">{t('goodsReceipts.supplier')}</label>
           <input
             type="text"
             readOnly
-            value={selectedPo?.supplier?.name || 'N/A (Select PO)'}
+            value={selectedPo?.supplier?.name || `N/A (${t('goodsReceipts.selectPo')})`}
             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium cursor-not-allowed"
           />
           {selectedPo?.supplier && (
@@ -369,10 +370,10 @@ export function GoodsReceiptForm() {
           )}
         </div>
 
-        {/* Warehouse */}
+        {/* Destination Warehouse */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Receiving Warehouse <span className="text-rose-500">*</span>
+            {t('goodsReceipts.warehouse')} <span className="text-rose-500">*</span>
           </label>
           <select
             value={selectedWarehouseId}
@@ -394,7 +395,7 @@ export function GoodsReceiptForm() {
         {/* Receipt Number & Date */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Receipt Reference & Date <span className="text-rose-500">*</span>
+            {t('goodsReceipts.receiptNumber')} & {t('goodsReceipts.receiptDate')} <span className="text-rose-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             <input
@@ -418,7 +419,7 @@ export function GoodsReceiptForm() {
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-slate-900 text-sm">Receiving Line Items</h3>
+            <h3 className="font-bold text-slate-900 text-sm">{t('goodsReceipts.items')}</h3>
             <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[11px] font-mono font-semibold">
               {items.length} Lines
             </span>
@@ -438,109 +439,85 @@ export function GoodsReceiptForm() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
-                  <th className="py-3 px-3 min-w-[200px]">Product / SKU</th>
-                  <th className="py-3 px-2 text-center w-16">Ordered</th>
-                  <th className="py-3 px-2 text-center w-16">Received</th>
-                  <th className="py-3 px-2 text-center w-20">Pending</th>
-                  <th className="py-3 px-3 w-28">Receive Qty</th>
-                  <th className="py-3 px-3 text-right w-24">Unit Cost</th>
-                  <th className="py-3 px-3 text-right w-28">Total</th>
-                  <th className="py-3 px-3 w-32">Batch #</th>
-                  <th className="py-3 px-3 w-32">Expiry Date</th>
-                  <th className="py-3 px-3 min-w-[160px]">Storage Location</th>
+                  <th className="py-3 px-3 min-w-[200px]">{t('goodsReceipts.product')} / {t('goodsReceipts.sku')}</th>
+                  <th className="py-3 px-2 text-center w-16">{t('goodsReceipts.orderedQty')}</th>
+                  <th className="py-3 px-2 text-center w-16">{t('goodsReceipts.receivedQty')}</th>
+                  <th className="py-3 px-2 text-center w-20">{t('goodsReceipts.remainingQty')}</th>
+                  <th className="py-3 px-3 w-28">{t('goodsReceipts.receiveNow')}</th>
+                  <th className="py-3 px-3 text-right w-24">{t('goodsReceipts.unitCost')}</th>
+                  <th className="py-3 px-3 text-right w-28">{t('goodsReceipts.lineTotal')}</th>
+                  <th className="py-3 px-3 w-32">{t('goodsReceipts.batchNumber')}</th>
+                  <th className="py-3 px-3 w-32">{t('goodsReceipts.expiryDate')}</th>
+                  <th className="py-3 px-3 min-w-[160px]">{t('goodsReceipts.storageLocation')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-800">
-                {items.map((item, idx) => (
-                  <tr key={idx} className={item.error ? 'bg-rose-50/40' : 'hover:bg-slate-50/50'}>
-                    {/* Product */}
+              <tbody className="divide-y divide-slate-100">
+                {items.map((it, idx) => (
+                  <tr key={idx} className={it.error ? 'bg-rose-50/40' : 'hover:bg-slate-50/50'}>
                     <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-900">{item.product_name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">SKU: {item.sku}</div>
-                      {item.error && (
-                        <div className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> {item.error}
+                      <div className="font-semibold text-slate-800">{it.product_name}</div>
+                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">{it.sku}</div>
+                      {it.error && (
+                        <div className="text-[10px] text-rose-600 font-medium mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{it.error}</span>
                         </div>
                       )}
                     </td>
-
-                    {/* Ordered */}
-                    <td className="py-3 px-2 text-center font-mono text-slate-500 font-medium">
-                      {item.ordered_quantity}
+                    <td className="py-3 px-2 text-center font-semibold text-slate-600">
+                      {it.ordered_quantity}
                     </td>
-
-                    {/* Received */}
-                    <td className="py-3 px-2 text-center font-mono text-slate-500 font-medium">
-                      {item.already_received}
+                    <td className="py-3 px-2 text-center text-slate-500">
+                      {it.already_received}
                     </td>
-
-                    {/* Pending */}
-                    <td className="py-3 px-2 text-center font-mono font-bold text-indigo-700 bg-indigo-50/50">
-                      {item.pending_quantity}
+                    <td className="py-3 px-2 text-center font-bold text-indigo-700 bg-indigo-50/40 rounded">
+                      {it.pending_quantity}
                     </td>
-
-                    {/* Receive Qty Input */}
                     <td className="py-3 px-3">
                       <input
                         type="number"
                         min="0"
-                        max={item.pending_quantity}
+                        max={it.pending_quantity}
                         step="any"
-                        value={item.received_quantity}
+                        value={it.received_quantity}
                         onChange={(e) => handleQuantityChange(idx, e.target.value)}
-                        className={`w-full px-2.5 py-1.5 border rounded-lg font-mono font-bold text-xs outline-none focus:ring-2 ${
-                          item.error
-                            ? 'border-rose-300 bg-rose-50 text-rose-800 focus:ring-rose-500/20'
-                            : 'border-slate-300 focus:ring-indigo-500/20 text-slate-900'
+                        className={`w-full px-2.5 py-1.5 border rounded-lg text-xs font-semibold text-slate-800 outline-none transition-all ${
+                          it.error 
+                            ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-500/20' 
+                            : 'border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
                         }`}
                       />
                     </td>
-
-                    {/* Unit Cost */}
-                    <td className="py-3 px-3 text-right font-mono text-slate-600">
-                      {formatCurrency(item.unit_cost)}
+                    <td className="py-3 px-3 text-right font-medium text-slate-600">
+                      {formatCurrency(it.unit_cost)}
                     </td>
-
-                    {/* Total */}
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                      {formatCurrency(item.line_total)}
+                    <td className="py-3 px-3 text-right font-bold text-slate-900">
+                      {formatCurrency(it.line_total)}
                     </td>
-
-                    {/* Batch Number */}
                     <td className="py-3 px-3">
                       <input
                         type="text"
-                        placeholder="e.g. BATCH-01"
-                        value={item.batch_number}
+                        placeholder="LOT-1234"
+                        value={it.batch_number}
                         onChange={(e) => handleItemFieldChange(idx, 'batch_number', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500"
                       />
                     </td>
-
-                    {/* Expiry Date */}
                     <td className="py-3 px-3">
                       <input
                         type="date"
-                        value={item.expiry_date}
+                        value={it.expiry_date}
                         onChange={(e) => handleItemFieldChange(idx, 'expiry_date', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500"
                       />
                     </td>
-
-                    {/* Storage Location */}
                     <td className="py-3 px-3">
                       <select
-                        value={item.storage_location_id || ''}
-                        onChange={(e) =>
-                          handleItemFieldChange(
-                            idx,
-                            'storage_location_id',
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                        value={it.storage_location_id || ''}
+                        onChange={(e) => handleItemFieldChange(idx, 'storage_location_id', e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500 bg-white"
                       >
-                        <option value="">-- General Bin --</option>
+                        <option value="">-- {t('goodsReceipts.selectLocation')} --</option>
                         {storageLocations.map((loc) => (
                           <option key={loc.id} value={loc.id}>
                             {loc.name} ({loc.code})
@@ -554,100 +531,104 @@ export function GoodsReceiptForm() {
             </table>
           </div>
         ) : (
-          <div className="p-12 text-center text-slate-400">
-            <Info className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-            <p className="font-semibold text-slate-600">No Purchase Order selected</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Select an approved Purchase Order above to automatically load receivable items.
-            </p>
+          <div className="p-8 text-center text-slate-400 text-xs">
+            {t('goodsReceipts.poRequired')}
           </div>
         )}
 
-        {/* Totals Summary Footer */}
-        {items.length > 0 && (
-          <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6 text-xs text-slate-600">
-              <div>
-                <span className="text-slate-400 block text-[10px]">TOTAL LINES</span>
-                <span className="font-bold text-slate-800 text-sm">{totalItemsCount}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">TOTAL RECEIVING QTY</span>
-                <span className="font-bold text-indigo-700 text-sm font-mono">{totalReceivingQty}</span>
-              </div>
+        {/* Footer Summary */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-6 text-xs">
+            <div>
+              <span className="text-slate-500 block">{t('goodsReceipts.items')}:</span>
+              <span className="font-bold text-slate-800 text-sm">{totalItemsCount}</span>
             </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-600">Total Receipt Valuation:</span>
-              <span className="text-lg font-bold font-mono text-indigo-600">
-                {formatCurrency(totalReceivingCost)}
-              </span>
+            <div>
+              <span className="text-slate-500 block">{t('goodsReceipts.totalQuantity')}:</span>
+              <span className="font-bold text-slate-800 text-sm">{totalReceivingQty.toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-slate-500 block">{t('goodsReceipts.totalValuation')}:</span>
+              <span className="font-bold text-indigo-700 text-base">{formatCurrency(totalReceivingCost)}</span>
             </div>
           </div>
-        )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={submitting || hasErrors || hasZeroTotal || !selectedPo}
+              onClick={() => handleSubmit(false)}
+              className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            >
+              <Save className="w-3.5 h-3.5" /> {submitting ? t('goodsReceipts.saving') : t('goodsReceipts.saveDraft')}
+            </button>
+            <button
+              type="button"
+              disabled={submitting || hasErrors || hasZeroTotal || !selectedPo}
+              onClick={() => handleSubmit(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            >
+              <Send className="w-3.5 h-3.5" /> {t('goodsReceipts.post')}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Confirmation Modal for Posting */}
+      {/* Confirmation Modal */}
       {isConfirmModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold text-base">
-                <Send className="w-5 h-5" />
-                <span>Post Goods Receipt?</span>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-emerald-600">
+              <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                <Send className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">
+                  {t('goodsReceipts.postConfirmTitle')}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {receiptNumber} • {formatCurrency(totalReceivingCost)}
+                </p>
               </div>
             </div>
 
-            <div className="p-6 space-y-4 text-xs text-slate-600">
-              <p className="font-medium text-slate-800">
-                Are you sure you want to permanently post Goods Receipt <span className="font-mono font-bold text-slate-900">{receiptNumber}</span>?
-              </p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {t('goodsReceipts.postConfirmMessage')}
+            </p>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2 text-amber-800">
-                <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
-                  <span>Important Operational Effects:</span>
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-900/90 pl-1">
-                  <li>Warehouse inventory will immediately increase via <code className="font-mono bg-amber-100 px-1 rounded">InventoryService::stockIn()</code>.</li>
-                  <li>Immutable <code className="font-mono bg-amber-100 px-1 rounded">StockMovement</code> records will be generated.</li>
-                  <li>Purchase Order received & pending quantities will be updated.</li>
-                  <li>Batch and storage location bins will be updated.</li>
-                  <li>Automated GL Journal (<span className="font-semibold">DR Inventory Asset, CR AP Clearing</span>) will post.</li>
-                </ul>
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-1">
+              <div className="flex justify-between text-slate-600">
+                <span>{t('goodsReceipts.supplier')}:</span>
+                <span className="font-semibold text-slate-800">{selectedPo?.supplier?.name}</span>
               </div>
-
-              <p className="text-[11px] text-slate-400 italic">
-                * Note: Once posted, this Goods Receipt cannot be edited or reversed directly.
-              </p>
+              <div className="flex justify-between text-slate-600">
+                <span>{t('goodsReceipts.warehouse')}:</span>
+                <span className="font-semibold text-slate-800">
+                  {warehouses.find((w) => w.id === selectedWarehouseId)?.name}
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>{t('goodsReceipts.totalQuantity')}:</span>
+                <span className="font-semibold text-slate-800">{totalReceivingQty.toLocaleString()} units</span>
+              </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => setIsConfirmModalOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/70 rounded-lg cursor-pointer"
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => executeSubmission(true)}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
-                {submitting ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Posting Goods Receipt...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Confirm & Post</span>
-                  </>
-                )}
+                {submitting ? t('goodsReceipts.posting') : t('goodsReceipts.post')}
               </button>
             </div>
           </div>

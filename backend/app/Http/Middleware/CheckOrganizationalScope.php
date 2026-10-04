@@ -52,6 +52,18 @@ class CheckOrganizationalScope
             default => null,
         };
 
+        if ($scopeType === 'company' && $targetId === null) {
+            if ($cat = $request->route('category')) {
+                $targetId = $cat instanceof \App\Models\Category ? $cat->company_id : \App\Models\Category::find($cat)?->company_id;
+            } elseif ($prod = $request->route('product')) {
+                $targetId = $prod instanceof \App\Models\Product ? $prod->company_id : \App\Models\Product::find($prod)?->company_id;
+            } elseif ($brand = $request->route('brand')) {
+                $targetId = $brand instanceof \App\Models\Brand ? $brand->company_id : \App\Models\Brand::find($brand)?->company_id;
+            } elseif ($unit = $request->route('unit')) {
+                $targetId = $unit instanceof \App\Models\Unit ? $unit->company_id : \App\Models\Unit::find($unit)?->company_id;
+            }
+        }
+
         // If a specific ID is being accessed or manipulated, verify user's access
         if ($targetId !== null) {
             $checkId = $targetId instanceof \Illuminate\Database\Eloquent\Model ? $targetId->getKey() : $targetId;

@@ -35,7 +35,15 @@ class ProductVariant extends Model
             if (empty($model->variant_name)) {
                 $model->variant_name = $model->sku ?? 'Default Variant';
             }
+            if (empty($model->company_id) && $model->product_id) {
+                $model->company_id = $model->product?->company_id ?? \App\Models\Product::where('id', $model->product_id)->value('company_id');
+            }
         });
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function product(): BelongsTo

@@ -38,6 +38,7 @@ class Sale extends Model
     public function payments() { return $this->hasMany(SalePayment::class); }
     public function customer() { return $this->belongsTo(Customer::class); }
     public function terminal() { return $this->belongsTo(PosTerminal::class, 'pos_terminal_id'); }
+    public function posTerminal() { return $this->belongsTo(PosTerminal::class, 'pos_terminal_id'); }
     public function session() { return $this->belongsTo(PosSession::class, 'pos_session_id'); }
     public function cashier() { return $this->belongsTo(User::class, 'cashier_id'); }
     public function branch() { return $this->belongsTo(Branch::class); }
