@@ -249,7 +249,7 @@ class AccountingService
                 // Swap debit and credit
                 $reversalJournal->lines()->create([
                     'account_id' => $line->account_id,
-                    'description' => clone $line->description,
+                    'description' => $line->description,
                     'debit' => $line->credit,
                     'credit' => $line->debit,
                     'business_unit_id' => $line->business_unit_id,
@@ -390,6 +390,77 @@ class AccountingService
             }
             throw $e;
         }
+    }
+
+    /**
+     * Execute an atomic Cash / Bank transfer between two accounts within a company.
+     * Posts a balanced automated journal:
+     * DR Destination Account
+     * CR Source Account
+     */
+    public function transferCashBank(int $companyId, array $data, ?int $userId = null): JournalEntry
+    {
+        $fromAccountId = (int) $data['from_account_id'];
+        $toAccountId = (int) $data['to_account_id'];
+        $amount = (float) $data['amount'];
+        $transferDate = $data['transfer_date'] ?? date('Y-m-d');
+        $description = $data['description'] ?? 'Cash/Bank Transfer';
+        $reference = $data['reference'] ?? null;
+        $idempotencyKey = $data['idempotency_key'] ?? null;
+
+        if ($fromAccountId === $toAccountId) {
+            throw new ConflictHttpException("Source account and destination account cannot be the same.");
+        }
+
+        if ($amount <= 0) {
+            throw new ConflictHttpException("Transfer amount must be greater than zero.");
+        }
+
+        $fromAccount = Account::where('company_id', $companyId)->findOrFail($fromAccountId);
+        $toAccount = Account::where('company_id', $companyId)->findOrFail($toAccountId);
+
+        if (!$fromAccount->is_active) {
+            throw new ConflictHttpException("Source account {$fromAccount->account_code} is inactive.");
+        }
+        if (!$toAccount->is_active) {
+            throw new ConflictHttpException("Destination account {$toAccount->account_code} is inactive.");
+        }
+
+        if ($fromAccount->account_type !== 'ASSET' || $toAccount->account_type !== 'ASSET') {
+            throw new ConflictHttpException("Both source and destination accounts must be ASSET accounts for cash/bank transfers.");
+        }
+
+        return DB::transaction(function () use ($companyId, $fromAccount, $toAccount, $amount, $transferDate, $description, $reference, $idempotencyKey, $userId) {
+            $journalData = [
+                'journal_date' => $transferDate,
+                'description' => $description,
+                'reference_type' => 'CASH_BANK_TRANSFER',
+                'source' => 'SYSTEM',
+                'idempotency_key' => $idempotencyKey,
+                'lines' => [
+                    [
+                        'account_id' => $toAccount->id,
+                        'debit' => $amount,
+                        'credit' => 0,
+                        'description' => "Transfer in from {$fromAccount->account_name} ({$fromAccount->account_code})",
+                        'reference' => $reference,
+                    ],
+                    [
+                        'account_id' => $fromAccount->id,
+                        'debit' => 0,
+                        'credit' => $amount,
+                        'description' => "Transfer out to {$toAccount->account_name} ({$toAccount->account_code})",
+                        'reference' => $reference,
+                    ],
+                ],
+            ];
+
+            $journal = $this->postAutomatedJournal($companyId, $journalData, $userId);
+
+            AuditLog::log($companyId, $userId, 'CASH_BANK_TRANSFERRED', $journal->id, 'JournalEntry', "Transferred {$amount} from {$fromAccount->account_name} to {$toAccount->account_name}");
+
+            return $journal;
+        });
     }
 }
 

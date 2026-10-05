@@ -19,6 +19,8 @@ class AccountMappingService
     public const ROLE_VAT_PAYABLE = 'vat_payable';
     public const ROLE_COGS = 'cogs';
     public const ROLE_LOYALTY_EXPENSE = 'loyalty_expense';
+    public const ROLE_OPERATING_EXPENSE = 'operating_expense';
+    public const ROLE_OTHER_INCOME = 'other_income';
 
     public const VALID_ROLES = [
         self::ROLE_INVENTORY_ASSET,
@@ -31,6 +33,8 @@ class AccountMappingService
         self::ROLE_VAT_PAYABLE,
         self::ROLE_COGS,
         self::ROLE_LOYALTY_EXPENSE,
+        self::ROLE_OPERATING_EXPENSE,
+        self::ROLE_OTHER_INCOME,
     ];
 
     /**

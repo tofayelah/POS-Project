@@ -311,6 +311,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::get('accounts', [\App\Http\Controllers\Api\V1\AccountController::class, 'index'])->middleware('permission:account.view');
         Route::post('accounts', [\App\Http\Controllers\Api\V1\AccountController::class, 'store'])->middleware('permission:account.create');
+        Route::get('accounts/{id}', [\App\Http\Controllers\Api\V1\AccountController::class, 'show'])->middleware('permission:account.view');
+        Route::put('accounts/{id}', [\App\Http\Controllers\Api\V1\AccountController::class, 'update'])->middleware('permission:account.create');
+        Route::delete('accounts/{id}', [\App\Http\Controllers\Api\V1\AccountController::class, 'destroy'])->middleware('permission:account.create');
         Route::post('accounts/{id}/activate', [\App\Http\Controllers\Api\V1\AccountController::class, 'activate'])->middleware('permission:account.activate');
         Route::post('accounts/{id}/deactivate', [\App\Http\Controllers\Api\V1\AccountController::class, 'deactivate'])->middleware('permission:account.deactivate');
 
@@ -330,9 +333,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('journals/{id}/post', [\App\Http\Controllers\Api\V1\JournalEntryController::class, 'postJournal'])->middleware('permission:journal.post');
         Route::post('journals/{id}/cancel', [\App\Http\Controllers\Api\V1\JournalEntryController::class, 'cancelJournal'])->middleware('permission:journal.cancel');
         Route::post('journals/{id}/reverse', [\App\Http\Controllers\Api\V1\JournalEntryController::class, 'reverseJournal'])->middleware('permission:journal.reverse');
+        Route::post('accounting/cash-bank-transfer', [\App\Http\Controllers\Api\V1\JournalEntryController::class, 'transferCashBank'])->middleware('permission:journal.create');
         
         Route::get('general-ledger', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'generalLedger'])->middleware('permission:general_ledger.view');
         Route::get('trial-balance', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'trialBalance'])->middleware('permission:trial_balance.view');
+        Route::get('reports/general-ledger', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'generalLedger'])->middleware('permission:general_ledger.view');
+        Route::get('reports/trial-balance', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'trialBalance'])->middleware('permission:trial_balance.view');
+        Route::get('reports/profit-loss', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'profitAndLoss'])->middleware('permission:general_ledger.view');
+        Route::get('reports/balance-sheet', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'balanceSheet'])->middleware('permission:general_ledger.view');
+        Route::get('reports/cash-flow', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'cashFlow'])->middleware('permission:general_ledger.view');
+        Route::get('reports/vat', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'vatReport'])->middleware('permission:general_ledger.view');
+        Route::get('accounting/general-ledger', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'generalLedger'])->middleware('permission:general_ledger.view');
+        Route::get('accounting/trial-balance', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'trialBalance'])->middleware('permission:trial_balance.view');
+        Route::get('accounting/profit-loss', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'profitAndLoss'])->middleware('permission:general_ledger.view');
+        Route::get('accounting/balance-sheet', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'balanceSheet'])->middleware('permission:general_ledger.view');
+        Route::get('accounting/cash-flow', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'cashFlow'])->middleware('permission:general_ledger.view');
+        Route::get('accounting/vat-report', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'vatReport'])->middleware('permission:general_ledger.view');
 
         // GATE 1.4 — Payments & Allocations
         Route::get('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index']);

@@ -35,4 +35,9 @@ class ExpenseCategory extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class, 'account_id');
+    }
 }

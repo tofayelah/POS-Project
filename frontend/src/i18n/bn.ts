@@ -667,6 +667,13 @@ export const bn: Translations = {
   'accounting.journalEntries': 'জার্নাল এন্ট্রি',
   'accounting.generalLedger': 'জেনারেল লেজার',
   'accounting.chartOfAccounts': 'হিসাব তালিকা',
+  'accounting.trialBalance': 'রেওয়ামিল (ট্রায়াল ব্যালেন্স)',
+  'accounting.profitAndLoss': 'লাভ-ক্ষতি বিবরণী',
+  'accounting.balanceSheet': 'উদ্বৃত্তপত্র (ব্যালেন্স শিট)',
+  'accounting.cashFlow': 'নগদ প্রবাহ বিবরণী',
+  'accounting.cashBankTransfer': 'ক্যাশ ও ব্যাংক স্থানান্তর',
+  'accounting.vatReconciliation': 'ভ্যাট নিরীক্ষা ও সমন্বয়',
+  'accounting.financialReports': 'আর্থিক প্রতিবেদনসমূহ',
   'accounting.debit': 'ডেবিট',
   'accounting.credit': 'ক্রেডিট',
 

@@ -12,6 +12,17 @@ use Carbon\Carbon;
 
 class ExpenseService
 {
+    protected $accountingService;
+    protected $accountMappingService;
+
+    public function __construct(
+        AccountingService $accountingService,
+        AccountMappingService $accountMappingService
+    ) {
+        $this->accountingService = $accountingService;
+        $this->accountMappingService = $accountMappingService;
+    }
+
     /**
      * Generate next expense number
      */
@@ -238,9 +249,8 @@ class ExpenseService
             
             AuditLog::log($companyId, $userId, 'EXPENSE_COMPLETED', $expense->id, 'Expense', "Completed Expense {$expense->expense_number}");
             
-            // Note: If supplier_id exists, and it's not fully paid, we *could* create a supplier ledger payable entry here.
-            // But requirement states "do not create duplicate supplier-balance logic" and "use SupplierLedgerService if explicitly required".
-            // Since this is operational expenses, we will only log it for now. If an explicit payable is needed, we would call it.
+            // Post automated journal entry to General Ledger
+            $this->postExpenseJournal($companyId, $expense, $userId);
             
             return $expense->load(['items', 'payments']);
         });
@@ -292,6 +302,9 @@ class ExpenseService
             
             AuditLog::log($companyId, $userId, 'EXPENSE_PAYMENT_CREATED', $expense->id, 'Expense', "Added payment of {$amount} to Expense {$expense->expense_number}");
             
+            // Post automated journal for payment against payable
+            $this->postExpensePaymentJournal($companyId, $expense, $payment, $userId);
+            
             return $payment;
         });
     }
@@ -317,5 +330,220 @@ class ExpenseService
             
             return $expense;
         });
+    }
+
+    /**
+     * Post automated GL journal for expense completion
+     * DR Expense
+     * CR Cash/Bank (if paid)
+     * CR Accounts Payable (if due)
+     */
+    protected function postExpenseJournal(int $companyId, Expense $expense, ?int $userId = null): void
+    {
+        if ($expense->total_amount <= 0) {
+            return;
+        }
+
+        // 1. Resolve Expense Account
+        $expenseCategory = $expense->category;
+        $expenseAccountId = null;
+        if ($expenseCategory && $expenseCategory->account_id) {
+            $catAccount = \App\Models\Account::where('company_id', $companyId)->find($expenseCategory->account_id);
+            if ($catAccount && $catAccount->is_active) {
+                $expenseAccountId = $catAccount->id;
+            }
+        }
+
+        if (!$expenseAccountId && $this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_OPERATING_EXPENSE)) {
+            $expenseAccountId = $this->accountMappingService->getAccountId($companyId, AccountMappingService::ROLE_OPERATING_EXPENSE);
+        }
+
+        if (!$expenseAccountId) {
+            $fallbackAccount = \App\Models\Account::where('company_id', $companyId)
+                ->where('account_type', 'EXPENSE')
+                ->where('is_active', true)
+                ->first();
+            if ($fallbackAccount) {
+                $expenseAccountId = $fallbackAccount->id;
+            }
+        }
+
+        if (!$expenseAccountId) {
+            return;
+        }
+
+        $lines = [];
+        $lines[] = [
+            'account_id' => $expenseAccountId,
+            'debit' => (float) $expense->total_amount,
+            'credit' => 0,
+            'description' => "Expense: {$expense->expense_number}" . ($expense->description ? " - {$expense->description}" : ''),
+            'branch_id' => $expense->branch_id,
+            'warehouse_id' => $expense->warehouse_id,
+            'business_unit_id' => $expense->business_unit_id,
+        ];
+
+        $paidAmount = (float) $expense->paid_amount;
+        $dueAmount = (float) $expense->due_amount;
+
+        if ($paidAmount <= 0 && $dueAmount <= 0) {
+            if ($expense->payment_status === 'PAID') {
+                $paidAmount = (float) $expense->total_amount;
+            } else {
+                $dueAmount = (float) $expense->total_amount;
+            }
+        }
+
+        if ($paidAmount > 0) {
+            $cashBankAccountId = null;
+            if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_CASH_BANK)) {
+                $cashBankAccountId = $this->accountMappingService->getAccountId($companyId, AccountMappingService::ROLE_CASH_BANK);
+            } else {
+                $fallbackAsset = \App\Models\Account::where('company_id', $companyId)
+                    ->where('account_type', 'ASSET')
+                    ->where('is_active', true)
+                    ->where(function($q) {
+                        $q->where('account_name', 'like', '%cash%')
+                          ->orWhere('account_name', 'like', '%bank%');
+                    })
+                    ->first();
+                if ($fallbackAsset) {
+                    $cashBankAccountId = $fallbackAsset->id;
+                }
+            }
+
+            if ($cashBankAccountId) {
+                $lines[] = [
+                    'account_id' => $cashBankAccountId,
+                    'debit' => 0,
+                    'credit' => $paidAmount,
+                    'description' => "Expense Payment: {$expense->expense_number}",
+                    'branch_id' => $expense->branch_id,
+                    'warehouse_id' => $expense->warehouse_id,
+                    'business_unit_id' => $expense->business_unit_id,
+                ];
+            }
+        }
+
+        if ($dueAmount > 0) {
+            $payableAccountId = null;
+            if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE)) {
+                $payableAccountId = $this->accountMappingService->getAccountId($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE);
+            } else {
+                $fallbackPayable = \App\Models\Account::where('company_id', $companyId)
+                    ->where('account_type', 'LIABILITY')
+                    ->where('is_active', true)
+                    ->where('account_name', 'like', '%payable%')
+                    ->first();
+                if ($fallbackPayable) {
+                    $payableAccountId = $fallbackPayable->id;
+                }
+            }
+
+            if ($payableAccountId) {
+                $lines[] = [
+                    'account_id' => $payableAccountId,
+                    'debit' => 0,
+                    'credit' => $dueAmount,
+                    'description' => "Accounts Payable for Expense: {$expense->expense_number}",
+                    'branch_id' => $expense->branch_id,
+                    'warehouse_id' => $expense->warehouse_id,
+                    'business_unit_id' => $expense->business_unit_id,
+                ];
+            }
+        }
+
+        $totalDebit = array_sum(array_column($lines, 'debit'));
+        $totalCredit = array_sum(array_column($lines, 'credit'));
+
+        if (abs($totalDebit - $totalCredit) < 0.0001 && count($lines) >= 2) {
+            try {
+                $this->accountingService->postAutomatedJournal($companyId, [
+                    'journal_date' => $expense->expense_date,
+                    'description' => "Expense Posting: {$expense->expense_number}",
+                    'reference_type' => 'EXPENSE',
+                    'reference_id' => $expense->id,
+                    'idempotency_key' => "expense-{$expense->id}-gl",
+                    'source' => 'SYSTEM',
+                    'lines' => $lines,
+                ], $userId);
+            } catch (\Exception $e) {
+                // If automated accounting fails due to closed period or unconfigured accounts, do not crash business operation
+                \Illuminate\Support\Facades\Log::warning("Could not auto-post expense journal: " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Post automated GL journal for subsequent payment on expense
+     * DR Accounts Payable
+     * CR Cash/Bank
+     */
+    protected function postExpensePaymentJournal(int $companyId, Expense $expense, ExpensePayment $payment, ?int $userId = null): void
+    {
+        $amount = (float) $payment->amount;
+        if ($amount <= 0) return;
+
+        $payableAccountId = null;
+        if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE)) {
+            $payableAccountId = $this->accountMappingService->getAccountId($companyId, AccountMappingService::ROLE_ACCOUNTS_PAYABLE);
+        } else {
+            $fallbackPayable = \App\Models\Account::where('company_id', $companyId)
+                ->where('account_type', 'LIABILITY')
+                ->where('is_active', true)
+                ->where('account_name', 'like', '%payable%')
+                ->first();
+            if ($fallbackPayable) $payableAccountId = $fallbackPayable->id;
+        }
+
+        $cashBankAccountId = null;
+        if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_CASH_BANK)) {
+            $cashBankAccountId = $this->accountMappingService->getAccountId($companyId, AccountMappingService::ROLE_CASH_BANK);
+        } else {
+            $fallbackAsset = \App\Models\Account::where('company_id', $companyId)
+                ->where('account_type', 'ASSET')
+                ->where('is_active', true)
+                ->where(function($q) {
+                    $q->where('account_name', 'like', '%cash%')
+                      ->orWhere('account_name', 'like', '%bank%');
+                })
+                ->first();
+            if ($fallbackAsset) $cashBankAccountId = $fallbackAsset->id;
+        }
+
+        if ($payableAccountId && $cashBankAccountId) {
+            try {
+                $this->accountingService->postAutomatedJournal($companyId, [
+                    'journal_date' => $payment->payment_date,
+                    'description' => "Expense Payment Settlement: {$expense->expense_number}",
+                    'reference_type' => 'EXPENSE_PAYMENT',
+                    'reference_id' => $payment->id,
+                    'idempotency_key' => "expense-payment-{$payment->id}-gl",
+                    'source' => 'SYSTEM',
+                    'lines' => [
+                        [
+                            'account_id' => $payableAccountId,
+                            'debit' => $amount,
+                            'credit' => 0,
+                            'description' => "Settlement of Expense Payable: {$expense->expense_number}",
+                            'branch_id' => $expense->branch_id,
+                            'warehouse_id' => $expense->warehouse_id,
+                            'business_unit_id' => $expense->business_unit_id,
+                        ],
+                        [
+                            'account_id' => $cashBankAccountId,
+                            'debit' => 0,
+                            'credit' => $amount,
+                            'description' => "Payment for Expense: {$expense->expense_number}",
+                            'branch_id' => $expense->branch_id,
+                            'warehouse_id' => $expense->warehouse_id,
+                            'business_unit_id' => $expense->business_unit_id,
+                        ],
+                    ],
+                ], $userId);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Could not auto-post expense payment journal: " . $e->getMessage());
+            }
+        }
     }
 }

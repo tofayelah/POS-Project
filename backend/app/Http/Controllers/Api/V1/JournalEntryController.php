@@ -134,4 +134,35 @@ class JournalEntryController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 409);
         }
     }
+
+    public function transferCashBank(Request $request)
+    {
+        $companyId = $request->attributes->get('company_id');
+
+        $validated = $request->validate([
+            'from_account_id' => [
+                'required',
+                'integer',
+                Rule::exists('accounts', 'id')->where('company_id', $companyId),
+            ],
+            'to_account_id' => [
+                'required',
+                'integer',
+                'different:from_account_id',
+                Rule::exists('accounts', 'id')->where('company_id', $companyId),
+            ],
+            'amount' => 'required|numeric|min:0.01',
+            'transfer_date' => 'nullable|date',
+            'description' => 'required|string|max:500',
+            'reference' => 'nullable|string|max:100',
+            'idempotency_key' => 'nullable|string|max:100',
+        ]);
+
+        try {
+            $journal = $this->accountingService->transferCashBank($companyId, $validated, $request->user()->id);
+            return response()->json(['success' => true, 'data' => $journal], 201);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 409);
+        }
+    }
 }

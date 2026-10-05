@@ -667,6 +667,13 @@ export const en: Translations = {
   'accounting.journalEntries': 'Journal Entries',
   'accounting.generalLedger': 'General Ledger',
   'accounting.chartOfAccounts': 'Chart of Accounts',
+  'accounting.trialBalance': 'Trial Balance',
+  'accounting.profitAndLoss': 'Profit & Loss Statement',
+  'accounting.balanceSheet': 'Balance Sheet',
+  'accounting.cashFlow': 'Cash Flow Statement',
+  'accounting.cashBankTransfer': 'Cash & Bank Transfer',
+  'accounting.vatReconciliation': 'VAT Reconciliation',
+  'accounting.financialReports': 'Financial Statements',
   'accounting.debit': 'Debit',
   'accounting.credit': 'Credit',
 

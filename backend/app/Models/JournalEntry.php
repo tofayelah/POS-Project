@@ -58,4 +58,16 @@ class JournalEntry extends Model
     }
 
     public function sourceDocument() { return $this->morphTo(); }
+
+    protected $appends = ['total_debit', 'total_credit'];
+
+    public function getTotalDebitAttribute(): float
+    {
+        return (float) $this->lines()->sum('debit');
+    }
+
+    public function getTotalCreditAttribute(): float
+    {
+        return (float) $this->lines()->sum('credit');
+    }
 }
