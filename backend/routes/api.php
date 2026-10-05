@@ -40,6 +40,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('users/remove-company-access', [\App\Http\Controllers\Api\V1\UserController::class, 'removeCompanyAccess'])->middleware('permission:users.company_access,users.update');
         
         Route::get('roles', [\App\Http\Controllers\Api\V1\RoleController::class, 'index'])->middleware('permission:roles.view');
+        Route::post('roles', [\App\Http\Controllers\Api\V1\RoleController::class, 'store'])->middleware('permission:roles.create');
+        Route::get('roles/{role}', [\App\Http\Controllers\Api\V1\RoleController::class, 'show'])->middleware('permission:roles.view');
+        Route::match(['put', 'patch'], 'roles/{role}', [\App\Http\Controllers\Api\V1\RoleController::class, 'update'])->middleware('permission:roles.update');
+        Route::delete('roles/{role}', [\App\Http\Controllers\Api\V1\RoleController::class, 'destroy'])->middleware('permission:roles.delete');
+        Route::get('roles/{role}/permissions', [\App\Http\Controllers\Api\V1\RoleController::class, 'permissions'])->middleware('permission:roles.view');
+        Route::put('roles/{role}/permissions', [\App\Http\Controllers\Api\V1\RoleController::class, 'syncPermissions'])->middleware('permission:roles.update');
+
+        Route::get('permissions', [\App\Http\Controllers\Api\V1\PermissionController::class, 'index'])->middleware('permission:permissions.view,roles.view');
+
+        Route::get('users/{user}/roles', [\App\Http\Controllers\Api\V1\UserController::class, 'userRoles'])->middleware('permission:users.view');
+        Route::put('users/{user}/roles', [\App\Http\Controllers\Api\V1\UserController::class, 'syncUserRoles'])->middleware('permission:users.update');
         
         // Organizational Hierarchy: Company
         Route::get('company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);

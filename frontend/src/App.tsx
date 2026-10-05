@@ -46,6 +46,8 @@ import { BranchList } from './pages/organization/BranchList';
 import { WarehouseList } from './pages/organization/WarehouseList';
 import { StorageLocationList } from './pages/organization/StorageLocationList';
 import { UserList } from './pages/organization/UserList';
+import RoleList from './pages/rbac/RoleList';
+import RolePermissionMatrix from './pages/rbac/RolePermissionMatrix';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -389,6 +391,27 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/organization/users" element={<Navigate to="/users" replace />} />
+            <Route path="/roles" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <RoleList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/roles/:id/permissions" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <RolePermissionMatrix />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/permissions" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <RolePermissionMatrix />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

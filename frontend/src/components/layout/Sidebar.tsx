@@ -69,7 +69,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
 
   // RBAC checks for UI navigation visibility (safe default-deny)
   const canViewPos = hasRole('Super Admin') || hasRole('Admin') || hasPermission('pos.view');
-  const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || canViewPos;
+  const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || hasPermission('users.view') || hasPermission('roles.view') || canViewPos;
   const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
 
   const isActive = (path: string, exact = false) => {
@@ -699,13 +699,17 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 </span>
               </Link>
               <Link
-                to="/dashboard"
+                to="/roles"
                 id="nav-link-roles"
                 onClick={handleLinkClick}
                 title={t('nav.roles', 'Roles & Permissions')}
-                className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-xl transition-colors cursor-pointer text-xs"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/roles') || isActive('/permissions')
+                    ? 'bg-slate-800 text-white font-medium'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
               >
-                <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                <ShieldCheck className={`w-4 h-4 shrink-0 ${isActive('/roles') || isActive('/permissions') ? 'text-indigo-400' : 'text-slate-400'}`} />
                 <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
                   {t('nav.roles', 'Roles & Permissions')}
                 </span>

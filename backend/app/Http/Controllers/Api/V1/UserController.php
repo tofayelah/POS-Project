@@ -374,4 +374,100 @@ class UserController extends Controller
 
         return $this->removeCompanyUser($request, $validated['company_id'], $validated['user_id']);
     }
+
+    public function userRoles(Request $request, $id)
+    {
+        $currentUser = $request->user();
+        if (!$currentUser) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $targetUser = User::findOrFail($id);
+
+        if (!$currentUser->hasRole('Super Admin')) {
+            $myCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetCompanyIds = $targetUser->companies()->pluck('companies.id')->toArray();
+
+            if (empty(array_intersect($myCompanyIds, $targetCompanyIds))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: You do not have access to this user.'
+                ], 403);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $targetUser->roles()->get(),
+        ]);
+    }
+
+    public function syncUserRoles(Request $request, $id)
+    {
+        $currentUser = $request->user();
+        if (!$currentUser) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $targetUser = User::findOrFail($id);
+
+        if (!$currentUser->hasRole('Super Admin')) {
+            $myCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetCompanyIds = $targetUser->companies()->pluck('companies.id')->toArray();
+
+            if (empty(array_intersect($myCompanyIds, $targetCompanyIds))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: You cannot modify roles for a user from another company.'
+                ], 403);
+            }
+        }
+
+        $validated = $request->validate([
+            'role_ids' => 'present|array',
+            'role_ids.*' => 'integer|exists:roles,id',
+        ]);
+
+        $superAdminRole = Role::where('name', 'Super Admin')->first();
+        if ($superAdminRole && $targetUser->roles()->where('roles.id', $superAdminRole->id)->exists()) {
+            if (!in_array($superAdminRole->id, $validated['role_ids'])) {
+                $otherSuperAdminCount = User::whereHas('roles', function ($q) use ($superAdminRole) {
+                    $q->where('roles.id', $superAdminRole->id);
+                })->where('id', '!=', $targetUser->id)->count();
+
+                if ($otherSuperAdminCount === 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot remove Super Admin role from the only remaining Super Admin user in the system.',
+                    ], 422);
+                }
+            }
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($targetUser, $validated, $currentUser) {
+            $companyId = $currentUser->company_id ?? $currentUser->companies()->first()?->id;
+            $oldRoles = $targetUser->roles()->pluck('name')->toArray();
+
+            $targetUser->roles()->sync($validated['role_ids']);
+
+            $newRoles = $targetUser->fresh('roles')->roles->pluck('name')->toArray();
+
+            \App\Models\AuditLog::log(
+                $companyId,
+                $currentUser->id,
+                'USER_ROLES_SYNCED',
+                $targetUser->id,
+                'User',
+                "Updated roles for user {$targetUser->name} (" . implode(', ', $newRoles) . ")",
+                ['roles' => $oldRoles],
+                ['roles' => $newRoles]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Roles updated for user '{$targetUser->name}'.",
+                'data' => $targetUser->fresh(['roles:id,name', 'companies:id,name,code']),
+            ]);
+        });
+    }
 }

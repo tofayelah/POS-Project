@@ -16,14 +16,34 @@ class RolePermissionSeeder extends Seeder
         Role::firstOrCreate(['name' => 'Cashier']);
 
         $permissions = [
-            'storage_locations.view',
-            'storage_locations.create',
-            'storage_locations.update',
-            'storage_locations.delete',
+            'storage_locations.view' => 'organization',
+            'storage_locations.create' => 'organization',
+            'storage_locations.update' => 'organization',
+            'storage_locations.delete' => 'organization',
+            'roles.view' => 'roles',
+            'roles.create' => 'roles',
+            'roles.update' => 'roles',
+            'roles.delete' => 'roles',
+            'permissions.view' => 'roles',
+            'users.view' => 'users',
+            'users.create' => 'users',
+            'users.update' => 'users',
+            'users.delete' => 'users',
+            'users.company_access' => 'users',
         ];
 
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm, 'group' => 'organization']);
+        foreach ($permissions as $name => $group) {
+            Permission::firstOrCreate(['name' => $name], ['group' => $group]);
+        }
+
+        $superAdmin = Role::where('name', 'Super Admin')->first();
+        if ($superAdmin) {
+            $superAdmin->permissions()->syncWithoutDetaching(Permission::pluck('id'));
+        }
+
+        $admin = Role::where('name', 'Admin')->first();
+        if ($admin) {
+            $admin->permissions()->syncWithoutDetaching(Permission::pluck('id'));
         }
     }
 }
