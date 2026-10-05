@@ -9,8 +9,23 @@ class AuditLog extends Model {
         'old_values' => 'array',
         'new_values' => 'array',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function () {
+            throw new \DomainException('Audit logs are append-only and cannot be modified.');
+        });
+
+        static::deleting(function () {
+            throw new \DomainException('Audit logs are immutable and cannot be deleted.');
+        });
+    }
+
     public function auditable() { return $this->morphTo(); }
     public function user() { return $this->belongsTo(User::class); }
+    public function company() { return $this->belongsTo(Company::class); }
 
     public static function log(...$args)
     {

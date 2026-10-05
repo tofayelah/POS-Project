@@ -30,6 +30,8 @@ class RolePermissionSeeder extends Seeder
             'users.update' => 'users',
             'users.delete' => 'users',
             'users.company_access' => 'users',
+            'audit_logs.view' => 'audit',
+            'audit.view' => 'audit',
         ];
 
         foreach ($permissions as $name => $group) {

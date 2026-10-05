@@ -48,6 +48,7 @@ import { StorageLocationList } from './pages/organization/StorageLocationList';
 import { UserList } from './pages/organization/UserList';
 import RoleList from './pages/rbac/RoleList';
 import RolePermissionMatrix from './pages/rbac/RolePermissionMatrix';
+import { AuditLogList } from './pages/audit/AuditLogList';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -412,6 +413,14 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/audit-logs" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AuditLogList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings/audit-logs" element={<Navigate to="/audit-logs" replace />} />
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

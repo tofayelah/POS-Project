@@ -89,8 +89,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['put', 'patch'], 'settings', [\App\Http\Controllers\Api\V1\SettingController::class, 'update'])->middleware('permission:settings.update');
         Route::get('system/status', [\App\Http\Controllers\Api\V1\System\SystemStatusController::class, 'status']);
         
-        // Audit Logs
-        Route::get('audit-logs', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'index'])->middleware('permission:audit_logs.view');
+        // Audit Logs (Read-only / append-only governance)
+        Route::get('audit-logs', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'index'])->middleware('permission:audit_logs.view,audit.view');
+        Route::get('audit-logs/{id}', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'show'])->middleware('permission:audit_logs.view,audit.view');
+        Route::post('audit-logs', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'store']);
+        Route::match(['put', 'patch'], 'audit-logs/{id}', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'update']);
+        Route::delete('audit-logs/{id}', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'destroy']);
         
         // Metrics & Overview
         Route::get('dashboard/metrics', [\App\Http\Controllers\Api\V1\DashboardController::class, 'metrics']);
