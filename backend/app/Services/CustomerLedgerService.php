@@ -80,4 +80,35 @@ class CustomerLedgerService
             return $ledger;
         });
     }
+
+    /**
+     * Add an adjustment to customer ledger.
+     */
+    public function addAdjustment(
+        $companyId,
+        $customerId,
+        $amount,
+        $direction = 'CREDIT',
+        $referenceType = null,
+        $referenceId = null,
+        $referenceNumber = null,
+        $notes = null,
+        $userId = null
+    ) {
+        $debit = strtoupper($direction) === 'DEBIT' ? $amount : 0;
+        $credit = strtoupper($direction) === 'CREDIT' ? $amount : 0;
+        return $this->postTransaction(
+            $companyId,
+            $customerId,
+            'ADJUSTMENT',
+            $debit,
+            $credit,
+            date('Y-m-d'),
+            $referenceType,
+            $referenceId,
+            $referenceNumber,
+            $notes,
+            $userId
+        );
+    }
 }

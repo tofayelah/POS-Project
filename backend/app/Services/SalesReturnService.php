@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\AuditLog;
+use App\Models\CustomerPointLedger;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SalesReturn;
@@ -17,15 +19,21 @@ class SalesReturnService
     protected $inventoryService;
     protected $customerLedgerService;
     protected $inventoryAccountingService;
+    protected $storeCreditService;
+    protected $loyaltyService;
 
     public function __construct(
         InventoryService $inventoryService,
         CustomerLedgerService $customerLedgerService,
-        ?InventoryAccountingService $inventoryAccountingService = null
+        ?InventoryAccountingService $inventoryAccountingService = null,
+        ?StoreCreditService $storeCreditService = null,
+        ?LoyaltyService $loyaltyService = null
     ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
         $this->inventoryAccountingService = $inventoryAccountingService ?? app(InventoryAccountingService::class);
+        $this->storeCreditService = $storeCreditService ?? app(StoreCreditService::class);
+        $this->loyaltyService = $loyaltyService ?? app(LoyaltyService::class);
     }
 
     /**
@@ -259,7 +267,8 @@ class SalesReturnService
                     
                     $totalRefunded += $rmAmount;
                     
-                    if ($rm['method'] === 'CUSTOMER_CREDIT') {
+                    $methodUpper = strtoupper($rm['method'] ?? '');
+                    if ($methodUpper === 'CUSTOMER_CREDIT' || $methodUpper === 'STORE_CREDIT') {
                         if (!$originalSale->customer_id) {
                             throw new ConflictHttpException("Cannot issue customer credit to walk-in customer.");
                         }
@@ -349,7 +358,7 @@ class SalesReturnService
                 SalesReturnPayment::create($payment);
             }
 
-            // Customer Ledger
+            // Customer Ledger & Store Credit
             if ($customerCreditAmount > 0) {
                 $this->customerLedgerService->addAdjustment(
                     $companyId,
@@ -361,6 +370,40 @@ class SalesReturnService
                     $returnNumber,
                     "Store credit from return {$returnNumber}"
                 );
+
+                $this->storeCreditService->refundToCredit(
+                    $companyId,
+                    $originalSale->customer_id,
+                    $customerCreditAmount,
+                    $salesReturn->id,
+                    $returnNumber,
+                    "Store credit refund from return {$returnNumber}",
+                    $data['processed_by'] ?? null
+                );
+            }
+
+            // Proportional Loyalty Points Reversal
+            if ($originalSale->customer_id && $salesReturn->refund_total > 0 && $originalSale->grand_total > 0) {
+                $earnedPoints = (float) CustomerPointLedger::where('company_id', $companyId)
+                    ->where('sale_id', $originalSale->id)
+                    ->where('transaction_type', 'EARN')
+                    ->sum('points');
+
+                if ($earnedPoints > 0) {
+                    $ratio = min(1.0, (float) $salesReturn->refund_total / (float) $originalSale->grand_total);
+                    $pointsToReverse = round($earnedPoints * $ratio, 4);
+                    if ($pointsToReverse > 0) {
+                        $this->loyaltyService->reversePoints(
+                            $companyId,
+                            $originalSale->customer_id,
+                            $pointsToReverse,
+                            $originalSale->id,
+                            $returnNumber,
+                            "Points reversed for sales return {$returnNumber}",
+                            $data['processed_by'] ?? null
+                        );
+                    }
+                }
             }
 
             // General Ledger Integration (Gate 1.5)
@@ -372,6 +415,15 @@ class SalesReturnService
                     $this->inventoryAccountingService->postSalesReturnCogs($salesReturn, $totalRestoredCogs, $data['processed_by'] ?? null);
                 }
             }
+
+            AuditLog::log(
+                $companyId,
+                $data['processed_by'] ?? null,
+                'SALES_RETURN_COMPLETED',
+                $salesReturn->id,
+                'SalesReturn',
+                "Processed sales return {$returnNumber} for original sale #{$originalSale->id} with refund total {$salesReturn->refund_total}"
+            );
 
             return $salesReturn->load(['items', 'payments', 'originalSale']);
         });

@@ -128,6 +128,17 @@ class PaymentService
                                 $debitAccount = $fallbackExpense ?: $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_LOYALTY_EXPENSE);
                             }
                             $lineDesc = "Loyalty points redemption settlement for customer payment {$payment->payment_number}";
+                        } elseif ($paymentMethod === 'STORE_CREDIT') {
+                            if ($this->accountMappingService->isConfigured($companyId, AccountMappingService::ROLE_STORE_CREDIT_LIABILITY)) {
+                                $debitAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_STORE_CREDIT_LIABILITY);
+                            } else {
+                                $fallbackLiability = \App\Models\Account::where('company_id', $companyId)
+                                    ->where('account_type', 'LIABILITY')
+                                    ->where('is_active', true)
+                                    ->first();
+                                $debitAccount = $fallbackLiability ?: $arAccount;
+                            }
+                            $lineDesc = "Store credit redemption settlement for customer payment {$payment->payment_number}";
                         } else {
                             $debitAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_CASH_BANK);
                             $lineDesc = "Cash/Bank receipt for customer payment {$payment->payment_number}";

@@ -28,19 +28,22 @@ class SalesService
     protected $paymentService;
     protected $inventoryAccountingService;
     protected $loyaltyService;
+    protected $storeCreditService;
 
     public function __construct(
         InventoryService $inventoryService,
         CustomerLedgerService $customerLedgerService,
         PaymentService $paymentService,
         InventoryAccountingService $inventoryAccountingService,
-        LoyaltyService $loyaltyService
+        LoyaltyService $loyaltyService,
+        ?StoreCreditService $storeCreditService = null
     ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
         $this->paymentService = $paymentService;
         $this->inventoryAccountingService = $inventoryAccountingService;
         $this->loyaltyService = $loyaltyService;
+        $this->storeCreditService = $storeCreditService ?? app(StoreCreditService::class);
     }
 
     public function completeSale($companyId, $data)
@@ -186,10 +189,11 @@ class SalesService
                 }
             }
 
-            // Prepare payments & Calculate Point Redemption
+            // Prepare payments & Calculate Point Redemption & Store Credit
             $paidAmount = 0;
             $payments = [];
             $pointRedemptionAmount = 0;
+            $storeCreditAmount = 0;
 
             if (!empty($data['payments'])) {
                 foreach ($data['payments'] as $payment) {
@@ -198,9 +202,22 @@ class SalesService
                     $mName = strtoupper($payment['method'] ?? $payment['payment_method'] ?? 'CASH');
                     if ($mName === 'POINT_REDEMPTION') {
                         $pointRedemptionAmount += $amt;
+                    } elseif ($mName === 'STORE_CREDIT') {
+                        $storeCreditAmount += $amt;
                     }
                     $paidAmount += $amt;
                     $payments[] = $payment;
+                }
+            }
+
+            // Validate Store Credit redemption
+            if ($storeCreditAmount > 0) {
+                if (!$customer) {
+                    throw new ConflictHttpException("Walk-in customers cannot use store credit.");
+                }
+                $scBalance = $this->storeCreditService->getBalance($companyId, $customer->id);
+                if ($storeCreditAmount > ($scBalance + 0.0001)) {
+                    throw new ConflictHttpException("Store credit redemption amount (৳{$storeCreditAmount}) exceeds customer's available balance (৳{$scBalance}).");
                 }
             }
 
@@ -384,6 +401,20 @@ class SalesService
                         $pointsForThisPayment,
                         $sale->id,
                         $sale->invoice_number,
+                        $data['cashier_id']
+                    );
+                }
+
+                // If STORE_CREDIT, deduct customer store credit atomically
+                if ($method === 'STORE_CREDIT' && $customer && $alloc > 0) {
+                    $this->storeCreditService->redeemCredit(
+                        $companyId,
+                        $customer->id,
+                        $alloc,
+                        'Sale',
+                        $sale->id,
+                        $sale->invoice_number,
+                        "Store credit redemption for sale {$sale->invoice_number}",
                         $data['cashier_id']
                     );
                 }

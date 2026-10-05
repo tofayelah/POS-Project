@@ -237,9 +237,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('customers/{id}/ledger', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'index'])->middleware('permission:customer_ledger.view');
         Route::post('customers/{id}/opening-balance', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'storeOpeningBalance'])->middleware('permission:customer_ledger.create_opening_balance');
         Route::post('customers/{id}/ledger/adjustment', [\App\Http\Controllers\Api\V1\CustomerLedgerController::class, 'storeAdjustment'])->middleware('permission:customer_ledger.create_adjustment');
-        Route::get('customers/{id}/points', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPoints'])->middleware('permission:customers.view,pos.view');
-        Route::get('customers/{id}/points/ledger', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPointLedger'])->middleware('permission:customers.view,pos.view');
-        Route::post('customers/{id}/points/adjust', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'adjustPoints'])->middleware('permission:customers.update');
+        Route::get('customers/{id}/points', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPoints'])->middleware('permission:customers.view,pos.view,loyalty.view');
+        Route::get('customers/{id}/points/ledger', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'customerPointLedger'])->middleware('permission:customers.view,pos.view,loyalty.view');
+        Route::post('customers/{id}/points/adjust', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'adjustPoints'])->middleware('permission:customers.update,loyalty.adjust');
+
+        // Phase 5.3 — Store Credit API
+        Route::get('customers/{id}/store-credit', [\App\Http\Controllers\Api\V1\StoreCreditController::class, 'customerCredit'])->middleware('permission:customers.view,store_credit.view,pos.view');
+        Route::get('customers/{id}/store-credit/transactions', [\App\Http\Controllers\Api\V1\StoreCreditController::class, 'customerTransactions'])->middleware('permission:customers.view,store_credit.view');
+        Route::post('customers/{id}/store-credit/issue', [\App\Http\Controllers\Api\V1\StoreCreditController::class, 'issue'])->middleware('permission:customers.update,store_credit.issue');
+        Route::post('customers/{id}/store-credit/redeem', [\App\Http\Controllers\Api\V1\StoreCreditController::class, 'redeem'])->middleware('permission:customers.update,store_credit.redeem');
+        Route::post('customers/{id}/store-credit/adjust', [\App\Http\Controllers\Api\V1\StoreCreditController::class, 'adjust'])->middleware('permission:customers.update,store_credit.adjust');
 
         // SPRINT 06 — POS & Sales
         Route::get('pos/terminals', [\App\Http\Controllers\Api\V1\PosTerminalController::class, 'index'])->middleware('permission:pos.view');

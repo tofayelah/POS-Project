@@ -57,4 +57,15 @@ class Customer extends Model
     {
         return $this->hasMany(CustomerPointLedger::class);
     }
+
+    public function storeCreditAccount()
+    {
+        return $this->hasOne(StoreCreditAccount::class);
+    }
+
+    public function storeCreditTransactions()
+    {
+        return $this->hasMany(StoreCreditTransaction::class);
+    }
 }
+

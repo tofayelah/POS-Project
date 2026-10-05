@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\CustomerPointLedger;
 use App\Models\LoyaltySetting;
@@ -147,7 +148,7 @@ class LoyaltyService
         $customer->points_balance = $balanceAfter;
         $customer->save();
 
-        return CustomerPointLedger::create([
+        $ledger = CustomerPointLedger::create([
             'company_id' => $companyId,
             'customer_id' => $customerId,
             'sale_id' => $saleId,
@@ -159,6 +160,17 @@ class LoyaltyService
             'description' => "Redeemed {$points} points for sale {$invoiceNumber}",
             'created_by' => $userId,
         ]);
+
+        AuditLog::log(
+            $companyId,
+            $userId,
+            'LOYALTY_POINTS_REDEEMED',
+            $ledger->id,
+            'CustomerPointLedger',
+            "Redeemed {$points} points for customer #{$customerId}. New balance: {$balanceAfter}"
+        );
+
+        return $ledger;
     }
 
     /**
@@ -180,7 +192,7 @@ class LoyaltyService
         $customer->points_balance = $balanceAfter;
         $customer->save();
 
-        return CustomerPointLedger::create([
+        $ledger = CustomerPointLedger::create([
             'company_id' => $companyId,
             'customer_id' => $customerId,
             'sale_id' => $saleId,
@@ -192,6 +204,68 @@ class LoyaltyService
             'description' => "Earned {$points} points from sale {$invoiceNumber}",
             'created_by' => $userId,
         ]);
+
+        AuditLog::log(
+            $companyId,
+            $userId,
+            'LOYALTY_POINTS_EARNED',
+            $ledger->id,
+            'CustomerPointLedger',
+            "Awarded {$points} loyalty points to customer #{$customerId}. New balance: {$balanceAfter}"
+        );
+
+        return $ledger;
+    }
+
+    /**
+     * Reverse earned points (e.g. on sales return) atomically.
+     */
+    public function reversePoints(
+        int $companyId,
+        int $customerId,
+        float $points,
+        ?int $saleId = null,
+        ?string $referenceNumber = null,
+        string $reason = 'Sales Return Points Reversal',
+        ?int $userId = null
+    ): ?CustomerPointLedger {
+        if ($points <= 0) {
+            return null;
+        }
+
+        $customer = Customer::where('company_id', $companyId)
+            ->where('id', $customerId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $balanceBefore = (float) $customer->points_balance;
+        $balanceAfter = max(0.0, round($balanceBefore - $points, 4));
+        $customer->points_balance = $balanceAfter;
+        $customer->save();
+
+        $ledger = CustomerPointLedger::create([
+            'company_id' => $companyId,
+            'customer_id' => $customerId,
+            'sale_id' => $saleId,
+            'transaction_type' => 'REVERSAL',
+            'points' => -$points,
+            'balance_before' => $balanceBefore,
+            'balance_after' => $balanceAfter,
+            'reference_number' => $referenceNumber,
+            'description' => $reason,
+            'created_by' => $userId,
+        ]);
+
+        AuditLog::log(
+            $companyId,
+            $userId,
+            'LOYALTY_POINTS_REVERSED',
+            $ledger->id,
+            'CustomerPointLedger',
+            "Reversed {$points} loyalty points for customer #{$customerId}. New balance: {$balanceAfter}"
+        );
+
+        return $ledger;
     }
 
     /**
@@ -210,7 +284,7 @@ class LoyaltyService
             $customer->points_balance = $balanceAfter;
             $customer->save();
 
-            return CustomerPointLedger::create([
+            $ledger = CustomerPointLedger::create([
                 'company_id' => $companyId,
                 'customer_id' => $customerId,
                 'sale_id' => null,
@@ -222,6 +296,17 @@ class LoyaltyService
                 'description' => $reason,
                 'created_by' => $userId,
             ]);
+
+            AuditLog::log(
+                $companyId,
+                $userId,
+                'LOYALTY_POINTS_ADJUSTED',
+                $ledger->id,
+                'CustomerPointLedger',
+                "Adjusted loyalty points for customer #{$customerId} by {$points} ({$reason}). New balance: {$balanceAfter}"
+            );
+
+            return $ledger;
         });
     }
 }

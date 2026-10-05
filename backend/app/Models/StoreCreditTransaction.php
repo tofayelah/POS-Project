@@ -2,31 +2,36 @@
 
 namespace App\Models;
 
+use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CustomerPointLedger extends Model
+class StoreCreditTransaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'company_id',
         'customer_id',
-        'sale_id',
-        'transaction_type',
-        'points',
+        'store_credit_account_id',
+        'type',
+        'amount',
         'balance_before',
         'balance_after',
+        'reference_type',
+        'reference_id',
         'reference_number',
         'description',
+        'expires_at',
         'created_by',
     ];
 
     protected $casts = [
-        'points' => 'decimal:4',
+        'amount' => 'decimal:4',
         'balance_before' => 'decimal:4',
         'balance_after' => 'decimal:4',
+        'expires_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -34,12 +39,17 @@ class CustomerPointLedger extends Model
         parent::boot();
 
         static::updating(function () {
-            throw new \DomainException('Loyalty point transactions are immutable and cannot be updated.');
+            throw new DomainException('Store credit transactions are immutable and cannot be updated.');
         });
 
         static::deleting(function () {
-            throw new \DomainException('Loyalty point transactions are immutable and cannot be deleted.');
+            throw new DomainException('Store credit transactions are immutable and cannot be deleted.');
         });
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function customer(): BelongsTo
@@ -47,9 +57,9 @@ class CustomerPointLedger extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function sale(): BelongsTo
+    public function account(): BelongsTo
     {
-        return $this->belongsTo(Sale::class);
+        return $this->belongsTo(StoreCreditAccount::class, 'store_credit_account_id');
     }
 
     public function creator(): BelongsTo

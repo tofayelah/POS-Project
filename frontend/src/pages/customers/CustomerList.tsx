@@ -17,9 +17,15 @@ import {
   ArrowRight,
   RefreshCw,
   UserCheck,
-  UserX
+  UserX,
+  Coins,
+  Wallet,
+  Award,
+  History
 } from 'lucide-react';
 import { customersApi, Customer, CustomerGroup, CustomerBalance } from '../../api/customers';
+import { posApi, CustomerPoints, CustomerPointLedgerItem } from '../../api/pos';
+import { storeCreditApi, StoreCreditAccount, StoreCreditTransaction } from '../../api/storeCredit';
 import { PageHeader, TableContainer, StatusBadge, LoadingState, EmptyState } from '../../components/common';
 import { formatCurrency } from '../../utils/currency';
 import { useLanguage } from '../../i18n';
@@ -70,6 +76,31 @@ export function CustomerList() {
   // Delete Modal state
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Loyalty & Store Credit Modal state
+  const [loyaltyCreditCustomer, setLoyaltyCreditCustomer] = useState<Customer | null>(null);
+  const [loyaltyCreditTab, setLoyaltyCreditTab] = useState<'storeCredit' | 'loyalty'>('storeCredit');
+  const [storeCreditAccount, setStoreCreditAccount] = useState<StoreCreditAccount | null>(null);
+  const [storeCreditTransactions, setStoreCreditTransactions] = useState<StoreCreditTransaction[]>([]);
+  const [loadingStoreCredit, setLoadingStoreCredit] = useState(false);
+  const [customerPoints, setCustomerPoints] = useState<CustomerPoints | null>(null);
+  const [pointsLedger, setPointsLedger] = useState<CustomerPointLedgerItem[]>([]);
+  const [loadingLoyalty, setLoadingLoyalty] = useState(false);
+
+  // Store credit actions state
+  const [isIssuingCredit, setIsIssuingCredit] = useState(false);
+  const [issueAmount, setIssueAmount] = useState<number | ''>('');
+  const [issueDesc, setIssueDesc] = useState('');
+  const [issueRef, setIssueRef] = useState('');
+  const [submittingCreditAction, setSubmittingCreditAction] = useState(false);
+  const [creditActionError, setCreditActionError] = useState<string | null>(null);
+
+  // Loyalty points adjustment state
+  const [isAdjustingPoints, setIsAdjustingPoints] = useState(false);
+  const [adjustPointsVal, setAdjustPointsVal] = useState<number | ''>('');
+  const [adjustPointsReason, setAdjustPointsReason] = useState('');
+  const [submittingPointsAction, setSubmittingPointsAction] = useState(false);
+  const [pointsActionError, setPointsActionError] = useState<string | null>(null);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -249,6 +280,100 @@ export function CustomerList() {
       setDeletingCustomer(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const fetchStoreCredit = useCallback(async (customerId: number) => {
+    setLoadingStoreCredit(true);
+    try {
+      const [accRes, transRes] = await Promise.all([
+        storeCreditApi.getCustomerCredit(customerId),
+        storeCreditApi.getTransactions(customerId),
+      ]);
+      setStoreCreditAccount(accRes.data);
+      setStoreCreditTransactions(transRes.data?.data || []);
+    } catch (err: any) {
+      console.error('Failed to load store credit', err);
+    } finally {
+      setLoadingStoreCredit(false);
+    }
+  }, []);
+
+  const fetchLoyalty = useCallback(async (customerId: number) => {
+    setLoadingLoyalty(true);
+    try {
+      const [pointsRes, ledgerRes] = await Promise.all([
+        posApi.getCustomerPoints(customerId),
+        posApi.getCustomerPointLedger(customerId),
+      ]);
+      setCustomerPoints(pointsRes.data);
+      setPointsLedger(ledgerRes.data?.data || []);
+    } catch (err: any) {
+      console.error('Failed to load loyalty points', err);
+    } finally {
+      setLoadingLoyalty(false);
+    }
+  }, []);
+
+  const handleOpenLoyaltyCreditModal = (cust: Customer) => {
+    setLoyaltyCreditCustomer(cust);
+    setLoyaltyCreditTab('storeCredit');
+    setCreditActionError(null);
+    setPointsActionError(null);
+    setIsIssuingCredit(false);
+    setIsAdjustingPoints(false);
+    fetchStoreCredit(cust.id);
+    fetchLoyalty(cust.id);
+  };
+
+  const handleIssueStoreCreditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loyaltyCreditCustomer || !issueAmount || Number(issueAmount) <= 0) return;
+    setSubmittingCreditAction(true);
+    setCreditActionError(null);
+    try {
+      await storeCreditApi.issueCredit(loyaltyCreditCustomer.id, {
+        amount: Number(issueAmount),
+        description: issueDesc.trim() || undefined,
+        reference_number: issueRef.trim() || undefined,
+      });
+      setIssueAmount('');
+      setIssueDesc('');
+      setIssueRef('');
+      setIsIssuingCredit(false);
+      setSuccessMessage('Store credit issued successfully.');
+      fetchStoreCredit(loyaltyCreditCustomer.id);
+      fetchCustomers();
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setCreditActionError(err.response?.data?.message || 'Failed to issue store credit.');
+    } finally {
+      setSubmittingCreditAction(false);
+    }
+  };
+
+  const handleAdjustPointsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loyaltyCreditCustomer || !adjustPointsVal || Number(adjustPointsVal) === 0 || !adjustPointsReason.trim()) return;
+    setSubmittingPointsAction(true);
+    setPointsActionError(null);
+    try {
+      await posApi.adjustCustomerPoints(
+        loyaltyCreditCustomer.id,
+        Number(adjustPointsVal),
+        adjustPointsReason.trim()
+      );
+      setAdjustPointsVal('');
+      setAdjustPointsReason('');
+      setIsAdjustingPoints(false);
+      setSuccessMessage('Loyalty points adjusted successfully.');
+      fetchLoyalty(loyaltyCreditCustomer.id);
+      fetchCustomers();
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setPointsActionError(err.response?.data?.message || 'Failed to adjust points.');
+    } finally {
+      setSubmittingPointsAction(false);
     }
   };
 
@@ -446,6 +571,13 @@ export function CustomerList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenLoyaltyCreditModal(cust)}
+                          title="Store Credit & Loyalty"
+                          className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition"
+                        >
+                          <Coins className="w-4 h-4 text-amber-600" />
+                        </button>
                         <button
                           onClick={() => handleOpenViewModal(cust)}
                           title="View Details & Balance"
@@ -846,6 +978,411 @@ export function CustomerList() {
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
               >
                 {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loyalty & Store Credit Modal */}
+      {loyaltyCreditCustomer && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-3xl w-full p-6 space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    {loyaltyCreditCustomer.name}
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                      {loyaltyCreditCustomer.customer_code}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {t('storeCredit.title', 'Store Credit')} & {t('loyalty.title', 'Customer Loyalty Program')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLoyaltyCreditCustomer(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex border-b border-slate-200">
+              <button
+                onClick={() => setLoyaltyCreditTab('storeCredit')}
+                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border-b-2 transition ${
+                  loyaltyCreditTab === 'storeCredit'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                {t('storeCredit.title', 'Store Credit')}
+              </button>
+              <button
+                onClick={() => setLoyaltyCreditTab('loyalty')}
+                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border-b-2 transition ${
+                  loyaltyCreditTab === 'loyalty'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                {t('loyalty.title', 'Loyalty Points')}
+              </button>
+            </div>
+
+            {/* TAB 1: Store Credit */}
+            {loyaltyCreditTab === 'storeCredit' && (
+              <div className="space-y-4">
+                {/* Balance Card */}
+                <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-medium text-emerald-800 uppercase tracking-wider block">
+                      {t('storeCredit.balance', 'Store Credit Balance')}
+                    </span>
+                    <div className="text-2xl font-bold text-emerald-900 mt-1">
+                      {formatCurrency(storeCreditAccount?.current_balance || 0)}
+                    </div>
+                    <span className="text-xs text-emerald-700 mt-0.5 inline-block">
+                      Status: <strong className="font-semibold">{storeCreditAccount?.account_status || 'ACTIVE'}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fetchStoreCredit(loyaltyCreditCustomer.id)}
+                      title="Refresh"
+                      className="p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loadingStoreCredit ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIssuingCredit(!isIssuingCredit);
+                        setCreditActionError(null);
+                      }}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+                    >
+                      {isIssuingCredit ? t('common.cancel', 'Cancel') : t('storeCredit.issue', 'Issue Store Credit')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Inline Form: Issue Store Credit */}
+                {isIssuingCredit && (
+                  <form onSubmit={handleIssueStoreCreditSubmit} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      {t('storeCredit.issue', 'Issue Store Credit')}
+                    </h4>
+                    {creditActionError && (
+                      <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs">
+                        {creditActionError}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          {t('storeCredit.amount', 'Amount (৳)')} *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          value={issueAmount}
+                          onChange={(e) => setIssueAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="0.00"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          {t('storeCredit.reference', 'Reference #')}
+                        </label>
+                        <input
+                          type="text"
+                          value={issueRef}
+                          onChange={(e) => setIssueRef(e.target.value)}
+                          placeholder="e.g. REF-1002"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          {t('storeCredit.reason', 'Description')}
+                        </label>
+                        <input
+                          type="text"
+                          value={issueDesc}
+                          onChange={(e) => setIssueDesc(e.target.value)}
+                          placeholder="Reason / Notes"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsIssuingCredit(false)}
+                        className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-100 transition"
+                      >
+                        {t('common.cancel', 'Cancel')}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingCreditAction}
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+                      >
+                        {submittingCreditAction ? t('common.saving', 'Saving...') : t('common.save', 'Confirm Issue')}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Transactions Table */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto">
+                  <table className="min-w-full divide-y divide-slate-200 text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Date</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-600">Type</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">Amount</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">Balance</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Description</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Actor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-100">
+                      {loadingStoreCredit ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-center text-slate-400">Loading transactions...</td>
+                        </tr>
+                      ) : storeCreditTransactions.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-center text-slate-400">No store credit transactions found.</td>
+                        </tr>
+                      ) : (
+                        storeCreditTransactions.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                              {new Date(tx.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                tx.type === 'ISSUE' || tx.type === 'REFUND'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : tx.type === 'REDEEM'
+                                  ? 'bg-indigo-100 text-indigo-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {tx.type}
+                              </span>
+                            </td>
+                            <td className={`px-3 py-2 text-right font-semibold whitespace-nowrap ${
+                              Number(tx.amount) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {Number(tx.amount) >= 0 ? '+' : ''}{formatCurrency(Number(tx.amount))}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono text-slate-700 whitespace-nowrap">
+                              {formatCurrency(Number(tx.balance_after))}
+                            </td>
+                            <td className="px-3 py-2 text-slate-600 max-w-[180px] truncate" title={tx.description || ''}>
+                              {tx.description || tx.reference_number || '—'}
+                            </td>
+                            <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                              {tx.creator?.name || 'System'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Loyalty Points */}
+            {loyaltyCreditTab === 'loyalty' && (
+              <div className="space-y-4">
+                {/* Points Card */}
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-medium text-amber-800 uppercase tracking-wider block">
+                      {t('loyalty.pointsBalance', 'Points Balance')}
+                    </span>
+                    <div className="text-2xl font-bold text-amber-900 mt-1 flex items-center gap-2">
+                      <Award className="w-6 h-6 text-amber-600" />
+                      {Number(customerPoints?.points_balance || 0).toLocaleString()} <span className="text-sm font-normal text-amber-700">pts</span>
+                    </div>
+                    <span className="text-xs text-amber-700 mt-0.5 inline-block">
+                      {t('loyalty.redemptionValue', 'Redemption Value')}: <strong className="font-semibold">{formatCurrency(customerPoints?.redemption_value || 0)}</strong>
+                      {' • '}
+                      {t('loyalty.minRedemption', 'Min Redemption')}: <strong className="font-semibold">{customerPoints?.min_redemption_points || 0} pts</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fetchLoyalty(loyaltyCreditCustomer.id)}
+                      title="Refresh"
+                      className="p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loadingLoyalty ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAdjustingPoints(!isAdjustingPoints);
+                        setPointsActionError(null);
+                      }}
+                      className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+                    >
+                      {isAdjustingPoints ? t('common.cancel', 'Cancel') : t('loyalty.adjustPoints', 'Adjust Points')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Inline Form: Adjust Points */}
+                {isAdjustingPoints && (
+                  <form onSubmit={handleAdjustPointsSubmit} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      {t('loyalty.adjustPoints', 'Adjust Points')}
+                    </h4>
+                    {pointsActionError && (
+                      <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs">
+                        {pointsActionError}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          {t('loyalty.points', 'Points (+ to add, - to deduct)')} *
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          required
+                          value={adjustPointsVal}
+                          onChange={(e) => setAdjustPointsVal(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="e.g. 50 or -50"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          {t('loyalty.adjustReason', 'Reason')} *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={adjustPointsReason}
+                          onChange={(e) => setAdjustPointsReason(e.target.value)}
+                          placeholder="Adjustment reason / justification"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAdjustingPoints(false)}
+                        className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-100 transition"
+                      >
+                        {t('common.cancel', 'Cancel')}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingPointsAction}
+                        className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+                      >
+                        {submittingPointsAction ? t('common.saving', 'Saving...') : t('common.save', 'Confirm Adjustment')}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Points Ledger Table */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto">
+                  <table className="min-w-full divide-y divide-slate-200 text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Date</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-600">Type</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">Points</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">Balance</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Description</th>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Actor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-100">
+                      {loadingLoyalty ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-center text-slate-400">Loading points ledger...</td>
+                        </tr>
+                      ) : pointsLedger.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-center text-slate-400">No loyalty point transactions found.</td>
+                        </tr>
+                      ) : (
+                        pointsLedger.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-3 py-2 text-center whitespace-nowrap">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                item.transaction_type === 'EARN'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : item.transaction_type === 'REDEEM'
+                                  ? 'bg-indigo-100 text-indigo-800'
+                                  : item.transaction_type === 'REVERSAL'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {item.transaction_type}
+                              </span>
+                            </td>
+                            <td className={`px-3 py-2 text-right font-semibold whitespace-nowrap ${
+                              Number(item.points) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            }`}>
+                              {Number(item.points) >= 0 ? '+' : ''}{Number(item.points).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono text-slate-700 whitespace-nowrap">
+                              {Number(item.balance_after).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2 text-slate-600 max-w-[180px] truncate" title={item.description || ''}>
+                              {item.description || item.reference_number || '—'}
+                            </td>
+                            <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                              {item.creator?.name || 'System'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setLoyaltyCreditCustomer(null)}
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition"
+              >
+                {t('common.close', 'Close')}
               </button>
             </div>
           </div>
