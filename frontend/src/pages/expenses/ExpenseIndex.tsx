@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Link } from 'react-router';
 import { Plus } from 'lucide-react';
 
 export default function ExpenseIndex() {
   const { data, isLoading } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => axios.get('/api/v1/expenses').then(res => res.data.data),
+    queryFn: () => api.get('/expenses').then(res => res.data.data),
   });
 
   if (isLoading) return <div>Loading...</div>;

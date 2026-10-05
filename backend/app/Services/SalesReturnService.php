@@ -16,11 +16,16 @@ class SalesReturnService
 {
     protected $inventoryService;
     protected $customerLedgerService;
+    protected $inventoryAccountingService;
 
-    public function __construct(InventoryService $inventoryService, CustomerLedgerService $customerLedgerService)
-    {
+    public function __construct(
+        InventoryService $inventoryService,
+        CustomerLedgerService $customerLedgerService,
+        ?InventoryAccountingService $inventoryAccountingService = null
+    ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
+        $this->inventoryAccountingService = $inventoryAccountingService ?? app(InventoryAccountingService::class);
     }
 
     /**
@@ -83,6 +88,7 @@ class SalesReturnService
             $totalDiscount = 0;
             $totalTax = 0;
             $refundTotal = 0;
+            $totalRestoredCogs = 0;
             
             $exchangeSubtotal = 0;
             
@@ -150,6 +156,7 @@ class SalesReturnService
 
                 // Inventory Restoration
                 if ($pItem['inventory_action'] === 'RESTORE' && $pItem['condition'] === 'RESELLABLE') {
+                    $totalRestoredCogs += ($returnQty * (float) ($saleItem->unit_cost_snapshot ?? 0));
                     $this->inventoryService->processMovement(
                         $companyId,
                         $originalSale->warehouse_id,
@@ -354,6 +361,16 @@ class SalesReturnService
                     $returnNumber,
                     "Store credit from return {$returnNumber}"
                 );
+            }
+
+            // General Ledger Integration (Gate 1.5)
+            if ($this->inventoryAccountingService) {
+                if ($salesReturn->refund_total > 0) {
+                    $this->inventoryAccountingService->postSalesReturnInvoice($salesReturn, $data['processed_by'] ?? null);
+                }
+                if ($totalRestoredCogs > 0) {
+                    $this->inventoryAccountingService->postSalesReturnCogs($salesReturn, $totalRestoredCogs, $data['processed_by'] ?? null);
+                }
             }
 
             return $salesReturn->load(['items', 'payments', 'originalSale']);

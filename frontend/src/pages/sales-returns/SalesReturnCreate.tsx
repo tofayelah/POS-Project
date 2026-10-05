@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '../../api/axios';
 
 export default function SalesReturnCreate() {
     const [saleId, setSaleId] = useState('');
@@ -8,7 +8,7 @@ export default function SalesReturnCreate() {
 
     const handleSearch = async () => {
         if (!saleId) return;
-        const res = await axios.get(`/api/v1/sales/${saleId}/returnable-items`);
+        const res = await api.get(`/sales/${saleId}/returnable-items`);
         setReturnItems(res.data.data);
     };
 

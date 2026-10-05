@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Models\Customer;
+use App\Models\CustomerLedger;
 use App\Models\AuditLog;
 use App\Services\CustomerLedgerService;
 use Illuminate\Http\Request;
@@ -337,7 +338,14 @@ class CustomerController extends Controller
             ->sum('payment_allocations.amount');
 
         $openingBalance = (float) ($customer->opening_balance ?? 0);
-        $balance = round($openingBalance + $salesTotal - $paidTotal, 4);
+
+        $latestLedger = CustomerLedger::where('company_id', $companyId)
+            ->where('customer_id', $customer->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $calculatedFallback = round($openingBalance + $salesTotal - $paidTotal, 4);
+        $balance = $latestLedger ? (float) $latestLedger->balance_after : $calculatedFallback;
 
         return response()->json([
             'success' => true,

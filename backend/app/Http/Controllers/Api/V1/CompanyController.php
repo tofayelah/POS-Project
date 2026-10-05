@@ -41,19 +41,10 @@ class CompanyController extends Controller
         }
 
         if (!$company) {
-            $company = Company::create([
-                'name' => 'Apex Retail Ltd',
-                'legal_name' => 'Apex Retail Holdings Limited',
-                'code' => 'APEX-01',
-                'subdomain' => 'apex',
-                'status' => 'active',
-                'country' => 'Bangladesh',
-                'currency_code' => 'BDT',
-                'timezone' => 'Asia/Dhaka',
-            ]);
-            if ($user) {
-                $user->companies()->syncWithoutDetaching([$company->id]);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Company not found.',
+            ], 404);
         }
 
         return response()->json([

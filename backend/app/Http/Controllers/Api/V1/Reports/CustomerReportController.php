@@ -19,7 +19,8 @@ class CustomerReportController extends Controller
         
         $salesSub = '(SELECT COALESCE(SUM(s.grand_total), 0) FROM sales s WHERE s.customer_id = customers.id AND s.company_id = customers.company_id AND s.status = \'COMPLETED\')';
         $paidSub = '(SELECT COALESCE(SUM(pa.amount), 0) FROM payment_allocations pa JOIN sales s ON s.id = pa.allocatable_id WHERE (pa.allocatable_type = \'Sale\' OR pa.allocatable_type LIKE \'%Sale\') AND s.customer_id = customers.id AND s.company_id = customers.company_id AND s.status = \'COMPLETED\')';
-        $balanceExpr = '(COALESCE(customers.opening_balance, 0) + ' . $salesSub . ' - ' . $paidSub . ')';
+        $ledgerSub = '(SELECT cl.balance_after FROM customer_ledgers cl WHERE cl.customer_id = customers.id AND cl.company_id = customers.company_id ORDER BY cl.id DESC LIMIT 1)';
+        $balanceExpr = 'COALESCE(' . $ledgerSub . ', (COALESCE(customers.opening_balance, 0) + ' . $salesSub . ' - ' . $paidSub . '))';
 
         $query = Customer::where('company_id', $companyId)
             ->select('customers.*')

@@ -6,6 +6,7 @@ use App\Models\GoodsReceipt;
 use App\Models\JournalEntry;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\SalesReturn;
 use App\Models\StockMovement;
 
 class InventoryAccountingService
@@ -348,6 +349,159 @@ class InventoryAccountingService
                     'branch_id' => $sale->branch_id,
                     'warehouse_id' => $sale->warehouse_id,
                     'description' => "Inventory asset reduction for Sale {$sale->invoice_number}",
+                ],
+            ],
+        ];
+
+        return $this->accountingService->postAutomatedJournal($companyId, $data, $userId);
+    }
+
+    /**
+     * Post automated journal entry for a Sales Return (Refund / Credit).
+     * Debit: Sales Revenue (grand_total - tax_total)
+     * Debit: VAT Payable (tax_total, if > 0)
+     * Credit: Accounts Receivable (store credit portion) or Cash/Bank (cash refund portion)
+     */
+    public function postSalesReturnInvoice(SalesReturn $salesReturn, ?int $userId = null): ?JournalEntry
+    {
+        $companyId = $salesReturn->company_id;
+        if (!$this->accountMappingService->isAccountingEnabled($companyId)) {
+            return null;
+        }
+
+        $refundTotal = round((float) $salesReturn->refund_total, 4);
+        if ($refundTotal <= 0) {
+            return null;
+        }
+
+        $taxTotal = round((float) $salesReturn->tax, 4);
+        $revenueTotal = round($refundTotal - $taxTotal, 4);
+
+        $revenueAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_SALES_REVENUE);
+        $arAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_ACCOUNTS_RECEIVABLE);
+        $cashBankAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_CASH_BANK);
+
+        $lines = [
+            [
+                'account_id' => $revenueAccount->id,
+                'debit' => $revenueTotal,
+                'credit' => 0,
+                'branch_id' => $salesReturn->branch_id,
+                'warehouse_id' => $salesReturn->warehouse_id,
+                'description' => "Sales revenue reduction for Return {$salesReturn->return_number}",
+            ],
+        ];
+
+        if ($taxTotal > 0) {
+            $vatAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_VAT_PAYABLE);
+            $lines[] = [
+                'account_id' => $vatAccount->id,
+                'debit' => $taxTotal,
+                'credit' => 0,
+                'branch_id' => $salesReturn->branch_id,
+                'warehouse_id' => $salesReturn->warehouse_id,
+                'description' => "VAT payable reduction for Return {$salesReturn->return_number}",
+            ];
+        }
+
+        $customerCredit = round((float) $salesReturn->customer_credit_amount, 4);
+        $cashRefund = round((float) $salesReturn->cash_refund_amount, 4);
+        $remainder = round($refundTotal - $customerCredit - $cashRefund, 4);
+
+        if ($customerCredit > 0) {
+            $lines[] = [
+                'account_id' => $arAccount->id,
+                'debit' => 0,
+                'credit' => $customerCredit,
+                'branch_id' => $salesReturn->branch_id,
+                'warehouse_id' => $salesReturn->warehouse_id,
+                'description' => "Store credit AR adjustment for Return {$salesReturn->return_number}",
+            ];
+        }
+
+        if ($cashRefund > 0) {
+            $lines[] = [
+                'account_id' => $cashBankAccount->id,
+                'debit' => 0,
+                'credit' => $cashRefund,
+                'branch_id' => $salesReturn->branch_id,
+                'warehouse_id' => $salesReturn->warehouse_id,
+                'description' => "Cash refund payout for Return {$salesReturn->return_number}",
+            ];
+        }
+
+        if ($remainder > 0) {
+            $targetAccount = $salesReturn->customer_id ? $arAccount : $cashBankAccount;
+            $lines[] = [
+                'account_id' => $targetAccount->id,
+                'debit' => 0,
+                'credit' => $remainder,
+                'branch_id' => $salesReturn->branch_id,
+                'warehouse_id' => $salesReturn->warehouse_id,
+                'description' => "Refund credit offset for Return {$salesReturn->return_number}",
+            ];
+        }
+
+        $journalDate = $salesReturn->return_date ? (is_string($salesReturn->return_date) ? $salesReturn->return_date : $salesReturn->return_date->format('Y-m-d')) : date('Y-m-d');
+
+        $data = [
+            'journal_date' => $journalDate,
+            'reference_type' => 'SalesReturn',
+            'reference_id' => $salesReturn->id,
+            'description' => "Sales Return Invoice: {$salesReturn->return_number}",
+            'source' => 'SALES',
+            'idempotency_key' => "RET-INV-{$salesReturn->id}",
+            'lines' => $lines,
+        ];
+
+        return $this->accountingService->postAutomatedJournal($companyId, $data, $userId);
+    }
+
+    /**
+     * Post automated journal entry for Cost of Goods Sold (COGS) reversal on a sales return.
+     * Debit: Inventory Asset (restocked items)
+     * Credit: Cost of Goods Sold (COGS reduction)
+     */
+    public function postSalesReturnCogs(SalesReturn $salesReturn, float $cogsAmount, ?int $userId = null): ?JournalEntry
+    {
+        $companyId = $salesReturn->company_id;
+        if (!$this->accountMappingService->isAccountingEnabled($companyId)) {
+            return null;
+        }
+
+        $cogsAmount = round($cogsAmount, 4);
+        if ($cogsAmount <= 0) {
+            return null;
+        }
+
+        $cogsAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_COGS);
+        $assetAccount = $this->accountMappingService->getAccount($companyId, AccountMappingService::ROLE_INVENTORY_ASSET);
+
+        $journalDate = $salesReturn->return_date ? (is_string($salesReturn->return_date) ? $salesReturn->return_date : $salesReturn->return_date->format('Y-m-d')) : date('Y-m-d');
+
+        $data = [
+            'journal_date' => $journalDate,
+            'reference_type' => 'SalesReturn',
+            'reference_id' => $salesReturn->id,
+            'description' => "Cost of Goods Sold Reversal for Return: {$salesReturn->return_number}",
+            'source' => 'SALES',
+            'idempotency_key' => "RET-COGS-{$salesReturn->id}",
+            'lines' => [
+                [
+                    'account_id' => $assetAccount->id,
+                    'debit' => $cogsAmount,
+                    'credit' => 0,
+                    'branch_id' => $salesReturn->branch_id,
+                    'warehouse_id' => $salesReturn->warehouse_id,
+                    'description' => "Inventory asset restoration for Return {$salesReturn->return_number}",
+                ],
+                [
+                    'account_id' => $cogsAccount->id,
+                    'debit' => 0,
+                    'credit' => $cogsAmount,
+                    'branch_id' => $salesReturn->branch_id,
+                    'warehouse_id' => $salesReturn->warehouse_id,
+                    'description' => "COGS reduction for Return {$salesReturn->return_number}",
                 ],
             ],
         ];

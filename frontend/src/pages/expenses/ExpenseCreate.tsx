@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 
@@ -15,13 +15,13 @@ export default function ExpenseCreate() {
 
   const { data: categories } = useQuery({
     queryKey: ['expense-categories'],
-    queryFn: () => axios.get('/api/v1/expense-categories').then(res => res.data.data),
+    queryFn: () => api.get('/expense-categories').then(res => res.data.data),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/v1/expenses', {
+      await api.post('/expenses', {
         ...formData,
         items
       });

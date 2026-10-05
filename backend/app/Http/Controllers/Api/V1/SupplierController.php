@@ -277,7 +277,14 @@ class SupplierController extends Controller
             ->sum('payment_allocations.amount');
 
         $openingBalance = (float) ($supplier->opening_balance ?? 0);
-        $balance = round($openingBalance + $purchasesTotal - $paidTotal, 4);
+
+        $latestLedger = SupplierLedger::where('company_id', $companyId)
+            ->where('supplier_id', $supplier->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $calculatedFallback = round($openingBalance + $purchasesTotal - $paidTotal, 4);
+        $balance = $latestLedger ? (float) $latestLedger->balance_after : $calculatedFallback;
 
         return response()->json([
             'success' => true,

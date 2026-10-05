@@ -43,11 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Organizational Hierarchy: Company
         Route::get('company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
-        Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
+        Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update'])->middleware('permission:company.update,companies.update');
         Route::get('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'index']);
-        Route::post('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'store']);
+        Route::post('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'store'])->middleware('permission:company.create,companies.create');
         Route::get('companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
-        Route::match(['put', 'patch'], 'companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update']);
+        Route::match(['put', 'patch'], 'companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update'])->middleware('permission:company.update,companies.update');
         Route::get('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'companyUsers'])->middleware('permission:users.view');
         Route::post('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'assignCompanyUser'])->middleware('permission:users.company_access,users.update');
         Route::delete('companies/{company}/users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'removeCompanyUser'])->middleware('permission:users.company_access,users.update');
@@ -260,12 +260,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'show'])->middleware('permission:sales_return.view');
         Route::post('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'store'])->middleware('permission:sales_return.create');
         Route::get('sales/{id}/returnable-items', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'returnableItems'])->middleware('permission:sales_return.create');
-        Route::put('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'update']);
-        Route::post('sales-returns/{id}/approve', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'approve']);
-        Route::post('sales-returns/{id}/complete', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'complete']);
-        Route::post('sales-returns/{id}/cancel', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'cancel']);
-        Route::post('sales-returns/{id}/refund', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'refund']);
-        Route::post('sales-returns/{id}/exchange', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'exchange']);
+        Route::put('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'update'])->middleware('permission:sales_return.update');
+        Route::post('sales-returns/{id}/approve', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'approve'])->middleware('permission:sales_return.approve');
+        Route::post('sales-returns/{id}/complete', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'complete'])->middleware('permission:sales_return.complete');
+        Route::post('sales-returns/{id}/cancel', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'cancel'])->middleware('permission:sales_return.cancel');
+        Route::post('sales-returns/{id}/refund', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'refund'])->middleware('permission:sales_return.refund');
+        Route::post('sales-returns/{id}/exchange', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'exchange'])->middleware('permission:sales_return.exchange');
 
         // SPRINT 08 — Expenses
         Route::get('expense-categories', [\App\Http\Controllers\Api\V1\ExpenseCategoryController::class, 'index'])->middleware('permission:expense_category.view');
@@ -351,9 +351,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('accounting/vat-report', [\App\Http\Controllers\Api\V1\AccountingReportController::class, 'vatReport'])->middleware('permission:general_ledger.view');
 
         // GATE 1.4 — Payments & Allocations
-        Route::get('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index']);
-        Route::post('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'store']);
-        Route::get('payments/{id}', [\App\Http\Controllers\Api\V1\PaymentController::class, 'show']);
-        Route::post('payments/{id}/allocate', [\App\Http\Controllers\Api\V1\PaymentController::class, 'allocate']);
+        Route::get('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index'])->middleware('permission:payments.view');
+        Route::post('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'store'])->middleware('permission:payments.create');
+        Route::get('payments/{id}', [\App\Http\Controllers\Api\V1\PaymentController::class, 'show'])->middleware('permission:payments.view');
+        Route::post('payments/{id}/allocate', [\App\Http\Controllers\Api\V1\PaymentController::class, 'allocate'])->middleware('permission:payments.allocate');
     });
 });

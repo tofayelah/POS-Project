@@ -19,7 +19,8 @@ class SupplierReportController extends Controller
         
         $purchasesSub = '(SELECT COALESCE(SUM(p.grand_total), 0) FROM purchases p WHERE p.supplier_id = suppliers.id AND p.company_id = suppliers.company_id AND p.status = \'POSTED\')';
         $paidSub = '(SELECT COALESCE(SUM(pa.amount), 0) FROM payment_allocations pa JOIN purchases p ON p.id = pa.allocatable_id WHERE (pa.allocatable_type = \'Purchase\' OR pa.allocatable_type LIKE \'%Purchase\') AND p.supplier_id = suppliers.id AND p.company_id = suppliers.company_id AND p.status = \'POSTED\')';
-        $balanceExpr = '(COALESCE(suppliers.opening_balance, 0) + ' . $purchasesSub . ' - ' . $paidSub . ')';
+        $ledgerSub = '(SELECT sl.balance_after FROM supplier_ledgers sl WHERE sl.supplier_id = suppliers.id AND sl.company_id = suppliers.company_id ORDER BY sl.id DESC LIMIT 1)';
+        $balanceExpr = 'COALESCE(' . $ledgerSub . ', (COALESCE(suppliers.opening_balance, 0) + ' . $purchasesSub . ' - ' . $paidSub . '))';
 
         $query = Supplier::where('company_id', $companyId)
             ->select('suppliers.*')

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Link } from 'react-router';
 
 export default function SalesReturnIndex() {
     const { data, isLoading } = useQuery({
         queryKey: ['sales-returns'],
         queryFn: async () => {
-            const res = await axios.get('/api/v1/sales-returns');
+            const res = await api.get('/sales-returns');
             return res.data.data;
         }
     });
