@@ -40,6 +40,16 @@ class RolePermissionSeeder extends Seeder
             'store_credit.issue' => 'store_credit',
             'store_credit.redeem' => 'store_credit',
             'store_credit.adjust' => 'store_credit',
+            'pos.view' => 'pos',
+            'pos.open_session' => 'pos',
+            'pos.close_session' => 'pos',
+            'pos_shifts.view' => 'pos',
+            'pos_shifts.open' => 'pos',
+            'pos_shifts.close' => 'pos',
+            'pos_shifts.cash_in' => 'pos',
+            'pos_shifts.cash_out' => 'pos',
+            'pos_shifts.reconcile' => 'pos',
+            'pos_shifts.approve_variance' => 'pos',
         ];
 
         foreach ($permissions as $name => $group) {
@@ -60,7 +70,11 @@ class RolePermissionSeeder extends Seeder
         if ($manager) {
             $managerPerms = Permission::whereIn('name', [
                 'loyalty.view', 'loyalty.manage', 'loyalty.adjust', 'loyalty.redeem',
-                'store_credit.view', 'store_credit.issue', 'store_credit.redeem', 'store_credit.adjust'
+                'store_credit.view', 'store_credit.issue', 'store_credit.redeem', 'store_credit.adjust',
+                'pos.view', 'pos.open_session', 'pos.close_session',
+                'pos_shifts.view', 'pos_shifts.open', 'pos_shifts.close',
+                'pos_shifts.cash_in', 'pos_shifts.cash_out', 'pos_shifts.reconcile',
+                'pos_shifts.approve_variance'
             ])->pluck('id');
             $manager->permissions()->syncWithoutDetaching($managerPerms);
         }
@@ -69,7 +83,10 @@ class RolePermissionSeeder extends Seeder
         if ($cashier) {
             $cashierPerms = Permission::whereIn('name', [
                 'loyalty.view', 'loyalty.redeem',
-                'store_credit.view', 'store_credit.redeem'
+                'store_credit.view', 'store_credit.redeem',
+                'pos.view', 'pos.open_session', 'pos.close_session',
+                'pos_shifts.view', 'pos_shifts.open', 'pos_shifts.close',
+                'pos_shifts.cash_in', 'pos_shifts.cash_out', 'pos_shifts.reconcile'
             ])->pluck('id');
             $cashier->permissions()->syncWithoutDetaching($cashierPerms);
         }

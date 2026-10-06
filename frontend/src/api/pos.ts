@@ -45,17 +45,49 @@ export interface PosTerminal {
   default_bank_account?: { id: number; account_code: string; account_name: string } | null;
 }
 
+export interface PosCashMovement {
+  id: number;
+  company_id: number;
+  branch_id?: number | null;
+  pos_session_id: number;
+  pos_terminal_id: number;
+  user_id: number;
+  movement_number: string;
+  type: 'CASH_IN' | 'CASH_OUT' | 'ADJUSTMENT';
+  amount: number | string;
+  reason: string;
+  reference?: string | null;
+  notes?: string | null;
+  created_at: string;
+  user?: { id: number; name: string } | null;
+  terminal?: { id: number; terminal_name: string; terminal_code: string } | null;
+}
+
 export interface PosSession {
   id: number;
   company_id: number;
   pos_terminal_id: number;
   cashier_id: number;
   session_number: string;
-  opening_cash: number;
-  closing_cash?: number;
-  expected_cash?: number;
-  cash_difference?: number;
+  opening_cash: number | string;
+  closing_cash?: number | string | null;
+  expected_cash?: number | string | null;
+  cash_difference?: number | string | null;
+  cash_in_total?: number | string;
+  cash_out_total?: number | string;
+  cash_sales_total?: number | string;
+  cash_refunds_total?: number | string;
+  variance_status?: 'BALANCED' | 'SHORT' | 'OVER' | null;
+  variance_approved_at?: string | null;
+  variance_approved_by?: number | null;
+  denominations?: Record<string, number> | null;
   status: 'OPEN' | 'CLOSED';
+  opened_at?: string;
+  closed_at?: string | null;
+  notes?: string | null;
+  terminal?: PosTerminal;
+  cashier?: { id: number; name: string };
+  variance_approver?: { id: number; name: string };
 }
 
 export interface LoyaltySettings {
@@ -262,11 +294,29 @@ export const posApi = {
   openSession: (terminalId: number, openingCash: number, notes?: string) => 
     api.post<{success: boolean, data: PosSession}>('/pos/sessions/open', { pos_terminal_id: terminalId, opening_cash: openingCash, notes }).then(res => res.data),
     
-  closeSession: (id: number, closingCash: number, notes?: string) => 
-    api.post<{success: boolean, data: PosSession}>(`/pos/sessions/${id}/close`, { closing_cash: closingCash, notes }).then(res => res.data),
+  closeSession: (id: number, closingCash: number, notes?: string, denominations?: Record<string, number>) => 
+    api.post<{success: boolean, data: PosSession}>(`/pos/sessions/${id}/close`, { closing_cash: closingCash, notes, denominations }).then(res => res.data),
 
   getSessionReconciliation: (sessionId: number) =>
     api.get<{success: boolean, data: any}>(`/pos/sessions/${sessionId}/reconciliation`).then(res => res.data),
+
+  getShifts: (params?: any) =>
+    api.get<{success: boolean, data: { data: PosSession[], total: number, current_page: number, last_page: number }}>('/pos/sessions', { params }).then(res => res.data),
+
+  getShift: (id: number) =>
+    api.get<{success: boolean, data: PosSession}>(`/pos/sessions/${id}`).then(res => res.data),
+
+  cashIn: (id: number, data: { amount: number; reason: string; reference?: string; notes?: string }) =>
+    api.post<{success: boolean, data: PosCashMovement}>(`/pos/sessions/${id}/cash-in`, data).then(res => res.data),
+
+  cashOut: (id: number, data: { amount: number; reason: string; reference?: string; notes?: string }) =>
+    api.post<{success: boolean, data: PosCashMovement}>(`/pos/sessions/${id}/cash-out`, data).then(res => res.data),
+
+  getShiftMovements: (id: number) =>
+    api.get<{success: boolean, data: PosCashMovement[]}>(`/pos/sessions/${id}/movements`).then(res => res.data),
+
+  approveShiftVariance: (id: number, notes?: string) =>
+    api.post<{success: boolean, data: PosSession}>(`/pos/sessions/${id}/approve-variance`, { notes }).then(res => res.data),
 
   searchProducts: (query: string) => 
     api.get<{success: boolean, data: PosProductVariant[]}>('/pos/products/search', { params: { q: query } }).then(res => res.data),

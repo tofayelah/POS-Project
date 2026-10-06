@@ -49,6 +49,7 @@ import { UserList } from './pages/organization/UserList';
 import RoleList from './pages/rbac/RoleList';
 import RolePermissionMatrix from './pages/rbac/RolePermissionMatrix';
 import { AuditLogList } from './pages/audit/AuditLogList';
+import { PosShiftManagement } from './pages/pos/PosShiftManagement';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -310,6 +311,13 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <PosTerminalManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/pos/shifts" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PosShiftManagement />
                 </AdminLayout>
               </ProtectedRoute>
             } />

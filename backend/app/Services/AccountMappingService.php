@@ -22,6 +22,8 @@ class AccountMappingService
     public const ROLE_STORE_CREDIT_LIABILITY = 'store_credit_liability';
     public const ROLE_OPERATING_EXPENSE = 'operating_expense';
     public const ROLE_OTHER_INCOME = 'other_income';
+    public const ROLE_CASH_SHORTAGE = 'cash_shortage';
+    public const ROLE_CASH_OVERAGE = 'cash_overage';
 
     public const VALID_ROLES = [
         self::ROLE_INVENTORY_ASSET,
@@ -37,6 +39,8 @@ class AccountMappingService
         self::ROLE_STORE_CREDIT_LIABILITY,
         self::ROLE_OPERATING_EXPENSE,
         self::ROLE_OTHER_INCOME,
+        self::ROLE_CASH_SHORTAGE,
+        self::ROLE_CASH_OVERAGE,
     ];
 
     /**

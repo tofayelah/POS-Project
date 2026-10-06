@@ -263,10 +263,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('pos/loyalty/settings', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'getSettings'])->middleware('permission:pos.view');
         Route::put('pos/loyalty/settings', [\App\Http\Controllers\Api\V1\LoyaltyController::class, 'updateSettings'])->middleware('permission:pos.view');
 
-        Route::get('pos/sessions/current', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'current'])->middleware('permission:pos.view');
-        Route::post('pos/sessions/open', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'open'])->middleware('permission:pos.open_session');
-        Route::post('pos/sessions/{id}/close', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'close'])->middleware('permission:pos.close_session');
-        Route::get('pos/sessions/{id}/reconciliation', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'reconciliation'])->middleware('permission:pos.view');
+        Route::get('pos/sessions', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'index'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::get('pos/sessions/current', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'current'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/sessions/open', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'open'])->middleware('permission:pos.open_session,pos_shifts.open');
+        Route::get('pos/sessions/{id}', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'show'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/sessions/{id}/close', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'close'])->middleware('permission:pos.close_session,pos_shifts.close');
+        Route::get('pos/sessions/{id}/reconciliation', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'reconciliation'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/sessions/{id}/cash-in', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'cashIn'])->middleware('permission:pos_shifts.cash_in,pos.view');
+        Route::post('pos/sessions/{id}/cash-out', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'cashOut'])->middleware('permission:pos_shifts.cash_out,pos.view');
+        Route::get('pos/sessions/{id}/movements', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'movements'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/sessions/{id}/approve-variance', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'approveVariance'])->middleware('permission:pos_shifts.approve_variance');
+
+        // POS Shift Alias Routes
+        Route::get('pos/shifts', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'index'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::get('pos/shifts/current', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'current'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/shifts/open', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'open'])->middleware('permission:pos.open_session,pos_shifts.open');
+        Route::get('pos/shifts/{id}', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'show'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/shifts/{id}/close', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'close'])->middleware('permission:pos.close_session,pos_shifts.close');
+        Route::get('pos/shifts/{id}/reconciliation', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'reconciliation'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/shifts/{id}/cash-in', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'cashIn'])->middleware('permission:pos_shifts.cash_in,pos.view');
+        Route::post('pos/shifts/{id}/cash-out', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'cashOut'])->middleware('permission:pos_shifts.cash_out,pos.view');
+        Route::get('pos/shifts/{id}/movements', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'movements'])->middleware('permission:pos.view,pos_shifts.view');
+        Route::post('pos/shifts/{id}/approve-variance', [\App\Http\Controllers\Api\V1\PosSessionController::class, 'approveVariance'])->middleware('permission:pos_shifts.approve_variance');
 
         Route::get('pos/products/search', [\App\Http\Controllers\Api\V1\PosProductController::class, 'search'])->middleware('permission:pos.view');
         Route::get('pos/barcode/{barcode}', [\App\Http\Controllers\Api\V1\PosProductController::class, 'barcode'])->middleware('permission:pos.view');

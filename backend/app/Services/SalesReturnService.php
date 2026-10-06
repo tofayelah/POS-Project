@@ -79,6 +79,17 @@ class SalesReturnService
                 throw new ConflictHttpException("Only completed sales can be returned.");
             }
 
+            // POS session validation if provided
+            if (!empty($data['pos_session_id'])) {
+                $posSession = \App\Models\PosSession::where('company_id', $companyId)->find($data['pos_session_id']);
+                if (!$posSession) {
+                    throw new ConflictHttpException("POS session not found.");
+                }
+                if ($posSession->status !== 'OPEN') {
+                    throw new ConflictHttpException("Cannot process return against a {$posSession->status} POS session.");
+                }
+            }
+
             // Generate return number
             $attempts = 0;
             do {

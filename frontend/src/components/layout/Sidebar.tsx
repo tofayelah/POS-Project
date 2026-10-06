@@ -25,7 +25,8 @@ import {
   Award,
   RotateCcw,
   Receipt,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Clock
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -195,6 +196,22 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 <Monitor className="w-4 h-4 shrink-0 text-blue-400" />
                 <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
                   {t('nav.posTerminalManagement', 'POS Terminal Management')}
+                </span>
+              </Link>
+              <Link
+                to="/pos/shifts"
+                id="nav-link-pos-shifts"
+                onClick={handleLinkClick}
+                title={t('posShift.title', 'Shift & Drawer Management')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/pos/shifts')
+                    ? 'bg-slate-800 text-white font-medium'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('posShift.shifts', 'Shift History')}
                 </span>
               </Link>
               <Link
