@@ -12,6 +12,7 @@ class StorageLocation extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'capacity' => 'decimal:4',
     ];
 
     public function company(): BelongsTo
@@ -24,8 +25,23 @@ class StorageLocation extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(StorageLocation::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(StorageLocation::class, 'parent_id');
+    }
+
     public function inventoryBatches(): HasMany
     {
         return $this->hasMany(InventoryBatch::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
     }
 }

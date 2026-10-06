@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\BusinessUnit;
+use App\Models\Inventory;
+use App\Models\StockMovement;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,9 +17,22 @@ class WarehouseController extends Controller
     public function index(Request $request)
     {
         $companyId = $request->attributes->get('company_id');
-        $warehouses = Warehouse::where('company_id', $companyId)
-            ->with(['businessUnit:id,name,code', 'branch:id,name,code'])
-            ->get();
+        $query = Warehouse::where('company_id', $companyId)
+            ->with(['businessUnit:id,name,code', 'branch:id,name,code']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('code', 'ilike', "%{$search}%");
+            });
+        }
+
+        $warehouses = $query->get();
         return response()->json(['success' => true, 'data' => $warehouses]);
     }
 
@@ -24,7 +40,7 @@ class WarehouseController extends Controller
     {
         $companyId = $request->attributes->get('company_id');
         $warehouse = Warehouse::where('company_id', $companyId)
-            ->with(['businessUnit:id,name,code', 'branch:id,name,code'])
+            ->with(['businessUnit:id,name,code', 'branch:id,name,code', 'storageLocations'])
             ->findOrFail($id);
         return response()->json(['success' => true, 'data' => $warehouse]);
     }
@@ -39,6 +55,9 @@ class WarehouseController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255',
             'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'is_default' => 'nullable|boolean',
             'warehouse_type' => 'nullable|string|in:MAIN,CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
             'status' => 'nullable|in:active,inactive'
         ]);
@@ -65,9 +84,9 @@ class WarehouseController extends Controller
             }
         }
 
-        // Check unique code within the business unit
-        if (Warehouse::where('business_unit_id', $bu->id)->where('code', $validated['code'])->exists()) {
-            return response()->json(['success' => false, 'message' => 'Code already exists in this business unit.'], 422);
+        // Check unique code within the company / business unit
+        if (Warehouse::where('company_id', $companyId)->where('code', $validated['code'])->exists()) {
+            return response()->json(['success' => false, 'message' => 'Code already exists in this company.'], 422);
         }
 
         $validated['company_id'] = $companyId;
@@ -75,8 +94,26 @@ class WarehouseController extends Controller
         if (empty($validated['warehouse_type'])) {
             $validated['warehouse_type'] = 'MAIN';
         }
+        if (empty($validated['status'])) {
+            $validated['status'] = 'active';
+        }
+
+        // Handle default warehouse exclusivity
+        if (!empty($validated['is_default'])) {
+            Warehouse::where('company_id', $companyId)->update(['is_default' => false]);
+        }
 
         $warehouse = Warehouse::create($validated);
+
+        AuditLog::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $companyId,
+            'user_id' => $request->user()?->id,
+            'event' => 'WAREHOUSE_CREATED',
+            'auditable_type' => Warehouse::class,
+            'auditable_id' => $warehouse->id,
+            'new_values' => ['name' => $warehouse->name, 'code' => $warehouse->code, 'status' => $warehouse->status],
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Warehouse created.', 'data' => $warehouse], 201);
     }
@@ -92,6 +129,9 @@ class WarehouseController extends Controller
             'name' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:255',
             'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'is_default' => 'nullable|boolean',
             'warehouse_type' => 'nullable|string|in:MAIN,CENTRAL,BRANCH,STORE,RETURN,DAMAGED',
             'status' => 'nullable|in:active,inactive'
         ]);
@@ -123,12 +163,32 @@ class WarehouseController extends Controller
         }
 
         if (isset($validated['code']) && $validated['code'] !== $warehouse->code) {
-            if (Warehouse::where('business_unit_id', $targetBuId)->where('code', $validated['code'])->exists()) {
-                return response()->json(['success' => false, 'message' => 'Code already exists in this business unit.'], 422);
+            if (Warehouse::where('company_id', $companyId)->where('code', $validated['code'])->where('id', '!=', $warehouse->id)->exists()) {
+                return response()->json(['success' => false, 'message' => 'Code already exists in this company.'], 422);
             }
         }
 
+        if (!empty($validated['is_default'])) {
+            Warehouse::where('company_id', $companyId)->where('id', '!=', $warehouse->id)->update(['is_default' => false]);
+        }
+
+        $oldStatus = $warehouse->status;
         $warehouse->update($validated);
+
+        $event = ($oldStatus !== 'inactive' && isset($validated['status']) && $validated['status'] === 'inactive')
+            ? 'WAREHOUSE_DEACTIVATED'
+            : 'WAREHOUSE_UPDATED';
+
+        AuditLog::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $companyId,
+            'user_id' => $request->user()?->id,
+            'event' => $event,
+            'auditable_type' => Warehouse::class,
+            'auditable_id' => $warehouse->id,
+            'old_values' => ['status' => $oldStatus],
+            'new_values' => ['name' => $warehouse->name, 'code' => $warehouse->code, 'status' => $warehouse->status],
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Warehouse updated.', 'data' => $warehouse]);
     }
@@ -138,7 +198,36 @@ class WarehouseController extends Controller
         $companyId = $request->attributes->get('company_id');
         $warehouse = Warehouse::where('company_id', $companyId)->findOrFail($id);
         
+        // Prevent deletion if active stock exists
+        $hasActiveStock = Inventory::where('warehouse_id', $warehouse->id)->where('quantity', '>', 0)->exists();
+        if ($hasActiveStock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete warehouse with active stock inventory.'
+            ], 422);
+        }
+
+        // Prevent deletion if historical stock movements exist
+        $hasMovements = StockMovement::where('warehouse_id', $warehouse->id)->exists();
+        if ($hasMovements) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete warehouse with historical stock movement ledger records.'
+            ], 422);
+        }
+
         $warehouse->delete();
+
+        AuditLog::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $companyId,
+            'user_id' => $request->user()?->id,
+            'event' => 'WAREHOUSE_DEACTIVATED',
+            'auditable_type' => Warehouse::class,
+            'auditable_id' => $warehouse->id,
+            'old_values' => ['status' => $warehouse->status],
+            'new_values' => ['deleted' => true],
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Warehouse deleted.']);
     }

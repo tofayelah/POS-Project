@@ -46,6 +46,23 @@ class StoreStorageLocationRequest extends FormRequest
                 'nullable',
                 'boolean',
             ],
+            'parent_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('storage_locations', 'id')->where(function ($query) {
+                    return $query->where('warehouse_id', $this->warehouse_id);
+                }),
+            ],
+            'type' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'capacity' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 

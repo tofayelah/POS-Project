@@ -18,6 +18,10 @@ import { InventoryDashboard } from './pages/inventory/InventoryDashboard';
 import { StockMovements } from './pages/inventory/StockMovements';
 import { StockAdjustments } from './pages/inventory/StockAdjustments';
 import { StockTransfers } from './pages/inventory/StockTransfers';
+import { StockCounts } from './pages/inventory/StockCounts';
+import { StockBatches } from './pages/inventory/StockBatches';
+import { InventoryValuation } from './pages/inventory/InventoryValuation';
+import { InventoryReconciliation } from './pages/inventory/InventoryReconciliation';
 import { SupplierList } from './pages/purchase/SupplierList';
 import { SupplierForm } from './pages/purchase/SupplierForm';
 import { PurchaseOrderList } from './pages/purchase/PurchaseOrderList';
@@ -160,6 +164,34 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <StockTransfers />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory/stock-counts" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StockCounts />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory/batches" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StockBatches />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory/valuation" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <InventoryValuation />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory/reconciliation" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <InventoryReconciliation />
                 </AdminLayout>
               </ProtectedRoute>
             } />

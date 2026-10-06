@@ -159,9 +159,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('storage-locations/{storageLocation}', [\App\Http\Controllers\Api\V1\StorageLocationController::class, 'destroy'])->middleware(['permission:storage_locations.delete,inventory.manage_locations', 'scope:company']);
         Route::get('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'index'])->middleware('permission:inventory.view');
         Route::post('stock-batches', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'store'])->middleware(['permission:inventory.manage_batches', 'scope:company']);
+        Route::get('stock-batches/expiry-report', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'expiryReport'])->middleware('permission:inventory.expiry.view,inventory.view');
+        Route::get('stock-batches/{id}', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'show'])->middleware('permission:inventory.batches.view,inventory.view');
+        Route::match(['put', 'patch'], 'stock-batches/{id}', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'update'])->middleware(['permission:inventory.batches.manage,inventory.manage_batches', 'scope:company']);
+        Route::post('stock-batches/{id}/status', [\App\Http\Controllers\Api\V1\StockBatchController::class, 'toggleStatus'])->middleware(['permission:inventory.batches.manage,inventory.manage_batches', 'scope:company']);
 
         Route::get('inventory', [\App\Http\Controllers\Api\V1\InventoryController::class, 'index'])->middleware('permission:inventory.view');
         Route::get('inventory/low-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'lowStock'])->middleware('permission:inventory.view');
+        Route::get('inventory/reorder-alerts', [\App\Http\Controllers\Api\V1\InventoryController::class, 'reorderAlerts'])->middleware('permission:inventory.view');
+        Route::get('inventory/barcode-lookup/{barcode}', [\App\Http\Controllers\Api\V1\InventoryController::class, 'barcodeLookup'])->middleware('permission:inventory.view,pos.view');
         Route::get('inventory/movements', [\App\Http\Controllers\Api\V1\InventoryController::class, 'movements'])->middleware('permission:inventory.movement.view');
         
         Route::post('inventory/opening-stock', [\App\Http\Controllers\Api\V1\InventoryController::class, 'openingStock'])->middleware(['permission:inventory.create', 'scope:company']);
@@ -179,6 +185,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('inventory/transfers/{transfer}/ship', [\App\Http\Controllers\Api\V1\TransferController::class, 'ship'])->middleware(['permission:inventory.transfer.ship', 'scope:company']);
         Route::post('inventory/transfers/{transfer}/receive', [\App\Http\Controllers\Api\V1\TransferController::class, 'receive'])->middleware(['permission:inventory.transfer.receive', 'scope:company']);
         Route::post('inventory/transfers/{transfer}/cancel', [\App\Http\Controllers\Api\V1\TransferController::class, 'cancel'])->middleware(['permission:inventory.transfer.create', 'scope:company']);
+
+        // Phase 6 — Physical Stock Count Routes
+        Route::get('inventory/stock-counts', [\App\Http\Controllers\Api\V1\StockCountController::class, 'index'])->middleware('permission:inventory.count.view,inventory.view');
+        Route::post('inventory/stock-counts', [\App\Http\Controllers\Api\V1\StockCountController::class, 'store'])->middleware(['permission:inventory.count.create,inventory.create', 'scope:company']);
+        Route::get('inventory/stock-counts/{id}', [\App\Http\Controllers\Api\V1\StockCountController::class, 'show'])->middleware('permission:inventory.count.view,inventory.view');
+        Route::post('inventory/stock-counts/{id}/start', [\App\Http\Controllers\Api\V1\StockCountController::class, 'start'])->middleware(['permission:inventory.count.create,inventory.create', 'scope:company']);
+        Route::match(['put', 'patch'], 'inventory/stock-counts/{id}/items', [\App\Http\Controllers\Api\V1\StockCountController::class, 'updateItems'])->middleware(['permission:inventory.count.create,inventory.create', 'scope:company']);
+        Route::post('inventory/stock-counts/{id}/submit', [\App\Http\Controllers\Api\V1\StockCountController::class, 'submit'])->middleware(['permission:inventory.count.submit,inventory.count.create', 'scope:company']);
+        Route::post('inventory/stock-counts/{id}/review', [\App\Http\Controllers\Api\V1\StockCountController::class, 'review'])->middleware(['permission:inventory.count.approve,inventory.count.view', 'scope:company']);
+        Route::post('inventory/stock-counts/{id}/approve', [\App\Http\Controllers\Api\V1\StockCountController::class, 'approve'])->middleware(['permission:inventory.count.approve,inventory.approve', 'scope:company']);
+        Route::post('inventory/stock-counts/{id}/post', [\App\Http\Controllers\Api\V1\StockCountController::class, 'post'])->middleware(['permission:inventory.count.post,inventory.adjust', 'scope:company']);
+        Route::post('inventory/stock-counts/{id}/cancel', [\App\Http\Controllers\Api\V1\StockCountController::class, 'cancel'])->middleware(['permission:inventory.count.create,inventory.count.approve', 'scope:company']);
         // SPRINT 04 — Suppliers & Purchase Routes
         // Suppliers
         Route::get('suppliers', [\App\Http\Controllers\Api\V1\SupplierController::class, 'index'])->middleware('permission:suppliers.view');
@@ -342,6 +360,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::get('reports/inventory', [\App\Http\Controllers\Api\V1\Reports\InventoryReportController::class, 'stockSummary'])->middleware('permission:reports.inventory.view');
         Route::get('reports/inventory/movements', [\App\Http\Controllers\Api\V1\Reports\InventoryReportController::class, 'movements'])->middleware('permission:reports.stock_movement.view');
+        Route::get('reports/inventory/valuation', [\App\Http\Controllers\Api\V1\Reports\InventoryReportController::class, 'valuation'])->middleware('permission:inventory.valuation.view,reports.inventory.view');
+        Route::get('reports/inventory/reconciliation', [\App\Http\Controllers\Api\V1\Reports\InventoryReportController::class, 'reconciliation'])->middleware('permission:inventory.reconciliation.view,reports.inventory.view');
+        Route::post('reports/inventory/reconciliation/run', [\App\Http\Controllers\Api\V1\Reports\InventoryReportController::class, 'reconciliation'])->middleware('permission:inventory.reconciliation.run,reports.inventory.view');
         
         Route::get('reports/customer-receivables', [\App\Http\Controllers\Api\V1\Reports\CustomerReportController::class, 'receivables'])->middleware('permission:reports.customer.view');
         Route::get('reports/customers/{id}/ledger', [\App\Http\Controllers\Api\V1\Reports\CustomerReportController::class, 'ledger'])->middleware('permission:reports.customer.view');

@@ -39,6 +39,10 @@ class Warehouse extends Model
         });
     }
 
+    protected $casts = [
+        'is_default' => 'boolean',
+    ];
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
@@ -62,6 +66,16 @@ class Warehouse extends Model
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function stockCounts(): HasMany
+    {
+        return $this->hasMany(StockCount::class);
     }
 
     public function users(): BelongsToMany

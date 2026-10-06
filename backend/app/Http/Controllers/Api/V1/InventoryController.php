@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Barcode;
 use App\Models\Inventory;
+use App\Models\InventoryBatch;
+use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
@@ -438,5 +441,141 @@ class InventoryController extends Controller
             'message' => 'Stock adjusted out successfully.',
             'data' => $movement,
         ], 201);
+    }
+
+    public function reorderAlerts(Request $request): JsonResponse
+    {
+        $companyId = $request->attributes->get('company_id');
+        $query = Inventory::with(['warehouse', 'product.category', 'productVariant'])
+            ->where('company_id', $companyId);
+
+        if ($request->filled('warehouse_id')) {
+            $query->where('warehouse_id', $request->input('warehouse_id'));
+        }
+
+        $inventories = $query->get()->filter(function ($inv) {
+            $reorderPoint = $inv->reorder_point ?? $inv->product?->reorder_level ?? 0;
+            return (float) $inv->available_quantity <= (float) $reorderPoint;
+        })->map(function ($inv) {
+            $reorderPoint = (float) ($inv->reorder_point ?? $inv->product?->reorder_level ?? 0);
+            $reorderQty = (float) ($inv->reorder_quantity ?? $inv->product?->reorder_quantity ?? max(0, $reorderPoint - $inv->available_quantity));
+            return [
+                'inventory_id' => $inv->id,
+                'warehouse_id' => $inv->warehouse_id,
+                'warehouse_name' => $inv->warehouse?->name,
+                'product_id' => $inv->product_id,
+                'product_name' => $inv->product?->name,
+                'variant_id' => $inv->product_variant_id,
+                'variant_name' => $inv->productVariant?->variant_name,
+                'sku' => $inv->productVariant?->sku,
+                'on_hand_quantity' => (float) $inv->quantity,
+                'available_quantity' => (float) $inv->available_quantity,
+                'reorder_point' => $reorderPoint,
+                'reorder_quantity' => $reorderQty,
+                'recommended_order_quantity' => max($reorderQty, $reorderPoint - (float) $inv->available_quantity),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $inventories->values(),
+            'count' => $inventories->count(),
+        ]);
+    }
+
+    public function barcodeLookup(Request $request, string $barcode): JsonResponse
+    {
+        $companyId = $request->attributes->get('company_id');
+
+        // 1. Look up in barcodes table
+        $barcodeModel = Barcode::where('barcode', $barcode)
+            ->where('company_id', $companyId)
+            ->where('status', 'active')
+            ->first();
+
+        $variantId = $barcodeModel?->product_variant_id;
+
+        // 2. Fallback to product_variants sku
+        if (!$variantId) {
+            $variant = ProductVariant::where('company_id', $companyId)
+                ->where('sku', $barcode)
+                ->first();
+            $variantId = $variant?->id;
+        }
+
+        if (!$variantId) {
+            return response()->json([
+                'success' => false,
+                'message' => "Item with barcode '{$barcode}' not found.",
+            ], 404);
+        }
+
+        $variant = ProductVariant::with(['product.category', 'product.brand', 'product.unit', 'barcodes'])
+            ->where('company_id', $companyId)
+            ->findOrFail($variantId);
+
+        // Load stock positions across all warehouses
+        $inventories = Inventory::with('warehouse')
+            ->where('company_id', $companyId)
+            ->where('product_variant_id', $variantId)
+            ->get()
+            ->map(function ($inv) {
+                return [
+                    'warehouse_id' => $inv->warehouse_id,
+                    'warehouse_name' => $inv->warehouse?->name,
+                    'quantity' => (float) $inv->quantity,
+                    'available_quantity' => (float) $inv->available_quantity,
+                    'reserved_quantity' => (float) $inv->reserved_quantity,
+                    'average_cost' => (float) $inv->average_cost,
+                ];
+            });
+
+        // Load active batches
+        $batches = InventoryBatch::with(['batch', 'warehouse', 'storageLocation'])
+            ->whereHas('batch', function ($q) use ($companyId, $variantId) {
+                $q->where('company_id', $companyId)
+                  ->where('variant_id', $variantId)
+                  ->where('status', 'ACTIVE');
+            })
+            ->where('quantity', '>', 0)
+            ->get()
+            ->map(function ($ib) {
+                return [
+                    'batch_id' => $ib->stock_batch_id,
+                    'batch_no' => $ib->batch?->batch_no,
+                    'warehouse_id' => $ib->warehouse_id,
+                    'warehouse_name' => $ib->warehouse?->name,
+                    'storage_location' => $ib->storageLocation?->name,
+                    'quantity' => (float) $ib->quantity,
+                    'exp_date' => $ib->batch?->exp_date?->toDateString(),
+                    'expiry_status' => $ib->batch?->expiry_status,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'product' => [
+                    'id' => $variant->product?->id,
+                    'name' => $variant->product?->name,
+                    'category' => $variant->product?->category?->name,
+                    'brand' => $variant->product?->brand?->name,
+                    'unit' => $variant->product?->unit?->symbol ?? $variant->product?->unit?->name,
+                ],
+                'variant' => [
+                    'id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'name' => $variant->variant_name,
+                    'barcode' => $barcode,
+                    'cost_price' => (float) $variant->cost_price,
+                    'selling_price' => (float) $variant->selling_price,
+                    'mrp' => (float) $variant->mrp,
+                ],
+                'warehouses_stock' => $inventories,
+                'total_on_hand' => $inventories->sum('quantity'),
+                'total_available' => $inventories->sum('available_quantity'),
+                'batches' => $batches,
+            ],
+        ]);
     }
 }

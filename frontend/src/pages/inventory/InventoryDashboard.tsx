@@ -15,6 +15,9 @@ import {
   ChevronRight,
   AlertCircle,
   SlidersHorizontal,
+  ClipboardCheck,
+  ShieldCheck,
+  DollarSign,
 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { TableContainer } from '../../components/common/TableContainer';
@@ -284,6 +287,42 @@ export function InventoryDashboard() {
             >
               <Send className="w-4 h-4 text-slate-500" />
               <span>{t('inventory.transfers', 'Stock Transfers')}</span>
+            </Link>
+
+            <Link
+              to="/inventory/stock-counts"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-xs transition-colors"
+              data-testid="link-stock-counts"
+            >
+              <ClipboardCheck className="w-4 h-4 text-indigo-500" />
+              <span>{t('nav.stockCounts', 'Stock Counts')}</span>
+            </Link>
+
+            <Link
+              to="/inventory/batches"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-xs transition-colors"
+              data-testid="link-stock-batches"
+            >
+              <Layers className="w-4 h-4 text-amber-500" />
+              <span>{t('nav.batches', 'Batches & Expiry')}</span>
+            </Link>
+
+            <Link
+              to="/inventory/valuation"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-xs transition-colors"
+              data-testid="link-stock-valuation"
+            >
+              <DollarSign className="w-4 h-4 text-emerald-500" />
+              <span>{t('nav.valuation', 'Valuation')}</span>
+            </Link>
+
+            <Link
+              to="/inventory/reconciliation"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 shadow-xs transition-colors"
+              data-testid="link-stock-reconciliation"
+            >
+              <ShieldCheck className="w-4 h-4 text-sky-500" />
+              <span>{t('nav.reconciliation', 'Reconciliation')}</span>
             </Link>
 
             <button

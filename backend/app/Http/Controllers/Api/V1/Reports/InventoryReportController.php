@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
 use App\Models\StockMovement;
+use App\Services\InventoryReconciliationService;
+use App\Services\InventoryValuationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -95,6 +97,37 @@ class InventoryReportController extends Controller
                 'last_page' => $paginator->lastPage()
             ],
             'summary' => []
+        ]);
+    }
+
+    public function valuation(Request $request, InventoryValuationService $service)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $filters = $request->only(['warehouse_id', 'category_id', 'brand_id', 'search']);
+        $result = $service->getValuation($companyId, $filters);
+
+        return response()->json([
+            'success' => true,
+            'data' => $result['items'],
+            'summary' => $result['summary'],
+        ]);
+    }
+
+    public function reconciliation(Request $request, InventoryReconciliationService $service)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $warehouseId = $request->filled('warehouse_id') ? (int) $request->input('warehouse_id') : null;
+        $result = $service->reconcile(
+            companyId: $companyId,
+            warehouseId: $warehouseId,
+            userId: $request->user()?->id,
+            ip: $request->ip(),
+            userAgent: $request->userAgent()
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
         ]);
     }
 }

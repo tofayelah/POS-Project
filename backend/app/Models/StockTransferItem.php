@@ -32,4 +32,19 @@ class StockTransferItem extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+
+    public function sourceStorageLocation(): BelongsTo
+    {
+        return $this->belongsTo(StorageLocation::class, 'source_storage_location_id');
+    }
+
+    public function destinationStorageLocation(): BelongsTo
+    {
+        return $this->belongsTo(StorageLocation::class, 'destination_storage_location_id');
+    }
+
+    public function stockBatch(): BelongsTo
+    {
+        return $this->belongsTo(StockBatch::class, 'stock_batch_id');
+    }
 }

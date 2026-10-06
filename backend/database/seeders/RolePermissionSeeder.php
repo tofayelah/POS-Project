@@ -53,6 +53,17 @@ class RolePermissionSeeder extends Seeder
             'receipts.view' => 'pos',
             'receipts.print' => 'pos',
             'receipts.reprint' => 'pos',
+            'inventory.count.view' => 'inventory',
+            'inventory.count.create' => 'inventory',
+            'inventory.count.submit' => 'inventory',
+            'inventory.count.approve' => 'inventory',
+            'inventory.count.post' => 'inventory',
+            'inventory.reconciliation.view' => 'inventory',
+            'inventory.reconciliation.run' => 'inventory',
+            'inventory.batches.view' => 'inventory',
+            'inventory.batches.manage' => 'inventory',
+            'inventory.expiry.view' => 'inventory',
+            'inventory.valuation.view' => 'inventory',
         ];
 
         foreach ($permissions as $name => $group) {

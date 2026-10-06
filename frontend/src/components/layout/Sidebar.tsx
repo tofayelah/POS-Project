@@ -26,7 +26,9 @@ import {
   RotateCcw,
   Receipt,
   SlidersHorizontal,
-  Clock
+  Clock,
+  ClipboardCheck,
+  DollarSign
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -420,6 +422,70 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             <MapPin className="w-4 h-4 shrink-0 text-slate-400" />
             <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
               {t('nav.transfers', 'Transfers')}
+            </span>
+          </Link>
+          <Link
+            to="/inventory/stock-counts"
+            id="nav-link-stock-counts"
+            onClick={handleLinkClick}
+            title={t('nav.stockCounts', 'Stock Counts')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/inventory/stock-counts')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4 shrink-0 text-slate-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.stockCounts', 'Stock Counts')}
+            </span>
+          </Link>
+          <Link
+            to="/inventory/batches"
+            id="nav-link-batches"
+            onClick={handleLinkClick}
+            title={t('nav.batches', 'Batches & Expiry')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/inventory/batches')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Layers className="w-4 h-4 shrink-0 text-slate-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.batches', 'Batches & Expiry')}
+            </span>
+          </Link>
+          <Link
+            to="/inventory/valuation"
+            id="nav-link-valuation"
+            onClick={handleLinkClick}
+            title={t('nav.valuation', 'Valuation Report')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/inventory/valuation')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <DollarSign className="w-4 h-4 shrink-0 text-slate-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.valuation', 'Valuation Report')}
+            </span>
+          </Link>
+          <Link
+            to="/inventory/reconciliation"
+            id="nav-link-reconciliation"
+            onClick={handleLinkClick}
+            title={t('nav.reconciliation', 'Reconciliation')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/inventory/reconciliation')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.reconciliation', 'Reconciliation')}
             </span>
           </Link>
 

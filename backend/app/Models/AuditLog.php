@@ -14,6 +14,12 @@ class AuditLog extends Model {
     {
         parent::boot();
 
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+
         static::updating(function () {
             throw new \DomainException('Audit logs are append-only and cannot be modified.');
         });

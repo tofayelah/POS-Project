@@ -34,12 +34,27 @@ class InventoryService
         ?string $reason = null,
         ?string $notes = null,
         ?int $userId = null,
-        bool $allowNegative = false
+        bool $allowNegative = false,
+        ?int $storageLocationId = null,
+        ?int $stockBatchId = null
     ): StockMovement {
         return DB::transaction(function () use (
             $companyId, $warehouseId, $productVariantId, $movementType, $quantity, $unitCost,
-            $referenceType, $referenceId, $referenceNumber, $reason, $notes, $userId, $allowNegative
+            $referenceType, $referenceId, $referenceNumber, $reason, $notes, $userId, $allowNegative,
+            $storageLocationId, $stockBatchId
         ) {
+            $warehouse = Warehouse::where('id', $warehouseId)
+                ->where('company_id', $companyId)
+                ->first();
+
+            if (!$warehouse) {
+                throw new ConflictHttpException("Warehouse not found or does not belong to company.");
+            }
+
+            if ($warehouse->status === 'inactive') {
+                throw new ConflictHttpException("Warehouse is inactive and cannot process stock movements.");
+            }
+
             $variant = ProductVariant::with(['product.unit'])->findOrFail($productVariantId);
             $this->validateQuantityPrecision($variant, (float) $quantity);
             $productId = $variant->product_id;
@@ -95,9 +110,43 @@ class InventoryService
             $inventory->total_value = $inventory->quantity * $inventory->average_cost;
             $inventory->save();
 
+            // Track InventoryBatch balance if batch is specified
+            if ($stockBatchId !== null) {
+                $batchQuery = InventoryBatch::where('inventory_id', $inventory->id)
+                    ->where('stock_batch_id', $stockBatchId);
+
+                if ($storageLocationId !== null) {
+                    $batchQuery->where('storage_location_id', $storageLocationId);
+                } else {
+                    $batchQuery->whereNull('storage_location_id');
+                }
+
+                $invBatch = $batchQuery->lockForUpdate()->first();
+
+                if ($isIncoming) {
+                    if (!$invBatch) {
+                        $invBatch = InventoryBatch::create([
+                            'inventory_id' => $inventory->id,
+                            'stock_batch_id' => $stockBatchId,
+                            'storage_location_id' => $storageLocationId,
+                            'quantity' => 0,
+                        ]);
+                    }
+                    $invBatch->quantity = (float) $invBatch->quantity + $quantity;
+                    $invBatch->save();
+                } else {
+                    if ($invBatch) {
+                        $invBatch->quantity = max(0, (float) $invBatch->quantity - $quantity);
+                        $invBatch->save();
+                    }
+                }
+            }
+
             // Create immutable movement
             $movement = StockMovement::create([
                 'company_id' => $companyId,
+                'business_unit_id' => $warehouse->business_unit_id,
+                'branch_id' => $warehouse->branch_id,
                 'warehouse_id' => $warehouseId,
                 'product_id' => $productId,
                 'product_variant_id' => $productVariantId,
@@ -113,6 +162,8 @@ class InventoryService
                 'reason' => $reason,
                 'notes' => $notes,
                 'created_by' => $userId,
+                'storage_location_id' => $storageLocationId,
+                'stock_batch_id' => $stockBatchId,
             ]);
 
             return $movement;
@@ -298,6 +349,10 @@ class InventoryService
                 throw new ConflictHttpException("Warehouse not found or does not belong to company.");
             }
 
+            if ($warehouse->status === 'inactive') {
+                throw new ConflictHttpException("Warehouse is inactive and cannot dispense stock.");
+            }
+
             // 2. ProductVariant belongs to the correct product/company scope
             $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
@@ -318,6 +373,12 @@ class InventoryService
                 if ((int) $stockBatch->variant_id !== $productVariantId) {
                     throw new ConflictHttpException("Stock batch does not match the requested product variant.");
                 }
+                if ($stockBatch->isBlocked()) {
+                    throw new ConflictHttpException("Stock batch {$stockBatch->batch_no} is BLOCKED and cannot be sold or consumed.");
+                }
+                if ($stockBatch->isExpired()) {
+                    throw new ConflictHttpException("Stock batch {$stockBatch->batch_no} is EXPIRED and cannot be sold or consumed.");
+                }
             }
 
             // 4. If storageLocationId is supplied:
@@ -331,6 +392,9 @@ class InventoryService
                 }
                 if ((int) $storageLocation->warehouse_id !== $warehouseId) {
                     throw new ConflictHttpException("Storage location does not belong to the requested warehouse.");
+                }
+                if (isset($storageLocation->is_active) && !$storageLocation->is_active) {
+                    throw new ConflictHttpException("Storage location is inactive.");
                 }
             }
 
@@ -369,6 +433,40 @@ class InventoryService
 
                 $inventoryBatch->quantity = (float) $inventoryBatch->quantity - $quantity;
                 $inventoryBatch->save();
+            } else {
+                // FEFO / FIFO operational consumption across available batches
+                $availableBatches = InventoryBatch::where('inventory_batches.inventory_id', $inventory->id)
+                    ->where('inventory_batches.quantity', '>', 0)
+                    ->join('stock_batches', 'inventory_batches.stock_batch_id', '=', 'stock_batches.id')
+                    ->where('stock_batches.status', '!=', 'BLOCKED')
+                    ->where(function ($q) {
+                        $q->whereNull('stock_batches.exp_date')
+                          ->orWhere('stock_batches.exp_date', '>=', now()->toDateString());
+                    })
+                    ->orderByRaw('CASE WHEN stock_batches.exp_date IS NOT NULL THEN 0 ELSE 1 END')
+                    ->orderBy('stock_batches.exp_date', 'asc')
+                    ->orderBy('inventory_batches.created_at', 'asc')
+                    ->select('inventory_batches.*')
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($availableBatches->isNotEmpty()) {
+                    $remQty = $quantity;
+                    $allocatedBatchId = null;
+                    foreach ($availableBatches as $b) {
+                        if ($remQty <= 0) break;
+                        $deduct = min((float) $b->quantity, $remQty);
+                        $b->quantity = (float) $b->quantity - $deduct;
+                        $b->save();
+                        $remQty -= $deduct;
+                        if ($allocatedBatchId === null) {
+                            $allocatedBatchId = $b->stock_batch_id;
+                        }
+                    }
+                    if ($allocatedBatchId !== null) {
+                        $stockBatchId = $allocatedBatchId;
+                    }
+                }
             }
 
             // F. Unit cost
@@ -493,6 +591,12 @@ class InventoryService
                 );
             }
 
+            if ($warehouse->status === 'inactive') {
+                throw new ConflictHttpException(
+                    "Warehouse is inactive and cannot receive stock."
+                );
+            }
+
             // 4. Product Variant & Product validation
             $variant = ProductVariant::with(['product.unit'])
                 ->find($productVariantId);
@@ -539,6 +643,23 @@ class InventoryService
                     throw new ConflictHttpException(
                         "Storage location is inactive."
                     );
+                }
+            }
+
+            // 5b. Stock Batch validation if provided
+            if ($stockBatchId !== null) {
+                $batch = StockBatch::find($stockBatchId);
+                if (!$batch) {
+                    throw new ConflictHttpException("Stock batch does not exist.");
+                }
+                if ((int) $batch->company_id !== (int) $companyId) {
+                    throw new ConflictHttpException("Stock batch does not belong to the specified company.");
+                }
+                if ((int) $batch->variant_id !== (int) $productVariantId) {
+                    throw new ConflictHttpException("Stock batch does not match the product variant.");
+                }
+                if ($batch->isBlocked()) {
+                    throw new ConflictHttpException("Cannot receive stock into a BLOCKED batch.");
                 }
             }
 
@@ -1230,6 +1351,9 @@ class InventoryService
             if (!$warehouse) {
                 throw new ConflictHttpException("Warehouse does not belong to the specified company.");
             }
+            if ($warehouse->status === 'inactive') {
+                throw new ConflictHttpException("Warehouse is inactive and cannot process stock adjustment.");
+            }
 
             $variant = ProductVariant::with(['product.unit'])->find($productVariantId);
             if (!$variant || !$variant->product || (int) $variant->product->company_id !== $companyId) {
@@ -1480,6 +1604,9 @@ class InventoryService
                 ->first();
             if (!$warehouse) {
                 throw new ConflictHttpException("Warehouse does not belong to the specified company.");
+            }
+            if ($warehouse->status === 'inactive') {
+                throw new ConflictHttpException("Warehouse is inactive and cannot process stock adjustment.");
             }
 
             $variant = ProductVariant::with(['product.unit'])->find($productVariantId);

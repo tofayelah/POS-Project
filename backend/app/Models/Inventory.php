@@ -19,6 +19,10 @@ class Inventory extends Model
         'available_quantity' => 'decimal:4',
         'average_cost' => 'decimal:4',
         'total_value' => 'decimal:4',
+        'min_stock' => 'decimal:4',
+        'max_stock' => 'decimal:4',
+        'reorder_point' => 'decimal:4',
+        'reorder_quantity' => 'decimal:4',
     ];
 
     protected static function boot()

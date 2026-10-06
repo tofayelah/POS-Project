@@ -74,5 +74,8 @@ class ProductVariant extends Model
         return $query->where('status', 'active');
     }
 
-    public function stockBatches() { return $this->hasMany(StockBatch::class); }
+    public function stockBatches(): HasMany
+    {
+        return $this->hasMany(StockBatch::class, 'variant_id');
+    }
 }
