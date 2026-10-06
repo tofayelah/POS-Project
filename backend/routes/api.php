@@ -420,5 +420,53 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'store'])->middleware('permission:payments.create');
         Route::get('payments/{id}', [\App\Http\Controllers\Api\V1\PaymentController::class, 'show'])->middleware('permission:payments.view');
         Route::post('payments/{id}/allocate', [\App\Http\Controllers\Api\V1\PaymentController::class, 'allocate'])->middleware('permission:payments.allocate');
+
+        // PHASE 7 — Advanced Procurement Intelligence Routes
+        // Purchase Requisitions
+        Route::get('purchase-requisitions/next-number', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'nextNumber'])->middleware(['permission:procurement.requisitions.view,purchase_orders.view', 'scope:company']);
+        Route::get('purchase-requisitions', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'index'])->middleware(['permission:procurement.requisitions.view,purchase_orders.view', 'scope:company']);
+        Route::post('purchase-requisitions', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'store'])->middleware(['permission:procurement.requisitions.create,purchase_orders.create', 'scope:company']);
+        Route::get('purchase-requisitions/{id}', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'show'])->middleware(['permission:procurement.requisitions.view,purchase_orders.view', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/submit', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'submit'])->middleware(['permission:procurement.requisitions.create,purchase_orders.create', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/review', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'review'])->middleware(['permission:procurement.requisitions.review,purchase_orders.approve', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/approve', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'approve'])->middleware(['permission:procurement.requisitions.approve,purchase_orders.approve', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/reject', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'reject'])->middleware(['permission:procurement.requisitions.approve,purchase_orders.approve', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/cancel', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'cancel'])->middleware(['permission:procurement.requisitions.create,purchase_orders.create', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/convert-po', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'convertToPo'])->middleware(['permission:procurement.requisitions.convert,purchase_orders.create', 'scope:company']);
+        Route::post('purchase-requisitions/{id}/convert-rfq', [\App\Http\Controllers\Api\V1\PurchaseRequisitionController::class, 'convertToRfq'])->middleware(['permission:procurement.requisitions.convert,purchase_orders.create', 'scope:company']);
+
+        // Requests for Quotation (RFQs)
+        Route::get('rfqs/next-number', [\App\Http\Controllers\Api\V1\RfqController::class, 'nextNumber'])->middleware(['permission:procurement.rfq.view,purchase_orders.view', 'scope:company']);
+        Route::get('rfqs', [\App\Http\Controllers\Api\V1\RfqController::class, 'index'])->middleware(['permission:procurement.rfq.view,purchase_orders.view', 'scope:company']);
+        Route::post('rfqs', [\App\Http\Controllers\Api\V1\RfqController::class, 'store'])->middleware(['permission:procurement.rfq.create,purchase_orders.create', 'scope:company']);
+        Route::get('rfqs/{id}', [\App\Http\Controllers\Api\V1\RfqController::class, 'show'])->middleware(['permission:procurement.rfq.view,purchase_orders.view', 'scope:company']);
+        Route::post('rfqs/{id}/invite', [\App\Http\Controllers\Api\V1\RfqController::class, 'invite'])->middleware(['permission:procurement.rfq.create,purchase_orders.create', 'scope:company']);
+        Route::post('rfqs/{id}/quotations', [\App\Http\Controllers\Api\V1\RfqController::class, 'recordQuotation'])->middleware(['permission:procurement.rfq.create,purchase_orders.create', 'scope:company']);
+        Route::get('rfqs/{id}/compare', [\App\Http\Controllers\Api\V1\RfqController::class, 'compare'])->middleware(['permission:procurement.rfq.evaluate,purchase_orders.view', 'scope:company']);
+        Route::post('rfqs/{id}/award', [\App\Http\Controllers\Api\V1\RfqController::class, 'award'])->middleware(['permission:procurement.rfq.award,purchase_orders.approve', 'scope:company']);
+
+        // Supplier Qualification & Performance
+        Route::post('suppliers/{id}/qualification', [\App\Http\Controllers\Api\V1\SupplierQualificationController::class, 'updateStatus'])->middleware(['permission:procurement.suppliers.qualify,suppliers.update', 'scope:company']);
+        Route::get('suppliers/{id}/performance', [\App\Http\Controllers\Api\V1\SupplierPerformanceController::class, 'show'])->middleware(['permission:procurement.suppliers.performance,suppliers.view', 'scope:company']);
+        Route::post('suppliers/{id}/recalculate-score', [\App\Http\Controllers\Api\V1\SupplierPerformanceController::class, 'recalculate'])->middleware(['permission:procurement.suppliers.qualify,suppliers.update', 'scope:company']);
+        Route::get('procurement/supplier-rankings', [\App\Http\Controllers\Api\V1\SupplierPerformanceController::class, 'rankings'])->middleware(['permission:procurement.suppliers.performance,suppliers.view', 'scope:company']);
+
+        // Supplier Contracts & Price Agreements
+        Route::get('supplier-contracts', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'index'])->middleware(['permission:procurement.contracts.view,suppliers.view', 'scope:company']);
+        Route::post('supplier-contracts', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'store'])->middleware(['permission:procurement.contracts.manage,suppliers.update', 'scope:company']);
+        Route::get('supplier-contracts/{id}', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'show'])->middleware(['permission:procurement.contracts.view,suppliers.view', 'scope:company']);
+        Route::put('supplier-contracts/{id}', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'update'])->middleware(['permission:procurement.contracts.manage,suppliers.update', 'scope:company']);
+        Route::delete('supplier-contracts/{id}', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'destroy'])->middleware(['permission:procurement.contracts.manage,suppliers.delete', 'scope:company']);
+        Route::get('supplier-price-agreements', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'priceAgreements'])->middleware(['permission:procurement.contracts.view,suppliers.view', 'scope:company']);
+        Route::post('supplier-price-agreements', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'storePriceAgreement'])->middleware(['permission:procurement.contracts.manage,suppliers.update', 'scope:company']);
+        Route::get('procurement/resolve-price', [\App\Http\Controllers\Api\V1\SupplierContractController::class, 'resolvePrice'])->middleware(['permission:procurement.contracts.view,purchase_orders.view', 'scope:company']);
+
+        // Procurement Analytics, 3-Way Matching & Planning
+        Route::get('procurement/dashboard', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'dashboard'])->middleware(['permission:procurement.dashboard.view,purchase_orders.view', 'scope:company']);
+        Route::get('procurement/three-way-match/{purchaseId}', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'threeWayMatch'])->middleware(['permission:procurement.matching.view,purchases.view', 'scope:company']);
+        Route::get('procurement/match-exceptions', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'matchExceptions'])->middleware(['permission:procurement.matching.view,purchases.view', 'scope:company']);
+        Route::get('procurement/ppv-summary', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'ppvSummary'])->middleware(['permission:procurement.matching.view,purchases.view', 'scope:company']);
+        Route::get('procurement/recommendations', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'recommendations'])->middleware(['permission:procurement.planning.view,purchase_orders.view', 'scope:company']);
+        Route::post('procurement/recommendations/create-requisition', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'createRequisitionFromRecommendations'])->middleware(['permission:procurement.requisitions.create,purchase_orders.create', 'scope:company']);
     });
 });

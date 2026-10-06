@@ -18,6 +18,11 @@ class Supplier extends Model
     protected $casts = [
         'opening_balance' => 'decimal:4',
         'credit_limit' => 'decimal:4',
+        'min_order_value' => 'decimal:4',
+        'min_order_qty' => 'decimal:4',
+        'score_cached' => 'decimal:2',
+        'last_evaluated_at' => 'datetime',
+        'qualified_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -27,6 +32,9 @@ class Supplier extends Model
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = (string) Str::uuid();
+            }
+            if (empty($model->qualification_status)) {
+                $model->qualification_status = 'QUALIFIED';
             }
         });
     }
@@ -46,8 +54,43 @@ class Supplier extends Model
         return $this->hasMany(SupplierLedger::class);
     }
 
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(SupplierContract::class);
+    }
+
+    public function priceAgreements(): HasMany
+    {
+        return $this->hasMany(SupplierPriceAgreement::class);
+    }
+
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(SupplierQuotation::class);
+    }
+
+    public function qualifiedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'qualified_by');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'ACTIVE');
+    }
+
+    public function scopeQualified($query)
+    {
+        return $query->where('qualification_status', 'QUALIFIED');
+    }
+
+    public function scopeActiveAndQualified($query)
+    {
+        return $query->where('status', 'ACTIVE')->where('qualification_status', 'QUALIFIED');
     }
 }

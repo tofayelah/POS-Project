@@ -54,6 +54,13 @@ import RoleList from './pages/rbac/RoleList';
 import RolePermissionMatrix from './pages/rbac/RolePermissionMatrix';
 import { AuditLogList } from './pages/audit/AuditLogList';
 import { PosShiftManagement } from './pages/pos/PosShiftManagement';
+import { ProcurementDashboard } from './pages/procurement/ProcurementDashboard';
+import { PurchaseRequisitions } from './pages/procurement/PurchaseRequisitions';
+import { RfqManagement } from './pages/procurement/RfqManagement';
+import { SupplierPerformance } from './pages/procurement/SupplierPerformance';
+import { SupplierContracts } from './pages/procurement/SupplierContracts';
+import { ThreeWayMatchingExceptions } from './pages/procurement/ThreeWayMatchingExceptions';
+import { ProcurementRecommendations } from './pages/procurement/ProcurementRecommendations';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -318,6 +325,57 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/suppliers/:id/ledger" element={<Navigate to="/purchases/suppliers/:id/ledger" replace />} />
+            {/* Procurement Intelligence (Phase 7) */}
+            <Route path="/procurement" element={<Navigate to="/procurement/dashboard" replace />} />
+            <Route path="/procurement/dashboard" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ProcurementDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/requisitions" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseRequisitions />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/rfqs" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <RfqManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/supplier-performance" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierPerformance />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/contracts" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierContracts />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/matching" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ThreeWayMatchingExceptions />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procurement/planning" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ProcurementRecommendations />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/expenses" element={<ProtectedRoute><AdminLayout><ExpenseIndex /></AdminLayout></ProtectedRoute>} />
 <Route path="/expenses/create" element={<ProtectedRoute><AdminLayout><ExpenseCreate /></AdminLayout></ProtectedRoute>} />
 <Route path="/customers" element={

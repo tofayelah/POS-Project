@@ -28,7 +28,8 @@ import {
   SlidersHorizontal,
   Clock,
   ClipboardCheck,
-  DollarSign
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -496,6 +497,54 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             {t('nav.procurement', 'Procurement')}
           </div>
           <Link
+            to="/procurement/dashboard"
+            id="nav-link-procurement-dashboard"
+            onClick={handleLinkClick}
+            title={t('nav.procurementDashboard', 'Procurement Intelligence')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/dashboard')
+                ? 'bg-slate-800 text-indigo-400 font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.procurementDashboard', 'Procurement Intelligence')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/requisitions"
+            id="nav-link-procurement-requisitions"
+            onClick={handleLinkClick}
+            title={t('nav.purchaseRequisitions', 'Purchase Requisitions')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/requisitions')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <FileText className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.purchaseRequisitions', 'Requisitions')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/rfqs"
+            id="nav-link-procurement-rfqs"
+            onClick={handleLinkClick}
+            title={t('nav.rfqManagement', 'RFQs & Tenders')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/rfqs')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Layers className="w-4 h-4 shrink-0 text-sky-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.rfqManagement', 'RFQs & Tenders')}
+            </span>
+          </Link>
+          <Link
             to="/purchases/suppliers"
             id="nav-link-suppliers"
             onClick={handleLinkClick}
@@ -509,6 +558,38 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             <Users className="w-4 h-4 shrink-0 text-purple-400" />
             <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
               {t('nav.suppliers', 'Suppliers')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/supplier-performance"
+            id="nav-link-supplier-performance"
+            onClick={handleLinkClick}
+            title={t('nav.supplierPerformance', 'Supplier Performance')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/supplier-performance')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Award className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.supplierPerformance', 'Supplier Ratings')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/contracts"
+            id="nav-link-supplier-contracts"
+            onClick={handleLinkClick}
+            title={t('nav.supplierContracts', 'Contracts & Price Agreements')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/contracts')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.supplierContracts', 'Contracts & Pricing')}
             </span>
           </Link>
           <Link
@@ -557,6 +638,38 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             <ShoppingCart className="w-4 h-4 shrink-0 text-blue-400" />
             <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
               {t('nav.purchaseInvoices', 'Purchase Invoices')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/matching"
+            id="nav-link-matching-exceptions"
+            onClick={handleLinkClick}
+            title={t('nav.matchingExceptions', '3-Way Match & PPV')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/matching')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Scale className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.matchingExceptions', '3-Way Match & PPV')}
+            </span>
+          </Link>
+          <Link
+            to="/procurement/planning"
+            id="nav-link-procurement-planning"
+            onClick={handleLinkClick}
+            title={t('nav.procurementPlanning', 'Replenishment Planning')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/procurement/planning')
+                ? 'bg-slate-800 text-white font-medium'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Boxes className="w-4 h-4 shrink-0 text-rose-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.procurementPlanning', 'Replenishment')}
             </span>
           </Link>
           <Link

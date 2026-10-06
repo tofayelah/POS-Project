@@ -56,4 +56,24 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+
+    public function requisition(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseRequisition::class, 'purchase_requisition_id');
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(SupplierContract::class, 'supplier_contract_id');
+    }
+
+    public function rfq(): BelongsTo
+    {
+        return $this->belongsTo(Rfq::class, 'rfq_id');
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(SupplierQuotation::class, 'supplier_quotation_id');
+    }
 }

@@ -61,8 +61,7 @@ class PurchaseOrderController extends Controller
     public static function generateUniquePoNumber($companyId): string
     {
         $year = date('Y');
-        $orders = PurchaseOrder::withTrashed()
-            ->where('company_id', $companyId)
+        $orders = PurchaseOrder::where('company_id', $companyId)
             ->where('po_number', 'LIKE', "PO-{$year}-%")
             ->pluck('po_number');
             
@@ -78,8 +77,7 @@ class PurchaseOrderController extends Controller
         
         $nextNum = $maxNum + 1;
         $candidate = "PO-{$year}-" . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
-        while (PurchaseOrder::withTrashed()
-            ->where('company_id', $companyId)
+        while (PurchaseOrder::where('company_id', $companyId)
             ->where('po_number', $candidate)
             ->exists()) {
             $nextNum++;
