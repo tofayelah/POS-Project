@@ -29,6 +29,7 @@ class SalesService
     protected $inventoryAccountingService;
     protected $loyaltyService;
     protected $storeCreditService;
+    protected $customerCreditService;
 
     public function __construct(
         InventoryService $inventoryService,
@@ -36,7 +37,8 @@ class SalesService
         PaymentService $paymentService,
         InventoryAccountingService $inventoryAccountingService,
         LoyaltyService $loyaltyService,
-        ?StoreCreditService $storeCreditService = null
+        ?StoreCreditService $storeCreditService = null,
+        ?CustomerCreditService $customerCreditService = null
     ) {
         $this->inventoryService = $inventoryService;
         $this->customerLedgerService = $customerLedgerService;
@@ -44,6 +46,7 @@ class SalesService
         $this->inventoryAccountingService = $inventoryAccountingService;
         $this->loyaltyService = $loyaltyService;
         $this->storeCreditService = $storeCreditService ?? app(StoreCreditService::class);
+        $this->customerCreditService = $customerCreditService ?? app(CustomerCreditService::class);
     }
 
     public function completeSale($companyId, $data)
@@ -264,20 +267,21 @@ class SalesService
 
             if ($dueAmount > 0.0001) {
                 if (!$customer) {
-                    throw new Exception("Walk-in customers cannot have a due balance.");
+                    throw new ConflictHttpException("Walk-in customers cannot have a due balance.");
                 }
-                if ($customer->credit_limit !== null && $customer->credit_limit > 0) {
-                    // Check credit limit
-                    $currentBalance = DB::table('customer_ledgers')
-                        ->where('customer_id', $customer->id)
-                        ->orderBy('id', 'desc')
-                        ->value('balance_after') ?? 0;
-
-                    if (($currentBalance + $dueAmount) > $customer->credit_limit) {
-                        throw new Exception("Credit limit exceeded.");
-                    }
-                }
+                $this->customerCreditService->validateCreditSale(
+                    $companyId,
+                    $customer,
+                    $dueAmount,
+                    $data,
+                    $data['cashier_id'] ?? null
+                );
             }
+
+            $creditDays = $customer ? (int) ($customer->credit_days ?? 0) : 0;
+            $saleDate = now()->toDateString();
+            $dueDate = \Carbon\Carbon::parse($saleDate)->addDays($creditDays)->toDateString();
+            $salespersonId = $data['salesperson_id'] ?? null;
 
             // Create or Update Sale
             $saleId = $data['sale_id'] ?? null;
@@ -299,7 +303,9 @@ class SalesService
                     'payment_status' => 'DUE',
                     'status' => 'COMPLETED',
                     'idempotency_key' => $data['idempotency_key'] ?? null,
-                    'cashier_id' => $data['cashier_id']
+                    'cashier_id' => $data['cashier_id'],
+                    'salesperson_id' => $salespersonId,
+                    'due_date' => $dueDate,
                 ]);
                 $sale->items()->delete();
                 $sale->payments()->delete();
@@ -314,7 +320,8 @@ class SalesService
                     'customer_id' => $customer ? $customer->id : null,
                     'invoice_number' => $invoiceNumber,
                     'idempotency_key' => $data['idempotency_key'] ?? null,
-                    'sale_date' => now()->toDateString(),
+                    'sale_date' => $saleDate,
+                    'due_date' => $dueDate,
                     'status' => 'COMPLETED',
                     'subtotal' => $subtotal,
                     'discount_total' => $totalDiscount + $saleDiscount,
@@ -325,6 +332,7 @@ class SalesService
                     'payment_status' => 'DUE',
                     'notes' => $data['notes'] ?? null,
                     'cashier_id' => $data['cashier_id'],
+                    'salesperson_id' => $salespersonId,
                     'created_by' => $data['cashier_id']
                 ]);
             }

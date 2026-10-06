@@ -20,6 +20,7 @@ class Sale extends Model
         'invoice_number',
         'idempotency_key',
         'sale_date',
+        'due_date',
         'status',
         'subtotal',
         'discount_total',
@@ -30,6 +31,7 @@ class Sale extends Model
         'payment_status',
         'notes',
         'cashier_id',
+        'salesperson_id',
         'created_by',
         'updated_by',
     ];
@@ -41,6 +43,7 @@ class Sale extends Model
     public function posTerminal() { return $this->belongsTo(PosTerminal::class, 'pos_terminal_id'); }
     public function session() { return $this->belongsTo(PosSession::class, 'pos_session_id'); }
     public function cashier() { return $this->belongsTo(User::class, 'cashier_id'); }
+    public function salesperson() { return $this->belongsTo(User::class, 'salesperson_id'); }
     public function branch() { return $this->belongsTo(Branch::class); }
     public function warehouse() { return $this->belongsTo(Warehouse::class); }
 

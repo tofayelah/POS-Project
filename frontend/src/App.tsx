@@ -61,6 +61,12 @@ import { SupplierPerformance } from './pages/procurement/SupplierPerformance';
 import { SupplierContracts } from './pages/procurement/SupplierContracts';
 import { ThreeWayMatchingExceptions } from './pages/procurement/ThreeWayMatchingExceptions';
 import { ProcurementRecommendations } from './pages/procurement/ProcurementRecommendations';
+import { Customer360 } from './pages/crm/Customer360';
+import { CustomerCreditManagement } from './pages/crm/CustomerCreditManagement';
+import { ArAgingDashboard } from './pages/crm/ArAgingDashboard';
+import { CrmActivityCenter } from './pages/crm/CrmActivityCenter';
+import { CustomerIntelligenceDashboard } from './pages/crm/CustomerIntelligenceDashboard';
+import { SalesIntelligenceDashboard } from './pages/crm/SalesIntelligenceDashboard';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -389,6 +395,49 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <CustomerGroupList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            {/* Phase 8: CRM, Credit, AR Aging, Intelligence & Sales */}
+            <Route path="/crm/customer-360" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <Customer360 />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/credit" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CustomerCreditManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/ar-aging" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ArAgingDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/activities" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CrmActivityCenter />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/intelligence" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CustomerIntelligenceDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/crm/sales-intelligence" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SalesIntelligenceDashboard />
                 </AdminLayout>
               </ProtectedRoute>
             } />

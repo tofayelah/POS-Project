@@ -468,5 +468,50 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('procurement/ppv-summary', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'ppvSummary'])->middleware(['permission:procurement.matching.view,purchases.view', 'scope:company']);
         Route::get('procurement/recommendations', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'recommendations'])->middleware(['permission:procurement.planning.view,purchase_orders.view', 'scope:company']);
         Route::post('procurement/recommendations/create-requisition', [\App\Http\Controllers\Api\V1\ProcurementAnalyticsController::class, 'createRequisitionFromRecommendations'])->middleware(['permission:procurement.requisitions.create,purchase_orders.create', 'scope:company']);
+
+        // PHASE 8 — Advanced Customer + Credit + CRM + Intelligence Routes
+        // Customer Credit & Requests
+        Route::get('customers/{id}/credit-summary', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'summary'])->middleware(['permission:customers.view', 'scope:company']);
+        Route::get('customer-credit-requests', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'listRequests'])->middleware(['permission:customers.view', 'scope:company']);
+        Route::post('customers/{id}/request-credit', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'requestCredit'])->middleware(['permission:customers.credit_manage,customers.update', 'scope:company']);
+        Route::post('customer-credit-requests/{id}/approve', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'approveRequest'])->middleware(['permission:customers.credit_approve,customers.update', 'scope:company']);
+        Route::post('customer-credit-requests/{id}/reject', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'rejectRequest'])->middleware(['permission:customers.credit_approve,customers.update', 'scope:company']);
+        Route::post('customers/{id}/credit-hold', [\App\Http\Controllers\Api\V1\CustomerCreditController::class, 'toggleHold'])->middleware(['permission:customers.credit_manage,customers.update', 'scope:company']);
+
+        // Accounts Receivable Aging & Statements
+        Route::get('customers/{id}/statement', [\App\Http\Controllers\Api\V1\CustomerArController::class, 'statement'])->middleware(['permission:customers.view', 'scope:company']);
+        Route::get('customers/{id}/aging', [\App\Http\Controllers\Api\V1\CustomerArController::class, 'customerAging'])->middleware(['permission:customers.view', 'scope:company']);
+        Route::get('ar/aging-summary', [\App\Http\Controllers\Api\V1\CustomerArController::class, 'companyAging'])->middleware(['permission:customers.view', 'scope:company']);
+        Route::get('ar/collection-priorities', [\App\Http\Controllers\Api\V1\CustomerArController::class, 'collectionPriorities'])->middleware(['permission:customers.view', 'scope:company']);
+
+        // CRM: Activities, Complaints, Opportunities & Timeline
+        Route::get('crm/dashboard', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'dashboard'])->middleware(['permission:crm.view,customers.view', 'scope:company']);
+        Route::get('customers/{id}/timeline', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'timeline'])->middleware(['permission:crm.view,customers.view', 'scope:company']);
+        Route::get('crm/activities', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'listActivities'])->middleware(['permission:crm.view,customers.view', 'scope:company']);
+        Route::post('crm/activities', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'createActivity'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+        Route::post('crm/activities/{id}/complete', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'completeActivity'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+        Route::get('crm/complaints', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'listComplaints'])->middleware(['permission:crm.view,customers.view', 'scope:company']);
+        Route::post('crm/complaints', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'createComplaint'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+        Route::post('crm/complaints/{id}/resolve', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'resolveComplaint'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+        Route::get('crm/opportunities', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'listOpportunities'])->middleware(['permission:crm.view,customers.view', 'scope:company']);
+        Route::post('crm/opportunities', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'createOpportunity'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+        Route::put('crm/opportunities/{id}', [\App\Http\Controllers\Api\V1\CustomerCrmController::class, 'updateOpportunity'])->middleware(['permission:crm.manage,customers.update', 'scope:company']);
+
+        // Customer Intelligence (RFM, CLV, At-Risk, 360)
+        Route::get('customers/{id}/360', [\App\Http\Controllers\Api\V1\CustomerIntelligenceController::class, 'show360'])->middleware(['permission:customer_intelligence.view,customers.view', 'scope:company']);
+        Route::get('customer-intelligence/rfm-summary', [\App\Http\Controllers\Api\V1\CustomerIntelligenceController::class, 'rfmSummary'])->middleware(['permission:customer_intelligence.view,customers.view', 'scope:company']);
+        Route::post('customer-intelligence/recalculate-rfm', [\App\Http\Controllers\Api\V1\CustomerIntelligenceController::class, 'recalculateRfm'])->middleware(['permission:customer_intelligence.manage,customers.update', 'scope:company']);
+        Route::get('customer-intelligence/at-risk', [\App\Http\Controllers\Api\V1\CustomerIntelligenceController::class, 'atRiskCustomers'])->middleware(['permission:customer_intelligence.view,customers.view', 'scope:company']);
+        Route::get('customers/{id}/clv', [\App\Http\Controllers\Api\V1\CustomerIntelligenceController::class, 'customerClv'])->middleware(['permission:customer_intelligence.view,customers.view', 'scope:company']);
+
+        // Sales Intelligence (Dashboards, Breakdown, Salesperson Attribution, Forecast & Procurement Integration)
+        Route::get('sales-intelligence/dashboard', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'dashboard'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/by-customer', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'salesByCustomer'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/by-branch', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'salesByBranch'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/by-product', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'salesByProduct'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/salespersons', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'salespersonPerformance'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/returns', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'returnsAnalysis'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/demand-forecast', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'demandForecast'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+        Route::get('sales-intelligence/reorder-recommendations', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'reorderRecommendations'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
     });
 });

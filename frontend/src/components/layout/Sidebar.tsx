@@ -29,7 +29,9 @@ import {
   Clock,
   ClipboardCheck,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  UserCheck,
+  Activity
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -741,6 +743,102 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             <Layers className="w-4 h-4 shrink-0 text-slate-400" />
             <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
               {t('nav.customerGroups', 'Customer Groups')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/customer-360"
+            id="nav-link-customer-360"
+            onClick={handleLinkClick}
+            title={t('nav.customer360', 'Customer 360')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/customer-360')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <UserCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.customer360', 'Customer 360')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/credit"
+            id="nav-link-customer-credit"
+            onClick={handleLinkClick}
+            title={t('nav.customerCredit', 'Credit & Limits')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/credit')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <CreditCard className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.customerCredit', 'Credit & Limits')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/ar-aging"
+            id="nav-link-ar-aging"
+            onClick={handleLinkClick}
+            title={t('nav.arAging', 'AR Aging & Collections')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/ar-aging')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.arAging', 'AR Aging & Collections')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/activities"
+            id="nav-link-crm-activities"
+            onClick={handleLinkClick}
+            title={t('nav.crmActivityCenter', 'CRM & Activities')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/activities')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Activity className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.crmActivityCenter', 'CRM & Activities')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/intelligence"
+            id="nav-link-customer-intelligence"
+            onClick={handleLinkClick}
+            title={t('nav.customerIntelligence', 'Customer Intelligence')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/intelligence')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Award className="w-4 h-4 shrink-0 text-purple-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.customerIntelligence', 'Customer Intelligence')}
+            </span>
+          </Link>
+          <Link
+            to="/crm/sales-intelligence"
+            id="nav-link-sales-intelligence"
+            onClick={handleLinkClick}
+            title={t('nav.salesIntelligence', 'Sales & Demand Intelligence')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/crm/sales-intelligence')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.salesIntelligence', 'Sales & Demand Intelligence')}
             </span>
           </Link>
 
