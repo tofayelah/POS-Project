@@ -8,13 +8,17 @@ use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use App\Services\ReceiptService;
+
 class SaleController extends Controller
 {
     protected $salesService;
+    protected $receiptService;
     
-    public function __construct(SalesService $salesService)
+    public function __construct(SalesService $salesService, ReceiptService $receiptService)
     {
         $this->salesService = $salesService;
+        $this->receiptService = $receiptService;
     }
     
     public function index(Request $request)
@@ -36,6 +40,23 @@ class SaleController extends Controller
             ->findOrFail($id);
             
         return response()->json(['success' => true, 'data' => $sale]);
+    }
+
+    public function receipt(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $data = $this->receiptService->getSaleReceipt($companyId, (int) $id);
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    public function reprint(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+        $data = $this->receiptService->reprintSaleReceipt($companyId, (int) $id, $request->user()->id, $validated['reason'] ?? null);
+        return response()->json(['success' => true, 'data' => $data]);
     }
     
     public function complete(Request $request)

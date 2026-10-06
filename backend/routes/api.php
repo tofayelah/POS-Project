@@ -293,11 +293,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sales/held', [\App\Http\Controllers\Api\V1\SaleController::class, 'held'])->middleware('permission:pos.hold,pos.view,sales.view');
         Route::delete('sales/held/{id}', [\App\Http\Controllers\Api\V1\SaleController::class, 'destroyHeld'])->middleware('permission:pos.hold,pos.view,sales.view');
         Route::get('sales/{id}', [\App\Http\Controllers\Api\V1\SaleController::class, 'show'])->middleware('permission:sales.view');
+        Route::get('sales/{id}/receipt', [\App\Http\Controllers\Api\V1\SaleController::class, 'receipt'])->middleware('permission:receipts.view,sales.view,pos.view');
+        Route::post('sales/{id}/receipt/reprint', [\App\Http\Controllers\Api\V1\SaleController::class, 'reprint'])->middleware('permission:receipts.reprint,sales.view,pos.view');
         Route::post('sales/hold', [\App\Http\Controllers\Api\V1\SaleController::class, 'hold'])->middleware('permission:pos.hold,pos.view');
         Route::post('sales/complete', [\App\Http\Controllers\Api\V1\SaleController::class, 'complete'])->middleware('permission:sales.complete');
         // SPRINT 07 — Sales Return & Exchange
         Route::get('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'index'])->middleware('permission:sales_return.view');
         Route::get('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'show'])->middleware('permission:sales_return.view');
+        Route::get('sales-returns/{id}/receipt', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'receipt'])->middleware('permission:receipts.view,sales_return.view,pos.view');
+        Route::post('sales-returns/{id}/receipt/reprint', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'reprint'])->middleware('permission:receipts.reprint,sales_return.view,pos.view');
         Route::post('sales-returns', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'store'])->middleware('permission:sales_return.create');
         Route::get('sales/{id}/returnable-items', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'returnableItems'])->middleware('permission:sales_return.create');
         Route::put('sales-returns/{id}', [\App\Http\Controllers\Api\V1\SalesReturnController::class, 'update'])->middleware('permission:sales_return.update');

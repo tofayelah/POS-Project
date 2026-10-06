@@ -7,15 +7,18 @@ use App\Models\Sale;
 use App\Models\SalesReturn;
 use App\Services\SalesReturnService;
 use Illuminate\Http\Request;
+use App\Services\ReceiptService;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SalesReturnController extends Controller
 {
     protected $salesReturnService;
+    protected $receiptService;
 
-    public function __construct(SalesReturnService $salesReturnService)
+    public function __construct(SalesReturnService $salesReturnService, ReceiptService $receiptService)
     {
         $this->salesReturnService = $salesReturnService;
+        $this->receiptService = $receiptService;
     }
 
     public function index(Request $request)
@@ -37,6 +40,23 @@ class SalesReturnController extends Controller
             ->findOrFail($id);
 
         return response()->json(['success' => true, 'data' => $return]);
+    }
+
+    public function receipt(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $data = $this->receiptService->getReturnReceipt($companyId, (int) $id);
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    public function reprint(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+        $data = $this->receiptService->reprintReturnReceipt($companyId, (int) $id, $request->user()->id, $validated['reason'] ?? null);
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function store(Request $request)

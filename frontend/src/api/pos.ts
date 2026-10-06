@@ -343,4 +343,135 @@ export const posApi = {
       if (Array.isArray(d?.data)) return d.data;
       return [];
     }),
+
+  getSaleReceipt: (saleId: number) =>
+    api.get<{success: boolean, data: PosReceiptPayload}>(`/sales/${saleId}/receipt`).then(res => res.data),
+
+  reprintSaleReceipt: (saleId: number, reason?: string) =>
+    api.post<{success: boolean, data: PosReceiptPayload}>(`/sales/${saleId}/receipt/reprint`, { reason }).then(res => res.data),
+
+  getReturnReceipt: (returnId: number) =>
+    api.get<{success: boolean, data: PosReceiptPayload}>(`/sales-returns/${returnId}/receipt`).then(res => res.data),
+
+  reprintReturnReceipt: (returnId: number, reason?: string) =>
+    api.post<{success: boolean, data: PosReceiptPayload}>(`/sales-returns/${returnId}/receipt/reprint`, { reason }).then(res => res.data),
 };
+
+export interface ReceiptItemDto {
+  id: number;
+  name: string;
+  variant_name?: string | null;
+  sku?: string;
+  barcode?: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  tax: number;
+  line_total: number;
+}
+
+export interface ReturnReceiptItemDto {
+  id: number;
+  name: string;
+  variant_name?: string | null;
+  sku?: string;
+  barcode?: string;
+  return_quantity: number;
+  condition?: string;
+  unit_price: number;
+  refund_line_total: number;
+}
+
+export interface ReceiptTenderDto {
+  method: string;
+  amount: number;
+  transaction_ref?: string | null;
+}
+
+export interface PosReceiptPayload {
+  receipt_type: 'SALE' | 'SALES_RETURN';
+  sale_id?: number;
+  return_id?: number;
+  invoice_number?: string;
+  return_number?: string;
+  original_sale_id?: number;
+  original_invoice_number?: string;
+  sale_date?: string;
+  return_date?: string;
+  sale_type?: string;
+  return_type?: string;
+  reason?: string;
+  company: {
+    name: string;
+    address: string;
+    phone: string;
+    bin: string;
+    website?: string;
+    logo_url?: string | null;
+  };
+  branch: {
+    id?: number | null;
+    name: string;
+    address?: string;
+  };
+  terminal?: {
+    id?: number | null;
+    name: string;
+    code?: string;
+  };
+  shift?: {
+    id?: number | null;
+    session_number?: string | null;
+  };
+  cashier?: {
+    id?: number;
+    name: string;
+  };
+  processor?: {
+    id?: number;
+    name: string;
+  };
+  customer?: {
+    id: number;
+    name: string;
+    mobile?: string | null;
+    code?: string | null;
+    points_balance?: number;
+  } | null;
+  items: Array<ReceiptItemDto | ReturnReceiptItemDto>;
+  total_quantity: number;
+  subtotal: number;
+  discount_total?: number;
+  discount?: number;
+  tax_total?: number;
+  tax?: number;
+  grand_total?: number;
+  refund_total?: number;
+  paid_amount?: number;
+  due_amount?: number;
+  change_amount?: number;
+  payment_status?: string;
+  payment_method?: string;
+  payments: ReceiptTenderDto[];
+  store_credit?: {
+    amount_used: number;
+  };
+  customer_credit_amount?: number;
+  cash_refund_amount?: number;
+  exchange_difference?: number;
+  loyalty?: {
+    points_earned: number;
+    points_redeemed: number;
+    current_points_balance?: number | null;
+  };
+  points_reversed?: number;
+  is_reprint?: boolean;
+  reprint_count?: number;
+  notes?: string | null;
+  footer?: {
+    message: string;
+    exchange_policy?: string;
+    policy?: string;
+    warranty?: string;
+  };
+}

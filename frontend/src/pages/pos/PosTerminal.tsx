@@ -49,6 +49,7 @@ import { PosProductSearchModal } from './PosProductSearchModal';
 import { PosCustomerModal } from './PosCustomerModal';
 import { PosSessionModal } from './PosSessionModal';
 import { PosHoldModal } from './PosHoldModal';
+import { useLanguage } from '../../i18n';
 
 // Audio feedback helper for USB barcode scanner & counter actions
 function playSound(type: 'beep' | 'success' | 'error' | 'cash') {
@@ -151,6 +152,7 @@ export function PosTerminal() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { company } = useCompany();
+  const { language, setLanguage } = useLanguage();
 
   // Cached initial backup for restoring state on refresh
   const initialBackupRef = useRef<PosCartBackup | null>(loadInitialCartBackup());
@@ -177,6 +179,7 @@ export function PosTerminal() {
   const [autoPrint, setAutoPrint] = useState(true);
   const [discountPercent, setDiscountPercent] = useState<string>(() => initialBackup?.discountPercent || '0');
   const [discountAmount, setDiscountAmount] = useState<string>(() => initialBackup?.discountAmount || '0');
+  const [discountActiveSource, setDiscountActiveSource] = useState<'percent' | 'amount'>('percent');
 
   // Customer & Staff state
   const [customer, setCustomer] = useState<Customer | null>(() => initialBackup?.customer || null);
@@ -374,15 +377,112 @@ export function PosTerminal() {
     return cart.reduce((sum, item) => sum + item.discount_amount, 0);
   }, [cart]);
 
-  // Overall sale discount calculation
+  // Subtotal eligible for overall invoice discount
+  const eligibleSubtotal = useMemo(() => {
+    return Math.max(0, subtotal - itemDiscountsTotal);
+  }, [subtotal, itemDiscountsTotal]);
+
+  // Overall sale discount calculation (authoritative client preview)
   const specialDiscount = useMemo(() => {
-    const pct = parseFloat(discountPercent) || 0;
+    if (eligibleSubtotal <= 0) return 0;
     const amt = parseFloat(discountAmount) || 0;
-    if (pct > 0) {
-      return (subtotal - itemDiscountsTotal) * (pct / 100);
+    return Math.max(0, Math.min(eligibleSubtotal, Math.round(amt * 100) / 100));
+  }, [eligibleSubtotal, discountAmount]);
+
+  // Smart Discount bidirectional calculation handlers
+  const handleDiscountPercentChange = (val: string) => {
+    setDiscountActiveSource('percent');
+    if (val === '') {
+      setDiscountPercent('');
+      setDiscountAmount('0.00');
+      return;
     }
-    return amt;
-  }, [subtotal, itemDiscountsTotal, discountPercent, discountAmount]);
+    const numPct = parseFloat(val);
+    if (isNaN(numPct)) {
+      setDiscountPercent(val);
+      return;
+    }
+
+    const clampedPct = Math.min(100, Math.max(0, numPct));
+    setDiscountPercent(val);
+
+    if (eligibleSubtotal <= 0) {
+      setDiscountAmount('0.00');
+    } else {
+      const calcAmt = Math.round(((eligibleSubtotal * clampedPct) / 100) * 100) / 100;
+      setDiscountAmount(calcAmt.toFixed(2));
+    }
+  };
+
+  const handleDiscountAmountChange = (val: string) => {
+    setDiscountActiveSource('amount');
+    if (val === '') {
+      setDiscountAmount('');
+      setDiscountPercent('0.00');
+      return;
+    }
+    const numAmt = parseFloat(val);
+    if (isNaN(numAmt)) {
+      setDiscountAmount(val);
+      return;
+    }
+
+    if (numAmt < 0) {
+      setDiscountAmount('0.00');
+      setDiscountPercent('0.00');
+      return;
+    }
+
+    if (eligibleSubtotal <= 0) {
+      setDiscountAmount(val);
+      setDiscountPercent('0.00');
+      return;
+    }
+
+    const clampedAmt = Math.min(eligibleSubtotal, numAmt);
+    if (numAmt > eligibleSubtotal) {
+      setDiscountAmount(eligibleSubtotal.toFixed(2));
+    } else {
+      setDiscountAmount(val);
+    }
+
+    const calcPct = Math.round(((clampedAmt / eligibleSubtotal) * 100) * 100) / 100;
+    setDiscountPercent(calcPct.toFixed(2));
+  };
+
+  // Sync discount values when cart eligible subtotal changes
+  useEffect(() => {
+    if (eligibleSubtotal <= 0) {
+      if (parseFloat(discountAmount) > 0) setDiscountAmount('0.00');
+      if (parseFloat(discountPercent) > 0) setDiscountPercent('0.00');
+      return;
+    }
+
+    if (discountActiveSource === 'percent') {
+      const pct = parseFloat(discountPercent);
+      if (!isNaN(pct) && pct > 0) {
+        const clampedPct = Math.min(100, Math.max(0, pct));
+        const calcAmt = Math.round(((eligibleSubtotal * clampedPct) / 100) * 100) / 100;
+        const formatted = calcAmt.toFixed(2);
+        if (formatted !== discountAmount) {
+          setDiscountAmount(formatted);
+        }
+      }
+    } else {
+      const amt = parseFloat(discountAmount);
+      if (!isNaN(amt) && amt > 0) {
+        const clampedAmt = Math.min(eligibleSubtotal, Math.max(0, amt));
+        if (clampedAmt !== amt) {
+          setDiscountAmount(clampedAmt.toFixed(2));
+        }
+        const calcPct = Math.round(((clampedAmt / eligibleSubtotal) * 100) * 100) / 100;
+        const formatted = calcPct.toFixed(2);
+        if (formatted !== discountPercent) {
+          setDiscountPercent(formatted);
+        }
+      }
+    }
+  }, [eligibleSubtotal, discountActiveSource]);
 
   // Tax calculation based on item tax_rate (authoritative)
   const taxTotal = useMemo(() => {
@@ -767,7 +867,8 @@ export function PosTerminal() {
     setSelectedRowIndex(null);
     setBarcodeInput('');
     setDiscountPercent('0');
-    setDiscountAmount('0');
+    setDiscountAmount('0.00');
+    setDiscountActiveSource('percent');
     setTenderedAmount('0');
     setSalesNote('');
     setScanStatus('idle');
@@ -1088,16 +1189,22 @@ export function PosTerminal() {
           setTotalSessionCashSales((prev) => prev + Math.min(cashSum, grandTotal));
         }
 
+        const paidForSale = isSingleCash ? Math.min(numericTendered, grandTotal) : totalPaid;
+        const remainingDue = Math.max(0, Math.round((grandTotal - paidForSale) * 100) / 100);
+
         const receiptData = {
           invoiceNumber: completed.invoice_number || `INV-${Date.now()}`,
           saleDate: completed.created_at ? new Date(completed.created_at).toLocaleString() : new Date().toLocaleString(),
           items: [...cart],
           subtotal,
           discountTotal: itemDiscountsTotal + specialDiscount,
+          specialDiscount,
+          discountPercent: parseFloat(discountPercent) || 0,
           taxTotal,
           grandTotal,
-          paidAmount: isSingleCash ? Math.min(numericTendered, grandTotal) : totalPaid,
+          paidAmount: paidForSale,
           changeAmount,
+          dueAmount: remainingDue,
           paymentMethod: isSplitPayment
             ? 'SPLIT'
             : redeemedPoints > 0
@@ -1108,7 +1215,10 @@ export function PosTerminal() {
           customer,
           cashierName: user?.name || 'Cashier',
           terminalName: session.terminal_code || `Terminal #${session.pos_terminal_id}`,
+          branchName: session.branch?.name || (session as any).branch_name,
+          saleType: 'RETAIL / COUNTER SALE',
           notes: salesNote,
+          previousPoints: customerPoints?.points_balance,
           pointsRedeemed: redeemedPoints > 0 ? redeemedPoints : undefined,
           pointsEarned: potentialPointsEarned,
           customerPointsBalance: customer
@@ -1116,6 +1226,9 @@ export function PosTerminal() {
                 ? customerPoints.points_balance - redeemedPoints + potentialPointsEarned
                 : 0)
             : undefined,
+          saleId: completed?.id,
+          sessionNumber: session?.session_number,
+          storeCreditAmount: paymentsData.find((p) => String(p.method).toUpperCase() === 'STORE_CREDIT')?.amount,
           payments: paymentsData.map((p) => ({
             method: p.method,
             amount: p.amount,
@@ -1400,6 +1513,36 @@ export function PosTerminal() {
               Open Session
             </button>
           )}
+
+          {/* Language Switcher (EN | বাংলা) */}
+          <div id="pos-language-switcher" className="flex items-center bg-slate-800 p-0.5 rounded border border-slate-700 text-xs font-semibold ml-1">
+            <button
+              type="button"
+              id="pos-lang-en"
+              onClick={() => setLanguage('en')}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                language === 'en'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="English"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              id="pos-lang-bn"
+              onClick={() => setLanguage('bn')}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                language === 'bn'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="বাংলা (Bengali)"
+            >
+              বাংলা
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1541,17 +1684,30 @@ export function PosTerminal() {
           </button>
         </div>
 
-        {/* Auto-print checkbox toggle in shortcut bar */}
-        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer select-none font-sans shrink-0 ml-2">
-          <input
-            type="checkbox"
-            checked={autoPrint}
-            onChange={(e) => setAutoPrint(e.target.checked)}
-            className="rounded border-slate-600 text-emerald-500 focus:ring-0 w-3.5 h-3.5"
-          />
-          <Printer className="w-3.5 h-3.5 text-slate-400" />
-          <span>Auto-Print</span>
-        </label>
+        {/* Auto-print toggle & Reprint button in shortcut bar */}
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          {lastCompletedSale && (
+            <button
+              type="button"
+              onClick={() => setReceiptModalOpen(true)}
+              className="px-2 py-0.5 bg-blue-900/90 hover:bg-blue-800 text-blue-200 hover:text-white rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors border border-blue-700/60"
+              title="Reprint last completed sales slip"
+            >
+              <RotateCcw className="w-3 h-3 text-blue-300" />
+              <span>Reprint Slip</span>
+            </button>
+          )}
+          <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer select-none font-sans">
+            <input
+              type="checkbox"
+              checked={autoPrint}
+              onChange={(e) => setAutoPrint(e.target.checked)}
+              className="rounded border-slate-600 text-emerald-500 focus:ring-0 w-3.5 h-3.5"
+            />
+            <Printer className="w-3.5 h-3.5 text-slate-400" />
+            <span>Auto-Print</span>
+          </label>
+        </div>
       </div>
 
       {/* ==================================================== */}
@@ -2003,8 +2159,9 @@ export function PosTerminal() {
                 F4 Discount:
               </span>
               <div className="flex flex-col items-end gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center border border-slate-300 rounded overflow-hidden">
+                <div className="flex items-center gap-1.5 font-mono">
+                  {/* Percentage Input */}
+                  <div className="flex items-center border border-slate-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 bg-white">
                     <input
                       ref={discountInputRef}
                       type="number"
@@ -2013,31 +2170,32 @@ export function PosTerminal() {
                       step="any"
                       disabled={redeemedPoints > 0}
                       value={discountPercent}
-                      onChange={(e) => {
-                        setDiscountPercent(e.target.value);
-                        setDiscountAmount('0');
-                      }}
-                      placeholder="%"
-                      className="w-12 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                      onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                      placeholder="0.00"
+                      className="w-14 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                      title="Discount percentage (%)"
                     />
                     <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">%</span>
                   </div>
-                  <span className="text-slate-400 font-sans">or</span>
-                  <div className="flex items-center border border-slate-300 rounded overflow-hidden">
+
+                  {/* Sync Indicator */}
+                  <span className="text-slate-400 font-bold text-xs select-none">↔</span>
+
+                  {/* Fixed Taka Amount Input */}
+                  <div className="flex items-center border border-slate-300 rounded overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 bg-white">
+                    <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">৳</span>
                     <input
                       type="number"
                       min="0"
+                      max={eligibleSubtotal}
                       step="any"
                       disabled={redeemedPoints > 0}
                       value={discountAmount}
-                      onChange={(e) => {
-                        setDiscountAmount(e.target.value);
-                        setDiscountPercent('0');
-                      }}
-                      placeholder="Tk"
-                      className="w-14 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                      onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                      placeholder="0.00"
+                      className="w-16 text-center py-0.5 text-xs font-bold focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
+                      title="Discount amount in Taka (৳)"
                     />
-                    <span className="bg-slate-100 text-slate-500 px-1 text-[10px] font-bold">Tk</span>
                   </div>
                 </div>
                 {redeemedPoints > 0 && (
@@ -2619,10 +2777,13 @@ export function PosTerminal() {
         isOpen={receiptModalOpen}
         onClose={() => setReceiptModalOpen(false)}
         saleData={lastCompletedSale}
-        companyName={company?.name || 'RETAILCORE SUPERSTORE'}
+        companyName={company?.legal_name || company?.name || 'RETAILCORE SUPERSTORE'}
         companyAddress={company?.address || 'Dhaka, Bangladesh'}
         companyPhone={company?.phone || '+880 1700-000000'}
-        companyBin={company?.tax_number || 'BIN-0012345678-0101'}
+        companyBin={company?.vat_registration || company?.tax_number || 'BIN-0012345678-0101'}
+        companyWebsite={company?.website || 'www.retailcore-erp.com'}
+        companyLogo={company?.logo_path || undefined}
+        branchName={session?.branch?.name || (session as any)?.branch_name}
       />
 
       <PosHoldModal

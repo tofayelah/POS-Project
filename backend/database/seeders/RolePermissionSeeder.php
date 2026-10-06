@@ -50,6 +50,9 @@ class RolePermissionSeeder extends Seeder
             'pos_shifts.cash_out' => 'pos',
             'pos_shifts.reconcile' => 'pos',
             'pos_shifts.approve_variance' => 'pos',
+            'receipts.view' => 'pos',
+            'receipts.print' => 'pos',
+            'receipts.reprint' => 'pos',
         ];
 
         foreach ($permissions as $name => $group) {
@@ -74,7 +77,8 @@ class RolePermissionSeeder extends Seeder
                 'pos.view', 'pos.open_session', 'pos.close_session',
                 'pos_shifts.view', 'pos_shifts.open', 'pos_shifts.close',
                 'pos_shifts.cash_in', 'pos_shifts.cash_out', 'pos_shifts.reconcile',
-                'pos_shifts.approve_variance'
+                'pos_shifts.approve_variance',
+                'receipts.view', 'receipts.print', 'receipts.reprint'
             ])->pluck('id');
             $manager->permissions()->syncWithoutDetaching($managerPerms);
         }
@@ -86,7 +90,8 @@ class RolePermissionSeeder extends Seeder
                 'store_credit.view', 'store_credit.redeem',
                 'pos.view', 'pos.open_session', 'pos.close_session',
                 'pos_shifts.view', 'pos_shifts.open', 'pos_shifts.close',
-                'pos_shifts.cash_in', 'pos_shifts.cash_out', 'pos_shifts.reconcile'
+                'pos_shifts.cash_in', 'pos_shifts.cash_out', 'pos_shifts.reconcile',
+                'receipts.view', 'receipts.print', 'receipts.reprint'
             ])->pluck('id');
             $cashier->permissions()->syncWithoutDetaching($cashierPerms);
         }
