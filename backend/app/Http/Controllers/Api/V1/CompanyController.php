@@ -14,37 +14,34 @@ class CompanyController extends Controller
         $user = $request->user();
         $routeCompany = $request->route('company');
         
-        $companyId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
+        $specifiedId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
             ?? $request->attributes->get('company_id')
             ?? $request->header('X-Company-ID')
-            ?? $request->header('X-Company-Id')
-            ?? ($user ? $user->companies()->first()?->id : null);
+            ?? $request->header('X-Company-Id');
 
-        if (!$companyId) {
+        if ($specifiedId) {
+            $company = Company::find($specifiedId);
+            if (!$company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Company not found.',
+                ], 404);
+            }
+        } else {
+            $company = ($user ? $user->companies()->first() : null) ?? Company::first();
+            if (!$company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Company not found.',
+                ], 404);
+            }
+        }
+
+        if ($user && !$user->hasCompanyAccess($company->id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active company context identified.'
-            ], 400);
-        }
-
-        $company = null;
-        if ($companyId) {
-            $company = Company::find($companyId);
-        }
-
-        if (!$company && $user) {
-            $company = $user->companies()->first();
-        }
-
-        if (!$company) {
-            $company = Company::first();
-        }
-
-        if (!$company) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Company not found.',
-            ], 404);
+                'message' => 'Forbidden: You do not have access to this company.'
+            ], 403);
         }
 
         return response()->json([
@@ -58,35 +55,34 @@ class CompanyController extends Controller
         $user = $request->user();
         $routeCompany = $request->route('company');
 
-        $companyId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
+        $specifiedId = ($routeCompany instanceof Company ? $routeCompany->id : $routeCompany)
             ?? $request->attributes->get('company_id')
             ?? $request->header('X-Company-ID')
-            ?? $request->header('X-Company-Id')
-            ?? ($user ? $user->companies()->first()?->id : null);
+            ?? $request->header('X-Company-Id');
 
-        if (!$companyId) {
+        if ($specifiedId) {
+            $company = Company::find($specifiedId);
+            if (!$company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Company not found.'
+                ], 404);
+            }
+        } else {
+            $company = ($user ? $user->companies()->first() : null) ?? Company::first();
+            if (!$company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Company not found.'
+                ], 404);
+            }
+        }
+
+        if ($user && !$user->hasCompanyAccess($company->id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active company context identified.'
-            ], 400);
-        }
-
-        $company = null;
-        if ($companyId) {
-            $company = Company::find($companyId);
-        }
-        if (!$company && $user) {
-            $company = $user->companies()->first();
-        }
-        if (!$company) {
-            $company = Company::first();
-        }
-
-        if (!$company) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Company not found.'
-            ], 404);
+                'message' => 'Forbidden: You do not have access to this company.'
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -165,7 +161,7 @@ class CompanyController extends Controller
             ], 401);
         }
 
-        if (!$user->hasRole('Super Admin') && !$user->hasPermission('company.create') && !$user->hasPermission('companies.create')) {
+        if (!$user->hasRole('Super Admin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Forbidden: Only administrators can create tenant companies.'
