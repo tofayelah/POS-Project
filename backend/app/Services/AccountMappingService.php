@@ -29,6 +29,12 @@ class AccountMappingService
     public const ROLE_EMPLOYEE_ADVANCE_ASSET = 'employee_advance_asset';
     public const ROLE_EMPLOYEE_LOAN_ASSET = 'employee_loan_asset';
     public const ROLE_TAX_WITHHOLDING_PAYABLE = 'tax_withholding_payable';
+    public const ROLE_OUTPUT_VAT_PAYABLE = 'output_vat_payable';
+    public const ROLE_INPUT_VAT_RECEIVABLE = 'input_vat_receivable';
+    public const ROLE_SUPPLEMENTARY_DUTY_PAYABLE = 'supplementary_duty_payable';
+    public const ROLE_ADVANCE_TAX_ASSET = 'advance_tax_asset';
+    public const ROLE_TAX_ADJUSTMENT = 'tax_adjustment';
+    public const ROLE_VAT_REFUND_RECEIVABLE = 'vat_refund_receivable';
 
     public const VALID_ROLES = [
         self::ROLE_INVENTORY_ASSET,
@@ -51,6 +57,12 @@ class AccountMappingService
         self::ROLE_EMPLOYEE_ADVANCE_ASSET,
         self::ROLE_EMPLOYEE_LOAN_ASSET,
         self::ROLE_TAX_WITHHOLDING_PAYABLE,
+        self::ROLE_OUTPUT_VAT_PAYABLE,
+        self::ROLE_INPUT_VAT_RECEIVABLE,
+        self::ROLE_SUPPLEMENTARY_DUTY_PAYABLE,
+        self::ROLE_ADVANCE_TAX_ASSET,
+        self::ROLE_TAX_ADJUSTMENT,
+        self::ROLE_VAT_REFUND_RECEIVABLE,
     ];
 
     /**
@@ -63,6 +75,14 @@ class AccountMappingService
             ->where('group', 'accounting_mapping')
             ->where('key', $role)
             ->first();
+
+        // Fallback for output_vat_payable to vat_payable if unconfigured
+        if ((!$setting || empty($setting->value)) && $role === self::ROLE_OUTPUT_VAT_PAYABLE) {
+            $setting = Setting::where('company_id', $companyId)
+                ->where('group', 'accounting_mapping')
+                ->where('key', self::ROLE_VAT_PAYABLE)
+                ->first();
+        }
 
         if (!$setting || empty($setting->value)) {
             throw new ConflictHttpException("Accounting mapping for role '{$role}' is not configured for company ID {$companyId}.");

@@ -591,5 +591,61 @@ Route::middleware('auth:sanctum')->group(function () {
         // HRM & Payroll Dashboards
         Route::get('hrm/dashboard', [\App\Http\Controllers\Api\V1\HrmDashboardController::class, 'hrDashboard'])->middleware(['permission:hrm.dashboard.view,employees.view', 'scope:company']);
         Route::get('hrm/payroll-dashboard', [\App\Http\Controllers\Api\V1\HrmDashboardController::class, 'payrollDashboard'])->middleware(['permission:hrm.dashboard.view,payroll.view', 'scope:company']);
+
+        // ================================================================
+        // PHASE 10: BANGLADESH VAT & TAX COMPLIANCE FOUNDATION
+        // ================================================================
+        Route::prefix('tax')->group(function () {
+            // Profile & Registrations
+            Route::get('profile', [\App\Http\Controllers\Api\V1\Tax\TaxProfileController::class, 'show'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::put('profile', [\App\Http\Controllers\Api\V1\Tax\TaxProfileController::class, 'update'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::get('registrations', [\App\Http\Controllers\Api\V1\Tax\TaxRegistrationController::class, 'index'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('registrations', [\App\Http\Controllers\Api\V1\Tax\TaxRegistrationController::class, 'store'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::delete('registrations/{id}', [\App\Http\Controllers\Api\V1\Tax\TaxRegistrationController::class, 'destroy'])->middleware(['permission:tax.manage', 'scope:company']);
+
+            // Categories & Rules
+            Route::get('categories', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'categories'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('categories', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'storeCategory'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::get('rules', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'index'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('rules', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'store'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::put('rules/{id}', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'update'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::patch('rules/{id}/status', [\App\Http\Controllers\Api\V1\Tax\TaxRuleController::class, 'toggleStatus'])->middleware(['permission:tax.manage', 'scope:company']);
+
+            // Tax Periods
+            Route::get('periods', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'index'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::get('periods/current', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'current'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('periods', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'store'])->middleware(['permission:tax.manage', 'scope:company']);
+            Route::post('periods/{id}/lock', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'lock'])->middleware(['permission:tax.close_period', 'scope:company']);
+            Route::post('periods/{id}/file', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'file'])->middleware(['permission:tax.close_period', 'scope:company']);
+            Route::post('periods/{id}/close', [\App\Http\Controllers\Api\V1\Tax\TaxPeriodController::class, 'close'])->middleware(['permission:tax.close_period', 'scope:company']);
+
+            // Tax Subledger & Settlement
+            Route::get('transactions', [\App\Http\Controllers\Api\V1\Tax\TaxTransactionController::class, 'index'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::get('transactions/{id}', [\App\Http\Controllers\Api\V1\Tax\TaxTransactionController::class, 'show'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('transactions/settle', [\App\Http\Controllers\Api\V1\Tax\TaxTransactionController::class, 'settle'])->middleware(['permission:tax.settle', 'scope:company']);
+
+            // Tax Reconciliation
+            Route::get('periods/{periodId}/reconciliation', [\App\Http\Controllers\Api\V1\Tax\TaxReconciliationController::class, 'show'])->middleware(['permission:tax.reconcile', 'scope:company']);
+            Route::post('periods/{periodId}/reconcile', [\App\Http\Controllers\Api\V1\Tax\TaxReconciliationController::class, 'reconcile'])->middleware(['permission:tax.reconcile', 'scope:company']);
+
+            // Tax Adjustments
+            Route::get('adjustments', [\App\Http\Controllers\Api\V1\Tax\TaxAdjustmentController::class, 'index'])->middleware(['permission:tax.view', 'scope:company']);
+            Route::post('adjustments', [\App\Http\Controllers\Api\V1\Tax\TaxAdjustmentController::class, 'store'])->middleware(['permission:tax.adjust', 'scope:company']);
+            Route::post('adjustments/{id}/approve', [\App\Http\Controllers\Api\V1\Tax\TaxAdjustmentController::class, 'approve'])->middleware(['permission:tax.adjust', 'scope:company']);
+            Route::post('adjustments/{id}/post', [\App\Http\Controllers\Api\V1\Tax\TaxAdjustmentController::class, 'post'])->middleware(['permission:tax.post', 'scope:company']);
+
+            // Pure Calculations / Previews
+            Route::post('calculate', [\App\Http\Controllers\Api\V1\Tax\TaxCalculationController::class, 'calculate'])->middleware(['permission:tax.calculate,tax.view', 'scope:company']);
+            Route::post('calculate-invoice', [\App\Http\Controllers\Api\V1\Tax\TaxCalculationController::class, 'calculateInvoice'])->middleware(['permission:tax.calculate,tax.view', 'scope:company']);
+            Route::post('calculate-withholding', [\App\Http\Controllers\Api\V1\Tax\TaxCalculationController::class, 'calculateWithholding'])->middleware(['permission:tax.calculate,tax.view', 'scope:company']);
+        });
+
+        // Tax Reports
+        Route::prefix('reports/tax')->group(function () {
+            Route::get('vat-summary', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'vatSummary'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
+            Route::get('output-vat', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'outputVat'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
+            Route::get('input-vat', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'inputVat'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
+            Route::get('mushak-foundation/{periodId}', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'mushakFoundation'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
+        });
     });
 });

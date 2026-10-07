@@ -29,6 +29,8 @@ class Customer extends Model
         'country',
         'bin_number',
         'tin_number',
+        'tax_status',
+        'tax_exemption_number',
         'credit_limit',
         'credit_days',
         'credit_status',

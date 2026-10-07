@@ -1000,6 +1000,141 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             </span>
           </Link>
 
+          {/* Tax & VAT Compliance */}
+          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+            isExpanded ? 'block' : 'lg:hidden'
+          }`}>
+            {t('nav.taxCompliance', 'Tax & VAT Compliance')}
+          </div>
+          <Link
+            to="/tax/dashboard"
+            id="nav-link-tax-dashboard"
+            onClick={handleLinkClick}
+            title={t('nav.taxDashboard', 'Tax Dashboard')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/dashboard')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Scale className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxDashboard', 'Tax Dashboard')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/profiles"
+            id="nav-link-tax-profiles"
+            onClick={handleLinkClick}
+            title={t('nav.taxProfiles', 'Tax Profiles & Registrations')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/profiles')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Building2 className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxProfiles', 'BIN & Registrations')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/rules"
+            id="nav-link-tax-rules"
+            onClick={handleLinkClick}
+            title={t('nav.taxRules', 'Tax Rates & Rules')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/rules')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Tag className="w-4 h-4 shrink-0 text-sky-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxRules', 'Rates & SD Rules')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/periods"
+            id="nav-link-tax-periods"
+            onClick={handleLinkClick}
+            title={t('nav.taxPeriods', 'Tax Filing Periods')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/periods')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxPeriods', 'Filing Periods')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/transactions"
+            id="nav-link-tax-transactions"
+            onClick={handleLinkClick}
+            title={t('nav.taxTransactions', 'Tax Subledger Register')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/transactions')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxTransactions', 'Tax Subledger')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/reconciliation"
+            id="nav-link-tax-reconciliation"
+            onClick={handleLinkClick}
+            title={t('nav.taxReconciliation', 'Subledger vs GL Audit')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/reconciliation')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0 text-purple-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxReconciliation', 'GL Reconciliation')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/adjustments"
+            id="nav-link-tax-adjustments"
+            onClick={handleLinkClick}
+            title={t('nav.taxAdjustments', 'Tax Adjustments & Notes')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/adjustments')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4 shrink-0 text-rose-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxAdjustments', 'Adjustments')}
+            </span>
+          </Link>
+          <Link
+            to="/tax/reports"
+            id="nav-link-tax-reports"
+            onClick={handleLinkClick}
+            title={t('nav.taxReports', 'Mushak 9.1 & VAT Reports')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/tax/reports')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.taxReports', 'Mushak & VAT Reports')}
+            </span>
+          </Link>
+
           {/* Organization */}
           <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
             isExpanded ? 'block' : 'lg:hidden'

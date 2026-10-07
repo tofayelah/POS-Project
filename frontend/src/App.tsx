@@ -75,6 +75,14 @@ import { ShiftAttendanceManagement } from './pages/hr/ShiftAttendanceManagement'
 import { LeaveManagement } from './pages/hr/LeaveManagement';
 import { PayrollManagement } from './pages/hr/PayrollManagement';
 import { AdvanceLoanManagement } from './pages/hr/AdvanceLoanManagement';
+import { TaxDashboard } from './pages/tax/TaxDashboard';
+import { TaxProfileManagement } from './pages/tax/TaxProfileManagement';
+import { TaxRuleManagement } from './pages/tax/TaxRuleManagement';
+import { TaxPeriodManagement } from './pages/tax/TaxPeriodManagement';
+import { TaxTransactionRegister } from './pages/tax/TaxTransactionRegister';
+import { TaxReconciliationView } from './pages/tax/TaxReconciliationView';
+import { TaxAdjustmentManagement } from './pages/tax/TaxAdjustmentManagement';
+import { TaxReports } from './pages/tax/TaxReports';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -635,6 +643,65 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/settings/audit-logs" element={<Navigate to="/audit-logs" replace />} />
+
+            {/* Tax & VAT Compliance Routes */}
+            <Route path="/tax/dashboard" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/profiles" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxProfileManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/rules" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxRuleManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/periods" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxPeriodManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/transactions" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxTransactionRegister />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/reconciliation" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxReconciliationView />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/adjustments" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxAdjustmentManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tax/reports" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <TaxReports />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
