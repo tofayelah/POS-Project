@@ -513,5 +513,83 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sales-intelligence/returns', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'returnsAnalysis'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
         Route::get('sales-intelligence/demand-forecast', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'demandForecast'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
         Route::get('sales-intelligence/reorder-recommendations', [\App\Http\Controllers\Api\V1\SalesIntelligenceController::class, 'reorderRecommendations'])->middleware(['permission:sales_intelligence.view,reports.view', 'scope:company']);
+
+        // =========================================================================
+        // PHASE 9 — HRM + ATTENDANCE + LEAVE + PAYROLL ROUTES
+        // =========================================================================
+
+        // Departments & Designations
+        Route::get('departments', [\App\Http\Controllers\Api\V1\DepartmentController::class, 'index'])->middleware(['permission:departments.view,employees.view', 'scope:company']);
+        Route::post('departments', [\App\Http\Controllers\Api\V1\DepartmentController::class, 'store'])->middleware(['permission:departments.manage,employees.create', 'scope:company']);
+        Route::put('departments/{id}', [\App\Http\Controllers\Api\V1\DepartmentController::class, 'update'])->middleware(['permission:departments.manage,employees.update', 'scope:company']);
+        Route::delete('departments/{id}', [\App\Http\Controllers\Api\V1\DepartmentController::class, 'destroy'])->middleware(['permission:departments.manage,employees.delete', 'scope:company']);
+
+        Route::get('designations', [\App\Http\Controllers\Api\V1\DesignationController::class, 'index'])->middleware(['permission:designations.view,employees.view', 'scope:company']);
+        Route::post('designations', [\App\Http\Controllers\Api\V1\DesignationController::class, 'store'])->middleware(['permission:designations.manage,employees.create', 'scope:company']);
+        Route::put('designations/{id}', [\App\Http\Controllers\Api\V1\DesignationController::class, 'update'])->middleware(['permission:designations.manage,employees.update', 'scope:company']);
+        Route::delete('designations/{id}', [\App\Http\Controllers\Api\V1\DesignationController::class, 'destroy'])->middleware(['permission:designations.manage,employees.delete', 'scope:company']);
+
+        // Employees
+        Route::get('employees', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'index'])->middleware(['permission:employees.view', 'scope:company']);
+        Route::post('employees', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'store'])->middleware(['permission:employees.create', 'scope:company']);
+        Route::get('employees/{id}', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'show'])->middleware(['permission:employees.view', 'scope:company']);
+        Route::put('employees/{id}', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'update'])->middleware(['permission:employees.update', 'scope:company']);
+        Route::get('employees/{id}/360', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'show360'])->middleware(['permission:employees.view', 'scope:company']);
+
+        // Shifts & Attendance
+        Route::get('shifts', [\App\Http\Controllers\Api\V1\ShiftController::class, 'index'])->middleware(['permission:shifts.view,attendance.view', 'scope:company']);
+        Route::post('shifts', [\App\Http\Controllers\Api\V1\ShiftController::class, 'store'])->middleware(['permission:shifts.manage,attendance.manage', 'scope:company']);
+        Route::put('shifts/{id}', [\App\Http\Controllers\Api\V1\ShiftController::class, 'update'])->middleware(['permission:shifts.manage,attendance.manage', 'scope:company']);
+        Route::delete('shifts/{id}', [\App\Http\Controllers\Api\V1\ShiftController::class, 'destroy'])->middleware(['permission:shifts.manage,attendance.manage', 'scope:company']);
+        Route::post('shifts/assign', [\App\Http\Controllers\Api\V1\ShiftController::class, 'assignShift'])->middleware(['permission:shifts.manage,attendance.manage', 'scope:company']);
+
+        Route::get('attendances', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'index'])->middleware(['permission:attendance.view', 'scope:company']);
+        Route::post('attendances/check-in', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'checkIn'])->middleware(['permission:attendance.checkin,attendance.view', 'scope:company']);
+        Route::post('attendances/check-out', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'checkOut'])->middleware(['permission:attendance.checkin,attendance.view', 'scope:company']);
+        Route::post('attendances/adjust', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'requestAdjustment'])->middleware(['permission:attendance.manage,attendance.view', 'scope:company']);
+        Route::post('attendance-adjustments/{id}/approve', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'approveAdjustment'])->middleware(['permission:attendance.manage', 'scope:company']);
+        Route::get('attendances/summary', [\App\Http\Controllers\Api\V1\AttendanceController::class, 'summary'])->middleware(['permission:attendance.view', 'scope:company']);
+
+        // Leave Management
+        Route::get('leave-types', [\App\Http\Controllers\Api\V1\LeaveController::class, 'leaveTypes'])->middleware(['permission:leave.view', 'scope:company']);
+        Route::post('leave-types', [\App\Http\Controllers\Api\V1\LeaveController::class, 'storeLeaveType'])->middleware(['permission:leave.manage,leave.approve', 'scope:company']);
+        Route::put('leave-types/{id}', [\App\Http\Controllers\Api\V1\LeaveController::class, 'updateLeaveType'])->middleware(['permission:leave.manage,leave.approve', 'scope:company']);
+        Route::get('leave-balances', [\App\Http\Controllers\Api\V1\LeaveController::class, 'balances'])->middleware(['permission:leave.view', 'scope:company']);
+        Route::get('leave-applications', [\App\Http\Controllers\Api\V1\LeaveController::class, 'applications'])->middleware(['permission:leave.view', 'scope:company']);
+        Route::post('leave-applications', [\App\Http\Controllers\Api\V1\LeaveController::class, 'storeApplication'])->middleware(['permission:leave.apply,leave.view', 'scope:company']);
+        Route::post('leave-applications/{id}/approve', [\App\Http\Controllers\Api\V1\LeaveController::class, 'approveApplication'])->middleware(['permission:leave.approve', 'scope:company']);
+        Route::post('leave-applications/{id}/reject', [\App\Http\Controllers\Api\V1\LeaveController::class, 'rejectApplication'])->middleware(['permission:leave.approve', 'scope:company']);
+
+        // Salary Structures & Components
+        Route::get('salary-components', [\App\Http\Controllers\Api\V1\SalaryStructureController::class, 'components'])->middleware(['permission:salary.view,payroll.view', 'scope:company']);
+        Route::post('salary-components', [\App\Http\Controllers\Api\V1\SalaryStructureController::class, 'storeComponent'])->middleware(['permission:salary.manage,payroll.approve', 'scope:company']);
+        Route::get('salary-structures', [\App\Http\Controllers\Api\V1\SalaryStructureController::class, 'index'])->middleware(['permission:salary.view,payroll.view', 'scope:company']);
+        Route::post('salary-structures', [\App\Http\Controllers\Api\V1\SalaryStructureController::class, 'store'])->middleware(['permission:salary.manage,payroll.approve', 'scope:company']);
+        Route::post('salary-structures/assign', [\App\Http\Controllers\Api\V1\SalaryStructureController::class, 'assignStructure'])->middleware(['permission:salary.manage,payroll.approve', 'scope:company']);
+
+        // Payroll Lifecycle
+        Route::get('payroll/periods', [\App\Http\Controllers\Api\V1\PayrollController::class, 'periods'])->middleware(['permission:payroll.view', 'scope:company']);
+        Route::post('payroll/periods', [\App\Http\Controllers\Api\V1\PayrollController::class, 'storePeriod'])->middleware(['permission:payroll.calculate,payroll.approve', 'scope:company']);
+        Route::get('payroll/runs', [\App\Http\Controllers\Api\V1\PayrollController::class, 'runs'])->middleware(['permission:payroll.view', 'scope:company']);
+        Route::post('payroll/runs', [\App\Http\Controllers\Api\V1\PayrollController::class, 'createRun'])->middleware(['permission:payroll.calculate,payroll.approve', 'scope:company']);
+        Route::get('payroll/runs/{id}', [\App\Http\Controllers\Api\V1\PayrollController::class, 'showRun'])->middleware(['permission:payroll.view', 'scope:company']);
+        Route::post('payroll/runs/{id}/calculate', [\App\Http\Controllers\Api\V1\PayrollController::class, 'calculateRun'])->middleware(['permission:payroll.calculate', 'scope:company']);
+        Route::post('payroll/runs/{id}/approve', [\App\Http\Controllers\Api\V1\PayrollController::class, 'approveRun'])->middleware(['permission:payroll.approve', 'scope:company']);
+        Route::post('payroll/runs/{id}/post', [\App\Http\Controllers\Api\V1\PayrollController::class, 'postRun'])->middleware(['permission:payroll.post', 'scope:company']);
+        Route::post('payroll/runs/{id}/settle', [\App\Http\Controllers\Api\V1\PayrollController::class, 'settlePayout'])->middleware(['permission:payroll.payout', 'scope:company']);
+
+        // Employee Advances & Loans
+        Route::get('employee-advances', [\App\Http\Controllers\Api\V1\EmployeeAdvanceController::class, 'index'])->middleware(['permission:advances.view', 'scope:company']);
+        Route::post('employee-advances', [\App\Http\Controllers\Api\V1\EmployeeAdvanceController::class, 'store'])->middleware(['permission:advances.request,advances.view', 'scope:company']);
+        Route::post('employee-advances/{id}/approve', [\App\Http\Controllers\Api\V1\EmployeeAdvanceController::class, 'approve'])->middleware(['permission:advances.manage', 'scope:company']);
+        Route::post('employee-advances/{id}/disburse', [\App\Http\Controllers\Api\V1\EmployeeAdvanceController::class, 'disburse'])->middleware(['permission:advances.manage', 'scope:company']);
+
+        Route::get('employee-loans', [\App\Http\Controllers\Api\V1\EmployeeLoanController::class, 'index'])->middleware(['permission:loans.view', 'scope:company']);
+        Route::post('employee-loans', [\App\Http\Controllers\Api\V1\EmployeeLoanController::class, 'store'])->middleware(['permission:loans.manage', 'scope:company']);
+        Route::post('employee-loans/{id}/disburse', [\App\Http\Controllers\Api\V1\EmployeeLoanController::class, 'disburse'])->middleware(['permission:loans.manage', 'scope:company']);
+
+        // HRM & Payroll Dashboards
+        Route::get('hrm/dashboard', [\App\Http\Controllers\Api\V1\HrmDashboardController::class, 'hrDashboard'])->middleware(['permission:hrm.dashboard.view,employees.view', 'scope:company']);
+        Route::get('hrm/payroll-dashboard', [\App\Http\Controllers\Api\V1\HrmDashboardController::class, 'payrollDashboard'])->middleware(['permission:hrm.dashboard.view,payroll.view', 'scope:company']);
     });
 });

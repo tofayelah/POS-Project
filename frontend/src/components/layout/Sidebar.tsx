@@ -842,6 +842,125 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             </span>
           </Link>
 
+          {/* HRM & Workforce */}
+          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+            isExpanded ? 'block' : 'lg:hidden'
+          }`}>
+            {t('nav.hrm', 'HRM & Workforce')}
+          </div>
+          <Link
+            to="/hr/dashboard"
+            id="nav-link-hr-dashboard"
+            onClick={handleLinkClick}
+            title={t('nav.hrDashboard', 'HR Command Center')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/dashboard')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <UserCheck className="w-4 h-4 shrink-0 text-indigo-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.hrDashboard', 'HR Command Center')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/employees"
+            id="nav-link-hr-employees"
+            onClick={handleLinkClick}
+            title={t('nav.employees', 'Workforce Directory')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/employees')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Users className="w-4 h-4 shrink-0 text-sky-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.employees', 'Workforce Directory')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/departments"
+            id="nav-link-hr-departments"
+            onClick={handleLinkClick}
+            title={t('nav.departments', 'Departments & Roles')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/departments')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Building2 className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.departments', 'Departments & Roles')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/attendance"
+            id="nav-link-hr-attendance"
+            onClick={handleLinkClick}
+            title={t('nav.attendance', 'Attendance & Shifts')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/attendance')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.attendance', 'Attendance & Shifts')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/leaves"
+            id="nav-link-hr-leaves"
+            onClick={handleLinkClick}
+            title={t('nav.leaves', 'Leave Management')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/leaves')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4 shrink-0 text-amber-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.leaves', 'Leave Management')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/payroll"
+            id="nav-link-hr-payroll"
+            onClick={handleLinkClick}
+            title={t('nav.payroll', 'Payroll Engine')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/payroll')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <DollarSign className="w-4 h-4 shrink-0 text-purple-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.payroll', 'Payroll Engine')}
+            </span>
+          </Link>
+          <Link
+            to="/hr/advances-loans"
+            id="nav-link-hr-advances-loans"
+            onClick={handleLinkClick}
+            title={t('nav.advancesLoans', 'Advances & Loans')}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+              isActive('/hr/advances-loans')
+                ? 'bg-slate-800 text-white font-semibold'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <CreditCard className="w-4 h-4 shrink-0 text-rose-400" />
+            <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+              {t('nav.advancesLoans', 'Advances & Loans')}
+            </span>
+          </Link>
+
           {/* Finance & Expenses */}
           <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
             isExpanded ? 'block' : 'lg:hidden'

@@ -24,6 +24,11 @@ class AccountMappingService
     public const ROLE_OTHER_INCOME = 'other_income';
     public const ROLE_CASH_SHORTAGE = 'cash_shortage';
     public const ROLE_CASH_OVERAGE = 'cash_overage';
+    public const ROLE_PAYROLL_EXPENSE = 'payroll_expense';
+    public const ROLE_SALARIES_PAYABLE = 'salaries_payable';
+    public const ROLE_EMPLOYEE_ADVANCE_ASSET = 'employee_advance_asset';
+    public const ROLE_EMPLOYEE_LOAN_ASSET = 'employee_loan_asset';
+    public const ROLE_TAX_WITHHOLDING_PAYABLE = 'tax_withholding_payable';
 
     public const VALID_ROLES = [
         self::ROLE_INVENTORY_ASSET,
@@ -41,6 +46,11 @@ class AccountMappingService
         self::ROLE_OTHER_INCOME,
         self::ROLE_CASH_SHORTAGE,
         self::ROLE_CASH_OVERAGE,
+        self::ROLE_PAYROLL_EXPENSE,
+        self::ROLE_SALARIES_PAYABLE,
+        self::ROLE_EMPLOYEE_ADVANCE_ASSET,
+        self::ROLE_EMPLOYEE_LOAN_ASSET,
+        self::ROLE_TAX_WITHHOLDING_PAYABLE,
     ];
 
     /**

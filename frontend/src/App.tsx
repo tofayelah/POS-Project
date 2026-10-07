@@ -67,6 +67,14 @@ import { ArAgingDashboard } from './pages/crm/ArAgingDashboard';
 import { CrmActivityCenter } from './pages/crm/CrmActivityCenter';
 import { CustomerIntelligenceDashboard } from './pages/crm/CustomerIntelligenceDashboard';
 import { SalesIntelligenceDashboard } from './pages/crm/SalesIntelligenceDashboard';
+import { HrDashboard } from './pages/hr/HrDashboard';
+import { EmployeeManagement } from './pages/hr/EmployeeManagement';
+import { EmployeeProfile } from './pages/hr/EmployeeProfile';
+import { DepartmentDesignationManagement } from './pages/hr/DepartmentDesignationManagement';
+import { ShiftAttendanceManagement } from './pages/hr/ShiftAttendanceManagement';
+import { LeaveManagement } from './pages/hr/LeaveManagement';
+import { PayrollManagement } from './pages/hr/PayrollManagement';
+import { AdvanceLoanManagement } from './pages/hr/AdvanceLoanManagement';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -438,6 +446,65 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <SalesIntelligenceDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            {/* Phase 9: HRM, Attendance, Leave & Payroll Routes */}
+            <Route path="/hr/dashboard" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <HrDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/employees" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EmployeeManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/employees/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EmployeeProfile />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/departments" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <DepartmentDesignationManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/designations" element={<Navigate to="/hr/departments" replace />} />
+            <Route path="/hr/attendance" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ShiftAttendanceManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/shifts" element={<Navigate to="/hr/attendance" replace />} />
+            <Route path="/hr/leaves" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <LeaveManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/payroll" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PayrollManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hr/advances-loans" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdvanceLoanManagement />
                 </AdminLayout>
               </ProtectedRoute>
             } />

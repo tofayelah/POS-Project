@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ReportPermissionsSeeder::class,
             ProcurementPermissionsSeeder::class,
             CustomerCrmPermissionsSeeder::class,
+            HrmPermissionsSeeder::class,
         ]);
         
         $user = \App\Models\User::firstOrCreate(
