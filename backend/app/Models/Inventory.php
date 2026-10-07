@@ -56,4 +56,5 @@ class Inventory extends Model
     }
 
     public function inventoryBatches() { return $this->hasMany(InventoryBatch::class); }
+    public function reservations() { return $this->hasMany(InventoryReservation::class, 'product_variant_id', 'product_variant_id')->whereColumn('inventory_reservations.warehouse_id', 'inventories.warehouse_id'); }
 }

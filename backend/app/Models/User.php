@@ -51,6 +51,7 @@ class User extends Authenticatable
     public function businessUnits() { return $this->belongsToMany(BusinessUnit::class, 'user_business_unit_access'); }
     public function branches() { return $this->belongsToMany(Branch::class, 'user_branch_access'); }
     public function warehouses() { return $this->belongsToMany(Warehouse::class, 'user_warehouse_access'); }
+    public function customer() { return $this->hasOne(Customer::class); }
 
     public function hasRole(string $role): bool
     {

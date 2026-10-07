@@ -647,5 +647,95 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('input-vat', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'inputVat'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
             Route::get('mushak-foundation/{periodId}', [\App\Http\Controllers\Api\V1\Tax\TaxReportController::class, 'mushakFoundation'])->middleware(['permission:reports.tax.view,tax.view', 'scope:company']);
         });
+
+        // ================================================================
+        // PHASE 11: E-COMMERCE ADMIN & CUSTOMER AUTHENTICATED PORTAL
+        // ================================================================
+        Route::prefix('ecommerce')->group(function () {
+            // Store Settings
+            Route::get('store', [\App\Http\Controllers\AdminEcommerceController::class, 'getStore'])->middleware(['permission:ecommerce.view', 'scope:company']);
+            Route::put('store/{id}', [\App\Http\Controllers\AdminEcommerceController::class, 'updateStore'])->middleware(['permission:ecommerce.settings.manage', 'scope:company']);
+
+            // Orders
+            Route::get('orders', [\App\Http\Controllers\AdminEcommerceController::class, 'getOrders'])->middleware(['permission:ecommerce.orders.view', 'scope:company']);
+            Route::get('orders/{id}', [\App\Http\Controllers\AdminEcommerceController::class, 'getOrderDetail'])->middleware(['permission:ecommerce.orders.view', 'scope:company']);
+            Route::post('orders/{id}/cancel', [\App\Http\Controllers\AdminEcommerceController::class, 'cancelOrder'])->middleware(['permission:ecommerce.orders.manage', 'scope:company']);
+
+            // Fulfillment & Shipments
+            Route::post('orders/{id}/shipments', [\App\Http\Controllers\AdminEcommerceController::class, 'createShipment'])->middleware(['permission:ecommerce.fulfillment.manage', 'scope:company']);
+            Route::post('shipments/{id}/ship', [\App\Http\Controllers\AdminEcommerceController::class, 'markShipped'])->middleware(['permission:ecommerce.fulfillment.manage', 'scope:company']);
+            Route::post('shipments/{id}/deliver', [\App\Http\Controllers\AdminEcommerceController::class, 'markDelivered'])->middleware(['permission:ecommerce.fulfillment.manage', 'scope:company']);
+
+            // Catalog Publishing
+            Route::get('catalog', [\App\Http\Controllers\AdminEcommerceController::class, 'getCatalog'])->middleware(['permission:ecommerce.catalog.view', 'scope:company']);
+            Route::put('catalog/{id}/publish', [\App\Http\Controllers\AdminEcommerceController::class, 'updateCatalogPublishing'])->middleware(['permission:ecommerce.catalog.manage', 'scope:company']);
+
+            // Categories
+            Route::get('categories', [\App\Http\Controllers\AdminEcommerceController::class, 'getCategories'])->middleware(['permission:ecommerce.catalog.view', 'scope:company']);
+            Route::post('categories', [\App\Http\Controllers\AdminEcommerceController::class, 'createCategory'])->middleware(['permission:ecommerce.catalog.manage', 'scope:company']);
+
+            // Coupons
+            Route::get('coupons', [\App\Http\Controllers\AdminEcommerceController::class, 'getCoupons'])->middleware(['permission:ecommerce.coupons.manage', 'scope:company']);
+            Route::post('coupons', [\App\Http\Controllers\AdminEcommerceController::class, 'createCoupon'])->middleware(['permission:ecommerce.coupons.manage', 'scope:company']);
+
+            // Shipping
+            Route::get('shipping/methods', [\App\Http\Controllers\AdminEcommerceController::class, 'getShippingMethods'])->middleware(['permission:ecommerce.shipping.manage', 'scope:company']);
+            Route::post('shipping/methods', [\App\Http\Controllers\AdminEcommerceController::class, 'createShippingMethod'])->middleware(['permission:ecommerce.shipping.manage', 'scope:company']);
+
+            // Reviews Moderation
+            Route::get('reviews', [\App\Http\Controllers\AdminEcommerceController::class, 'getReviews'])->middleware(['permission:ecommerce.reviews.manage', 'scope:company']);
+            Route::put('reviews/{id}/status', [\App\Http\Controllers\AdminEcommerceController::class, 'updateReviewStatus'])->middleware(['permission:ecommerce.reviews.manage', 'scope:company']);
+
+            // Reports
+            Route::get('reports/overview', [\App\Http\Controllers\AdminEcommerceController::class, 'getReportsOverview'])->middleware(['permission:ecommerce.reports.view', 'scope:company']);
+        });
+
+        // Customer Authenticated Portal Routes
+        Route::prefix('customer')->group(function () {
+            Route::get('profile', [\App\Http\Controllers\CustomerPortalController::class, 'getProfile']);
+            Route::get('addresses', [\App\Http\Controllers\CustomerPortalController::class, 'getAddresses']);
+            Route::post('addresses', [\App\Http\Controllers\CustomerPortalController::class, 'saveAddress']);
+            Route::delete('addresses/{id}', [\App\Http\Controllers\CustomerPortalController::class, 'deleteAddress']);
+            Route::get('orders', [\App\Http\Controllers\CustomerPortalController::class, 'getOrders']);
+            Route::get('orders/{id}', [\App\Http\Controllers\CustomerPortalController::class, 'getOrderDetail']);
+            Route::post('wishlist/toggle', [\App\Http\Controllers\CustomerPortalController::class, 'toggleWishlist']);
+            Route::post('reviews', [\App\Http\Controllers\CustomerPortalController::class, 'submitReview']);
+            Route::post('returns', [\App\Http\Controllers\CustomerPortalController::class, 'submitReturnRequest']);
+        });
     });
 });
+
+// ================================================================
+// PHASE 11: PUBLIC STOREFRONT & CUSTOMER AUTH & WEBHOOKS
+// ================================================================
+Route::prefix('v1')->group(function () {
+    // Customer Auth
+    Route::post('customer/register', [\App\Http\Controllers\CustomerPortalController::class, 'register']);
+    Route::post('customer/login', [\App\Http\Controllers\CustomerPortalController::class, 'login']);
+
+    // Payment Webhooks
+    Route::post('payments/webhook/{gateway}', [\App\Http\Controllers\PaymentWebhookController::class, 'handleWebhook']);
+
+    // Public Storefront Catalog, Cart & Checkout
+    Route::prefix('store/{store}')->group(function () {
+        Route::get('info', [\App\Http\Controllers\StorefrontCatalogController::class, 'getStoreInfo']);
+        Route::get('products', [\App\Http\Controllers\StorefrontCatalogController::class, 'getProducts']);
+        Route::get('products/{slug}', [\App\Http\Controllers\StorefrontCatalogController::class, 'getProductDetail']);
+        Route::get('categories', [\App\Http\Controllers\StorefrontCatalogController::class, 'getCategories']);
+        Route::get('shipping-methods', [\App\Http\Controllers\StorefrontCatalogController::class, 'getShippingMethods']);
+
+        // Cart
+        Route::get('cart', [\App\Http\Controllers\StorefrontCartController::class, 'getCart']);
+        Route::post('cart/items', [\App\Http\Controllers\StorefrontCartController::class, 'addItem']);
+        Route::put('cart/items/{id}', [\App\Http\Controllers\StorefrontCartController::class, 'updateItem']);
+        Route::delete('cart/items/{id}', [\App\Http\Controllers\StorefrontCartController::class, 'removeItem']);
+        Route::delete('cart', [\App\Http\Controllers\StorefrontCartController::class, 'clearCart']);
+        Route::post('cart/coupon', [\App\Http\Controllers\StorefrontCartController::class, 'applyCoupon']);
+        Route::delete('cart/coupon', [\App\Http\Controllers\StorefrontCartController::class, 'removeCoupon']);
+
+        // Checkout
+        Route::post('checkout', [\App\Http\Controllers\StorefrontCheckoutController::class, 'checkout']);
+        Route::get('orders/{orderNumber}/track', [\App\Http\Controllers\StorefrontCheckoutController::class, 'trackOrder']);
+    });
+});
+

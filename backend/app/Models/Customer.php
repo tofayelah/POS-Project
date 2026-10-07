@@ -12,6 +12,7 @@ class Customer extends Model
 
     protected $fillable = [
         'company_id',
+        'user_id',
         'business_unit_id',
         'customer_group_id',
         'customer_code',
@@ -127,6 +128,36 @@ class Customer extends Model
     public function salesReturns()
     {
         return $this->hasMany(SalesReturn::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(CustomerAddress::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function carts()
+    {
+        return $this->hasMany(EcommerceCart::class);
+    }
+
+    public function couponUsages()
+    {
+        return $this->hasMany(CouponUsage::class);
     }
 }
 

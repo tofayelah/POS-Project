@@ -31,7 +31,14 @@ import {
   DollarSign,
   TrendingUp,
   UserCheck,
-  Activity
+  Activity,
+  Globe,
+  Truck,
+  Percent,
+  Star,
+  Store,
+  ShoppingBag,
+  ExternalLink
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -77,6 +84,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const canViewPos = hasRole('Super Admin') || hasRole('Admin') || hasPermission('pos.view');
   const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || hasPermission('users.view') || hasPermission('roles.view') || canViewPos;
   const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
+  const canViewEcommerce = hasRole('Super Admin') || hasRole('Admin') || hasPermission('ecommerce.orders.view') || hasPermission('ecommerce.catalog.view') || hasPermission('ecommerce.settings.view') || canViewPos;
 
   const isActive = (path: string, exact = false) => {
     if (exact) return location.pathname === path;
@@ -841,6 +849,209 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               {t('nav.salesIntelligence', 'Sales & Demand Intelligence')}
             </span>
           </Link>
+
+          {/* E-Commerce & Omnichannel */}
+          {canViewEcommerce && (
+            <>
+              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+                isExpanded ? 'block' : 'lg:hidden'
+              }`}>
+                {t('nav.ecommerce', 'E-Commerce')}
+              </div>
+              <Link
+                to="/ecommerce/dashboard"
+                id="nav-link-ecommerce-dashboard"
+                onClick={handleLinkClick}
+                title={t('nav.ecomDashboard', 'E-Commerce Dashboard')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/dashboard')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Globe className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomDashboard', 'E-Com Dashboard')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/orders"
+                id="nav-link-ecommerce-orders"
+                onClick={handleLinkClick}
+                title={t('nav.ecomOrders', 'Online Orders')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/orders')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <ShoppingBag className="w-4 h-4 shrink-0 text-indigo-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomOrders', 'Online Orders')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/fulfillment"
+                id="nav-link-ecommerce-fulfillment"
+                onClick={handleLinkClick}
+                title={t('nav.ecomFulfillment', 'Fulfillment & Dispatch')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/fulfillment')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Truck className="w-4 h-4 shrink-0 text-sky-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomFulfillment', 'Fulfillment & Dispatch')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/catalog"
+                id="nav-link-ecommerce-catalog"
+                onClick={handleLinkClick}
+                title={t('nav.ecomCatalog', 'Online Catalog')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/catalog')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Package className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomCatalog', 'Online Catalog')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/categories"
+                id="nav-link-ecommerce-categories"
+                onClick={handleLinkClick}
+                title={t('nav.ecomCategories', 'E-Com Categories')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/categories')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <FolderTree className="w-4 h-4 shrink-0 text-violet-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomCategories', 'E-Com Categories')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/coupons"
+                id="nav-link-ecommerce-coupons"
+                onClick={handleLinkClick}
+                title={t('nav.ecomCoupons', 'Coupons & Promos')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/coupons')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Percent className="w-4 h-4 shrink-0 text-amber-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomCoupons', 'Coupons & Promos')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/shipping"
+                id="nav-link-ecommerce-shipping"
+                onClick={handleLinkClick}
+                title={t('nav.ecomShipping', 'Shipping & Delivery')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/shipping')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <MapPin className="w-4 h-4 shrink-0 text-rose-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomShipping', 'Shipping & Rates')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/reviews"
+                id="nav-link-ecommerce-reviews"
+                onClick={handleLinkClick}
+                title={t('nav.ecomReviews', 'Review Moderation')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/reviews')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Star className="w-4 h-4 shrink-0 text-amber-300" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomReviews', 'Review Moderation')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/returns"
+                id="nav-link-ecommerce-returns"
+                onClick={handleLinkClick}
+                title={t('nav.ecomReturns', 'Online Returns')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/returns')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <RotateCcw className="w-4 h-4 shrink-0 text-orange-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomReturns', 'Online Returns')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/reports"
+                id="nav-link-ecommerce-reports"
+                onClick={handleLinkClick}
+                title={t('nav.ecomReports', 'E-Commerce Reports')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/reports')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomReports', 'E-Com Reports')}
+                </span>
+              </Link>
+              <Link
+                to="/ecommerce/settings"
+                id="nav-link-ecommerce-settings"
+                onClick={handleLinkClick}
+                title={t('nav.ecomSettings', 'Store Settings')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/ecommerce/settings')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Settings className="w-4 h-4 shrink-0 text-slate-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.ecomSettings', 'Store Settings')}
+                </span>
+              </Link>
+              <Link
+                to="/store"
+                target="_blank"
+                id="nav-link-live-storefront"
+                onClick={handleLinkClick}
+                title={t('nav.storefront', 'Customer Storefront')}
+                className="flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-800/40 my-1"
+              >
+                <div className="flex items-center gap-3">
+                  <Store className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span className={`truncate whitespace-nowrap font-medium ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                    {t('nav.storefront', 'Live Storefront')}
+                  </span>
+                </div>
+                <ExternalLink className={`w-3.5 h-3.5 shrink-0 ${isExpanded ? 'inline' : 'lg:hidden'}`} />
+              </Link>
+            </>
+          )}
 
           {/* HRM & Workforce */}
           <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${

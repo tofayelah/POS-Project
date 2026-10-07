@@ -21,6 +21,12 @@ class Product extends Model
         'has_variants' => 'boolean',
         'tax_rate' => 'decimal:2',
         'reorder_level' => 'integer',
+        'is_published' => 'boolean',
+        'featured' => 'boolean',
+        'new_arrival' => 'boolean',
+        'best_seller' => 'boolean',
+        'sort_order' => 'integer',
+        'images' => 'array',
     ];
 
     protected static function boot()
@@ -108,5 +114,26 @@ class Product extends Model
     public function scopeVariable($query)
     {
         return $query->where('product_type', 'variable');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true);
+    }
+
+    public function scopeOnline($query)
+    {
+        return $query->where('is_published', true)
+            ->whereIn('visibility', ['ECOMMERCE_ONLY', 'BOTH']);
     }
 }

@@ -83,6 +83,27 @@ import { TaxTransactionRegister } from './pages/tax/TaxTransactionRegister';
 import { TaxReconciliationView } from './pages/tax/TaxReconciliationView';
 import { TaxAdjustmentManagement } from './pages/tax/TaxAdjustmentManagement';
 import { TaxReports } from './pages/tax/TaxReports';
+import { EcommerceDashboard } from './pages/ecommerce/EcommerceDashboard';
+import { OrderManagement } from './pages/ecommerce/OrderManagement';
+import { OrderDetail } from './pages/ecommerce/OrderDetail';
+import { FulfillmentManagement } from './pages/ecommerce/FulfillmentManagement';
+import { CatalogManagement } from './pages/ecommerce/CatalogManagement';
+import { EcommerceCategoryManagement } from './pages/ecommerce/EcommerceCategoryManagement';
+import { CouponManagement } from './pages/ecommerce/CouponManagement';
+import { ShippingConfiguration } from './pages/ecommerce/ShippingConfiguration';
+import { ReviewModeration } from './pages/ecommerce/ReviewModeration';
+import { EcommerceReturnManagement } from './pages/ecommerce/EcommerceReturnManagement';
+import { EcommerceReports } from './pages/ecommerce/EcommerceReports';
+import { StoreSettings } from './pages/ecommerce/StoreSettings';
+
+import { StorefrontHome } from './pages/storefront/StorefrontHome';
+import { StorefrontCatalog } from './pages/storefront/StorefrontCatalog';
+import { StorefrontProductDetail } from './pages/storefront/StorefrontProductDetail';
+import { StorefrontCart } from './pages/storefront/StorefrontCart';
+import { StorefrontCheckout } from './pages/storefront/StorefrontCheckout';
+import { StorefrontAccount } from './pages/storefront/StorefrontAccount';
+import { StorefrontOrderTracking } from './pages/storefront/StorefrontOrderTracking';
+import { StorefrontAuth } from './pages/storefront/StorefrontAuth';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -701,6 +722,109 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+
+            {/* E-Commerce Admin Routes */}
+            <Route path="/ecommerce" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/dashboard" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/orders" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <OrderManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/orders/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <OrderDetail />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/fulfillment" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FulfillmentManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/catalog" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CatalogManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/categories" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceCategoryManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/coupons" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CouponManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/shipping" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ShippingConfiguration />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/reviews" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ReviewModeration />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/returns" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceReturnManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/reports" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceReports />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ecommerce/settings" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <StoreSettings />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* E-Commerce Storefront Routes */}
+            <Route path="/store" element={<StorefrontHome />} />
+            <Route path="/store/catalog" element={<StorefrontCatalog />} />
+            <Route path="/store/products/:slug" element={<StorefrontProductDetail />} />
+            <Route path="/store/cart" element={<StorefrontCart />} />
+            <Route path="/store/checkout" element={<StorefrontCheckout />} />
+            <Route path="/store/account" element={<StorefrontAccount />} />
+            <Route path="/store/track" element={<StorefrontOrderTracking />} />
+            <Route path="/store/login" element={<StorefrontAuth />} />
 
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
