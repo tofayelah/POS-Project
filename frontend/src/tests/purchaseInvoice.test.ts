@@ -258,7 +258,7 @@ describe('Phase 3.3 Step 3 — Purchase Invoice & Accounts Payable Frontend Logi
       expect(purchaseKeysBn.length).toBe(purchaseKeysEn.length);
 
       for (const key of purchaseKeysEn) {
-        expect(bn).toHaveProperty(key);
+        expect(key in bn).toBe(true);
         expect((bn as any)[key]).toBeTruthy();
       }
     });

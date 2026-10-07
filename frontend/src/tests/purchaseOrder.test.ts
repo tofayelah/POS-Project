@@ -181,7 +181,7 @@ describe('Purchase Order Foundation & Monetary Precision', () => {
     expect(poKeysBn.length).toBe(poKeysEn.length);
 
     poKeysEn.forEach((key) => {
-      expect(bn).toHaveProperty(key);
+      expect(key in bn).toBe(true);
       expect((bn as any)[key]).toBeTruthy();
       expect(typeof (bn as any)[key]).toBe('string');
     });

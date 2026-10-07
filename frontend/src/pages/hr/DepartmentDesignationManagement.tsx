@@ -47,10 +47,12 @@ export const DepartmentDesignationManagement: React.FC = () => {
         hrApi.getDepartments(),
         hrApi.getDesignations(),
       ]);
-      setDepartments(deptData);
-      setDesignations(desigData);
+      setDepartments(Array.isArray(deptData) ? deptData : (deptData as any)?.data || []);
+      setDesignations(Array.isArray(desigData) ? desigData : (desigData as any)?.data || []);
     } catch (err) {
       console.error('Failed to load org structures', err);
+      setDepartments([]);
+      setDesignations([]);
     } finally {
       setLoading(false);
     }

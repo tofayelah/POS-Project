@@ -34,6 +34,14 @@ import type { StockBatch, Warehouse } from '../../types/inventory';
 import { formatCurrency, formatNumber } from '../../utils/format';
 import { useLanguage } from '../../i18n';
 
+function unwrapArray<T = any>(res: any): T[] {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.data)) return res.data.data;
+  if (Array.isArray(res?.items)) return res.items;
+  return [];
+}
+
 export function StockBatches() {
   const { t } = useLanguage();
 
@@ -69,8 +77,7 @@ export function StockBatches() {
     async function loadWarehouses() {
       try {
         const res = await getWarehouses();
-        const data = res?.data || (Array.isArray(res) ? res : []);
-        setWarehouses(data);
+        setWarehouses(unwrapArray(res));
       } catch (err) {
         console.error('Failed to load warehouses', err);
       }
@@ -88,8 +95,7 @@ export function StockBatches() {
         getStockBatchExpiryReport({ days: expiryThreshold }),
       ]);
 
-      const batchList = batchesRes?.data || (Array.isArray(batchesRes) ? batchesRes : []);
-      setBatches(batchList);
+      setBatches(unwrapArray(batchesRes));
 
       if (reportRes?.data) {
         setExpiryReport(reportRes.data);
@@ -109,7 +115,8 @@ export function StockBatches() {
 
   // Filtered batches
   const filteredBatches = useMemo(() => {
-    return batches.filter((b) => {
+    const list = unwrapArray<StockBatch>(batches);
+    return list.filter((b) => {
       // Status filter
       if (statusFilter && b.status !== statusFilter) return false;
 

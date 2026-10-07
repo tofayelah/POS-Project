@@ -60,11 +60,14 @@ export const EmployeeManagement: React.FC = () => {
         hrApi.getDepartments(),
         hrApi.getDesignations(),
       ]);
-      setEmployees(empData);
-      setDepartments(deptData);
-      setDesignations(desigData);
+      setEmployees(Array.isArray(empData) ? empData : (empData as any)?.data || []);
+      setDepartments(Array.isArray(deptData) ? deptData : (deptData as any)?.data || []);
+      setDesignations(Array.isArray(desigData) ? desigData : (desigData as any)?.data || []);
     } catch (err) {
       console.error('Failed to load employee directory', err);
+      setEmployees([]);
+      setDepartments([]);
+      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -106,7 +109,11 @@ export const EmployeeManagement: React.FC = () => {
     }
   };
 
-  const filteredEmployees = employees.filter((emp) => {
+  const employeeList = Array.isArray(employees) ? employees : [];
+  const departmentList = Array.isArray(departments) ? departments : [];
+  const designationList = Array.isArray(designations) ? designations : [];
+
+  const filteredEmployees = employeeList.filter((emp) => {
     const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
     const query = search.toLowerCase();
     const matchSearch =
@@ -187,7 +194,7 @@ export const EmployeeManagement: React.FC = () => {
             className="bg-slate-800/60 text-slate-300 text-xs px-3 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500"
           >
             <option value="ALL">{t('hr.employees.allDepartments', 'All Departments')}</option>
-            {departments.map((d) => (
+            {departmentList.map((d) => (
               <option key={d.id} value={d.id.toString()}>{d.name}</option>
             ))}
           </select>
@@ -406,7 +413,7 @@ export const EmployeeManagement: React.FC = () => {
                     className="w-full bg-slate-800 text-white text-xs px-3 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">Select Department</option>
-                    {departments.map((d) => (
+                    {departmentList.map((d) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
@@ -421,7 +428,7 @@ export const EmployeeManagement: React.FC = () => {
                     className="w-full bg-slate-800 text-white text-xs px-3 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">Select Designation</option>
-                    {designations.map((d) => (
+                    {designationList.map((d) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>

@@ -21,13 +21,20 @@ import {
   PayrollDashboardMetrics,
 } from '../types/hr';
 
+const toArrayList = <T>(res: any): T[] => {
+  const raw = res?.data?.data ?? res?.data;
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data)) return raw.data;
+  return [];
+};
+
 export const hrApi = {
   // ==========================================
   // DEPARTMENTS & DESIGNATIONS
   // ==========================================
   getDepartments: async (): Promise<Department[]> => {
     const res = await api.get('/departments');
-    return res.data.data;
+    return toArrayList<Department>(res);
   },
 
   createDepartment: async (data: { name: string; code: string; description?: string }): Promise<Department> => {
@@ -46,7 +53,7 @@ export const hrApi = {
 
   getDesignations: async (departmentId?: number): Promise<Designation[]> => {
     const res = await api.get('/designations', { params: departmentId ? { department_id: departmentId } : {} });
-    return res.data.data;
+    return toArrayList<Designation>(res);
   },
 
   createDesignation: async (data: { department_id?: number; name: string; code: string; description?: string }): Promise<Designation> => {
@@ -68,7 +75,7 @@ export const hrApi = {
   // ==========================================
   getEmployees: async (params?: { department_id?: number; status?: string; search?: string }): Promise<Employee[]> => {
     const res = await api.get('/employees', { params });
-    return res.data.data;
+    return toArrayList<Employee>(res);
   },
 
   getEmployee: async (id: number): Promise<Employee> => {
@@ -96,7 +103,7 @@ export const hrApi = {
   // ==========================================
   getShifts: async (): Promise<Shift[]> => {
     const res = await api.get('/shifts');
-    return res.data.data;
+    return toArrayList<Shift>(res);
   },
 
   createShift: async (data: Partial<Shift>): Promise<Shift> => {
@@ -116,7 +123,7 @@ export const hrApi = {
 
   getAttendances: async (params?: { date?: string; employee_id?: number; department_id?: number }): Promise<Attendance[]> => {
     const res = await api.get('/attendances', { params });
-    return res.data.data;
+    return toArrayList<Attendance>(res);
   },
 
   checkIn: async (data: { employee_id: number; timestamp?: string }): Promise<Attendance> => {
@@ -149,7 +156,7 @@ export const hrApi = {
   // ==========================================
   getLeaveTypes: async (): Promise<LeaveType[]> => {
     const res = await api.get('/leave-types');
-    return res.data.data;
+    return toArrayList<LeaveType>(res);
   },
 
   createLeaveType: async (data: Partial<LeaveType>): Promise<LeaveType> => {
@@ -159,12 +166,12 @@ export const hrApi = {
 
   getLeaveBalances: async (employeeId?: number, year?: number): Promise<LeaveBalance[]> => {
     const res = await api.get('/leave-balances', { params: { employee_id: employeeId, year } });
-    return res.data.data;
+    return toArrayList<LeaveBalance>(res);
   },
 
   getLeaveApplications: async (params?: { status?: string; employee_id?: number }): Promise<LeaveApplication[]> => {
     const res = await api.get('/leave-applications', { params });
-    return res.data.data;
+    return toArrayList<LeaveApplication>(res);
   },
 
   applyLeave: async (data: { employee_id: number; leave_type_id: number; from_date: string; to_date: string; reason: string }): Promise<LeaveApplication> => {
@@ -187,7 +194,7 @@ export const hrApi = {
   // ==========================================
   getSalaryComponents: async (): Promise<SalaryComponent[]> => {
     const res = await api.get('/salary-components');
-    return res.data.data;
+    return toArrayList<SalaryComponent>(res);
   },
 
   createSalaryComponent: async (data: Partial<SalaryComponent>): Promise<SalaryComponent> => {
@@ -197,7 +204,7 @@ export const hrApi = {
 
   getSalaryStructures: async (employeeId?: number): Promise<SalaryStructure[]> => {
     const res = await api.get('/salary-structures', { params: employeeId ? { employee_id: employeeId } : {} });
-    return res.data.data;
+    return toArrayList<SalaryStructure>(res);
   },
 
   createSalaryStructure: async (data: any): Promise<SalaryStructure> => {
@@ -215,7 +222,7 @@ export const hrApi = {
   // ==========================================
   getPayrollPeriods: async (): Promise<PayrollPeriod[]> => {
     const res = await api.get('/payroll/periods');
-    return res.data.data;
+    return toArrayList<PayrollPeriod>(res);
   },
 
   createPayrollPeriod: async (data: Partial<PayrollPeriod>): Promise<PayrollPeriod> => {
@@ -225,7 +232,7 @@ export const hrApi = {
 
   getPayrollRuns: async (params?: { payroll_period_id?: number; status?: string }): Promise<PayrollRun[]> => {
     const res = await api.get('/payroll/runs', { params });
-    return res.data.data;
+    return toArrayList<PayrollRun>(res);
   },
 
   getPayrollRun: async (id: number): Promise<PayrollRun> => {
@@ -263,7 +270,7 @@ export const hrApi = {
   // ==========================================
   getAdvances: async (params?: { employee_id?: number; status?: string }): Promise<EmployeeAdvance[]> => {
     const res = await api.get('/employee-advances', { params });
-    return res.data.data;
+    return toArrayList<EmployeeAdvance>(res);
   },
 
   requestAdvance: async (data: { employee_id: number; amount: number; reason: string; request_date?: string }): Promise<EmployeeAdvance> => {
@@ -283,7 +290,7 @@ export const hrApi = {
 
   getLoans: async (params?: { employee_id?: number; status?: string }): Promise<EmployeeLoan[]> => {
     const res = await api.get('/employee-loans', { params });
-    return res.data.data;
+    return toArrayList<EmployeeLoan>(res);
   },
 
   requestLoan: async (data: { employee_id: number; principal_amount: number; installment_count: number; interest_rate_percent?: number; start_date?: string }): Promise<EmployeeLoan> => {

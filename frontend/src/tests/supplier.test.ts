@@ -167,7 +167,7 @@ describe('Supplier Form Validation & Payload Modeling', () => {
     expect(suppKeysBn.length).toBe(suppKeysEn.length);
 
     suppKeysEn.forEach((key) => {
-      expect(bn).toHaveProperty(key);
+      expect(key in bn).toBe(true);
       expect((bn as any)[key]).toBeTruthy();
       expect(typeof (bn as any)[key]).toBe('string');
     });

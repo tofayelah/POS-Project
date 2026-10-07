@@ -294,14 +294,14 @@ describe('Phase 9: HRM, Attendance, Leave, Payroll & Advances Frontend Test Suit
 
     it('ensures all Phase 9 keys exist in English translations', () => {
       requiredKeys.forEach((key) => {
-        expect(en).toHaveProperty(key);
+        expect(key in en).toBe(true);
         expect((en as any)[key]).toBeTruthy();
       });
     });
 
     it('ensures 100% key parity with Bengali translations', () => {
       requiredKeys.forEach((key) => {
-        expect(bn).toHaveProperty(key);
+        expect(key in bn).toBe(true);
         expect((bn as any)[key]).toBeTruthy();
       });
     });
