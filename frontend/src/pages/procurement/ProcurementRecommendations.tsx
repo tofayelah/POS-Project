@@ -38,8 +38,8 @@ export const ProcurementRecommendations: React.FC = () => {
   const loadWarehouses = async () => {
     try {
       const res = await getWarehouses();
-      if (res.data) {
-        const list = res.data.data || res.data;
+      if (res) {
+        const list: any[] = Array.isArray(res.data) ? res.data : (res as any).data || [];
         setWarehouses(list);
         if (list.length > 0) {
           setSelectedWarehouseId(String(list[0].id));

@@ -204,4 +204,5 @@ export interface ProductFilterParams {
   sort_order?: 'asc' | 'desc';
   page?: number;
   per_page?: number;
+  all?: boolean;
 }

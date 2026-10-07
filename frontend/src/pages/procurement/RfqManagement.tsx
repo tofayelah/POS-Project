@@ -86,8 +86,8 @@ export const RfqManagement: React.FC = () => {
         getSuppliers({ all: true }),
         getProducts({ all: true }),
       ]);
-      if (supRes.data) setSuppliers(supRes.data.data || supRes.data);
-      if (prdRes.data) setProducts(prdRes.data.data || prdRes.data);
+      if (supRes?.data) setSuppliers(Array.isArray(supRes.data) ? supRes.data : (supRes.data as any).data || []);
+      if (prdRes?.data) setProducts(Array.isArray(prdRes.data) ? prdRes.data : (prdRes.data as any).data || []);
     } catch (err) {
       console.error('Failed to load dropdowns', err);
     }

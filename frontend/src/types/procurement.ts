@@ -364,6 +364,7 @@ export interface ReplenishmentRecommendation {
   reorder_point: number;
   moq: number;
   recommended_quantity: number;
+  recommended_order_qty?: number;
   unit_cost: number;
   price_source: string;
   estimated_line_cost: number;
@@ -374,6 +375,7 @@ export interface ReplenishmentRecommendation {
 }
 
 export interface ProcurementDashboardData {
+  recommendations_count?: number;
   kpis: {
     open_requisitions: number;
     pending_approval_requisitions: number;

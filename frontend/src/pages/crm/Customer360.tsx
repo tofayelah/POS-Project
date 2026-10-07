@@ -215,7 +215,7 @@ export const Customer360: React.FC = () => {
                       {profile.customer.group.name}
                     </span>
                   )}
-                  {profile.credit.credit_hold ? (
+                  {profile.credit?.credit_hold ? (
                     <span className="text-xs px-2 py-0.5 rounded font-bold bg-rose-950/60 text-rose-400 border border-rose-800/40 flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5" /> {t('crm.customer360.creditHoldActive', 'Credit Blocked')}
                     </span>
@@ -249,18 +249,18 @@ export const Customer360: React.FC = () => {
                 <button
                   onClick={handleToggleHold}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                    profile.credit.credit_hold
+                    profile.credit?.credit_hold
                       ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                       : 'bg-rose-600 hover:bg-rose-500 text-white'
                   }`}
                 >
-                  {profile.credit.credit_hold ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
-                  {profile.credit.credit_hold ? 'Release Hold' : 'Block Credit'}
+                  {profile.credit?.credit_hold ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                  {profile.credit?.credit_hold ? 'Release Hold' : 'Block Credit'}
                 </button>
                 <button
                   onClick={() => {
-                    setRequestedLimit(profile.credit.credit_limit);
-                    setRequestedDays(profile.credit.credit_days);
+                    setRequestedLimit(profile.credit?.credit_limit ?? 0);
+                    setRequestedDays(profile.credit?.credit_days ?? 0);
                     setShowCreditModal(true);
                   }}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-colors"
@@ -289,32 +289,32 @@ export const Customer360: React.FC = () => {
                   {t('crm.customer360.creditOverview', 'Credit & Balance')}
                 </span>
                 <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
-                  profile.credit.status === 'SAFE' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
-                  profile.credit.status === 'WARNING' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
+                  profile.credit?.status === 'SAFE' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+                  profile.credit?.status === 'WARNING' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
                   'bg-rose-950 text-rose-400 border border-rose-800'
                 }`}>
-                  {profile.credit.status}
+                  {profile.credit?.status || 'NORMAL'}
                 </span>
               </div>
               <div className="text-xl font-bold text-white mb-1">
-                ৳{profile.credit.current_balance.toLocaleString()}
+                ৳{(profile.credit?.current_balance ?? 0).toLocaleString()}
               </div>
               <div className="text-xs text-slate-400 flex justify-between mb-2">
-                <span>Limit: ৳{profile.credit.credit_limit.toLocaleString()}</span>
-                <span>Avail: ৳{profile.credit.available_credit.toLocaleString()}</span>
+                <span>Limit: ৳{(profile.credit?.credit_limit ?? 0).toLocaleString()}</span>
+                <span>Avail: ৳{(profile.credit?.available_credit ?? 0).toLocaleString()}</span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                 <div
                   className={`h-1.5 rounded-full ${
-                    profile.credit.credit_utilization_pct > 90 ? 'bg-rose-500' :
-                    profile.credit.credit_utilization_pct > 75 ? 'bg-amber-500' : 'bg-emerald-500'
+                    (profile.credit?.credit_utilization_pct ?? 0) > 90 ? 'bg-rose-500' :
+                    (profile.credit?.credit_utilization_pct ?? 0) > 75 ? 'bg-amber-500' : 'bg-emerald-500'
                   }`}
-                  style={{ width: `${Math.min(100, profile.credit.credit_utilization_pct)}%` }}
+                  style={{ width: `${Math.min(100, profile.credit?.credit_utilization_pct ?? 0)}%` }}
                 />
               </div>
               <div className="mt-2 text-[11px] text-slate-400 flex justify-between">
-                <span>Utilization: {profile.credit.credit_utilization_pct}%</span>
-                <span>Allowed Days: {profile.credit.credit_days}d</span>
+                <span>Utilization: {profile.credit?.credit_utilization_pct ?? 0}%</span>
+                <span>Allowed Days: {profile.credit?.credit_days ?? 0}d</span>
               </div>
             </div>
 
@@ -326,32 +326,32 @@ export const Customer360: React.FC = () => {
                   {t('crm.customer360.agingOverview', 'AR Aging Breakdown')}
                 </span>
                 <span className="text-xs font-semibold text-rose-400">
-                  {profile.credit.overdue_amount > 0 ? `৳${profile.credit.overdue_amount.toLocaleString()} Overdue` : 'Zero Overdue'}
+                  {(profile.credit?.overdue_amount ?? 0) > 0 ? `৳${(profile.credit?.overdue_amount ?? 0).toLocaleString()} Overdue` : 'Zero Overdue'}
                 </span>
               </div>
               <div className="text-xl font-bold text-white mb-2">
-                ৳{profile.ar_aging.total_outstanding.toLocaleString()}
+                ৳{(profile.ar_aging?.total_outstanding ?? 0).toLocaleString()}
               </div>
               <div className="grid grid-cols-5 gap-1 text-[10px] text-center">
                 <div className="bg-slate-800/60 p-1 rounded">
                   <div className="text-slate-400">Cur</div>
-                  <div className="font-semibold text-emerald-400">৳{Math.round(profile.ar_aging.buckets.current)}</div>
+                  <div className="font-semibold text-emerald-400">৳{Math.round(profile.ar_aging?.buckets?.current ?? 0)}</div>
                 </div>
                 <div className="bg-slate-800/60 p-1 rounded">
                   <div className="text-slate-400">1-30</div>
-                  <div className="font-semibold text-amber-400">৳{Math.round(profile.ar_aging.buckets.days_1_30)}</div>
+                  <div className="font-semibold text-amber-400">৳{Math.round(profile.ar_aging?.buckets?.days_1_30 ?? 0)}</div>
                 </div>
                 <div className="bg-slate-800/60 p-1 rounded">
                   <div className="text-slate-400">31-60</div>
-                  <div className="font-semibold text-amber-500">৳{Math.round(profile.ar_aging.buckets.days_31_60)}</div>
+                  <div className="font-semibold text-amber-500">৳{Math.round(profile.ar_aging?.buckets?.days_31_60 ?? 0)}</div>
                 </div>
                 <div className="bg-slate-800/60 p-1 rounded">
                   <div className="text-slate-400">61-90</div>
-                  <div className="font-semibold text-rose-400">৳{Math.round(profile.ar_aging.buckets.days_61_90)}</div>
+                  <div className="font-semibold text-rose-400">৳{Math.round(profile.ar_aging?.buckets?.days_61_90 ?? 0)}</div>
                 </div>
                 <div className="bg-slate-800/60 p-1 rounded">
                   <div className="text-slate-400">90+</div>
-                  <div className="font-semibold text-rose-500">৳{Math.round(profile.ar_aging.buckets.days_90_plus)}</div>
+                  <div className="font-semibold text-rose-500">৳{Math.round(profile.ar_aging?.buckets?.days_90_plus ?? 0)}</div>
                 </div>
               </div>
             </div>
@@ -364,24 +364,24 @@ export const Customer360: React.FC = () => {
                   {t('crm.customer360.rfmOverview', 'RFM Segment')}
                 </span>
                 <span className="font-mono text-xs font-bold bg-purple-950/80 text-purple-300 px-1.5 py-0.5 rounded border border-purple-800/50">
-                  {profile.rfm.composite_score}
+                  {profile.rfm?.composite_score ?? 0}
                 </span>
               </div>
               <div className="text-lg font-bold text-emerald-400 mb-2">
-                {profile.rfm.segment}
+                {profile.rfm?.segment ?? 'Uncategorized'}
               </div>
               <div className="grid grid-cols-3 gap-1 text-[11px] text-center mb-2">
                 <div className="bg-slate-800/50 p-1 rounded">
                   <div className="text-slate-400">Recency</div>
-                  <div className="font-bold text-slate-200">{profile.rfm.recency_days}d (S:{profile.rfm.recency_score})</div>
+                  <div className="font-bold text-slate-200">{profile.rfm?.recency_days ?? 0}d (S:{profile.rfm?.recency_score ?? 0})</div>
                 </div>
                 <div className="bg-slate-800/50 p-1 rounded">
                   <div className="text-slate-400">Frequency</div>
-                  <div className="font-bold text-slate-200">{profile.rfm.frequency_orders} (S:{profile.rfm.frequency_score})</div>
+                  <div className="font-bold text-slate-200">{profile.rfm?.frequency_orders ?? 0} (S:{profile.rfm?.frequency_score ?? 0})</div>
                 </div>
                 <div className="bg-slate-800/50 p-1 rounded">
                   <div className="text-slate-400">Monetary</div>
-                  <div className="font-bold text-slate-200">S:{profile.rfm.monetary_score}</div>
+                  <div className="font-bold text-slate-200">S:{profile.rfm?.monetary_score ?? 0}</div>
                 </div>
               </div>
             </div>
@@ -394,19 +394,19 @@ export const Customer360: React.FC = () => {
                   {t('crm.customer360.clvOverview', 'CLV & Profitability')}
                 </span>
                 <span className="text-xs text-slate-400">
-                  {profile.clv.total_orders} Orders
+                  {profile.clv?.total_orders ?? 0} Orders
                 </span>
               </div>
               <div className="text-xl font-bold text-white mb-1">
-                ৳{profile.clv.total_spent.toLocaleString()}
+                ৳{(profile.clv?.total_spent ?? 0).toLocaleString()}
               </div>
               <div className="text-xs text-slate-400 flex justify-between mb-1">
-                <span>Profit: <strong className="text-emerald-400">৳{profile.clv.gross_profit.toLocaleString()}</strong></span>
-                <span>Margin: <strong className="text-emerald-400">{profile.clv.gross_margin_pct}%</strong></span>
+                <span>Profit: <strong className="text-emerald-400">৳{(profile.clv?.gross_profit ?? 0).toLocaleString()}</strong></span>
+                <span>Margin: <strong className="text-emerald-400">{profile.clv?.gross_margin_pct ?? 0}%</strong></span>
               </div>
               <div className="text-[11px] text-slate-400 flex justify-between">
-                <span>AOV: ৳{profile.clv.average_order_value.toLocaleString()}</span>
-                <span>Points: <strong className="text-amber-400">{profile.balances.points}</strong></span>
+                <span>AOV: ৳{(profile.clv?.average_order_value ?? 0).toLocaleString()}</span>
+                <span>Points: <strong className="text-amber-400">{profile.balances?.points ?? 0}</strong></span>
               </div>
             </div>
           </div>
@@ -419,7 +419,7 @@ export const Customer360: React.FC = () => {
                 <ShoppingBag className="w-4 h-4 text-indigo-400" />
                 {t('crm.customer360.topProducts', 'Top Purchased Products')}
               </h3>
-              {profile.top_products.length === 0 ? (
+              {(profile.top_products || []).length === 0 ? (
                 <div className="text-xs text-slate-500 py-6 text-center">No purchased items on record.</div>
               ) : (
                 <div className="overflow-x-auto">
@@ -433,12 +433,12 @@ export const Customer360: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {profile.top_products.map((tp, idx) => (
+                      {(profile.top_products || []).map((tp, idx) => (
                         <tr key={idx} className="hover:bg-slate-800/40">
                           <td className="p-2 font-mono text-emerald-400">{tp.sku_snapshot}</td>
                           <td className="p-2 font-medium text-slate-200">{tp.product_name_snapshot}</td>
                           <td className="p-2 text-right">{tp.total_qty}</td>
-                          <td className="p-2 text-right font-bold text-white">৳{tp.total_spend.toLocaleString()}</td>
+                          <td className="p-2 text-right font-bold text-white">৳{(tp.total_spend ?? 0).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -463,16 +463,16 @@ export const Customer360: React.FC = () => {
                 <div className="flex justify-between items-center p-2.5 bg-slate-800/50 rounded-lg">
                   <span className="text-slate-400">{t('crm.customer360.storeCreditBalance', 'Store Credit')}</span>
                   <span className="font-bold text-emerald-400">
-                    ৳{profile.balances.storeCredit.toLocaleString()}
+                    ৳{(profile.balances?.storeCredit ?? 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 bg-slate-800/50 rounded-lg">
                   <span className="text-slate-400">Open Service Complaints</span>
-                  <span className="font-bold text-rose-400">{profile.counts.open_complaints}</span>
+                  <span className="font-bold text-rose-400">{profile.counts?.open_complaints ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 bg-slate-800/50 rounded-lg">
                   <span className="text-slate-400">Open CRM Activities</span>
-                  <span className="font-bold text-amber-400">{profile.counts.open_activities}</span>
+                  <span className="font-bold text-amber-400">{profile.counts?.open_activities ?? 0}</span>
                 </div>
               </div>
             </div>
@@ -501,13 +501,13 @@ export const Customer360: React.FC = () => {
                     <div className="flex-1 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-slate-200">{item.title}</span>
-                        <span className="text-[10px] text-slate-500">{new Date(item.timestamp).toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-500">{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</span>
                       </div>
                       {item.description && <p className="text-slate-400 mt-1">{item.description}</p>}
                       <div className="flex items-center gap-3 mt-1.5 text-[10px] text-slate-500">
                         {item.status && <span className="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-medium">{item.status}</span>}
                         {item.user_name && <span>By: {item.user_name}</span>}
-                        {item.amount !== undefined && <span className="font-bold text-emerald-400">৳{item.amount.toLocaleString()}</span>}
+                        {item.amount != null && <span className="font-bold text-emerald-400">৳{Number(item.amount).toLocaleString()}</span>}
                       </div>
                     </div>
                   </div>
@@ -563,10 +563,10 @@ export const Customer360: React.FC = () => {
 
               {statement && (
                 <div className="flex items-center gap-4 text-slate-300">
-                  <span>Opening: <strong>৳{statement.opening_balance.toLocaleString()}</strong></span>
-                  <span>Debits: <strong className="text-rose-400">৳{statement.total_debit.toLocaleString()}</strong></span>
-                  <span>Credits: <strong className="text-emerald-400">৳{statement.total_credit.toLocaleString()}</strong></span>
-                  <span>Closing: <strong className="text-white">৳{statement.closing_balance.toLocaleString()}</strong></span>
+                  <span>Opening: <strong>৳{(statement.opening_balance ?? 0).toLocaleString()}</strong></span>
+                  <span>Debits: <strong className="text-rose-400">৳{(statement.total_debit ?? 0).toLocaleString()}</strong></span>
+                  <span>Credits: <strong className="text-emerald-400">৳{(statement.total_credit ?? 0).toLocaleString()}</strong></span>
+                  <span>Closing: <strong className="text-white">৳{(statement.closing_balance ?? 0).toLocaleString()}</strong></span>
                 </div>
               )}
             </div>
@@ -595,9 +595,9 @@ export const Customer360: React.FC = () => {
                         <td className="p-2 font-semibold text-slate-200">{tx.type}</td>
                         <td className="p-2 font-mono text-emerald-400">{tx.reference_number || '-'}</td>
                         <td className="p-2 text-slate-400">{tx.notes || '-'}</td>
-                        <td className="p-2 text-right text-rose-400">{tx.debit > 0 ? `৳${tx.debit.toLocaleString()}` : '-'}</td>
-                        <td className="p-2 text-right text-emerald-400">{tx.credit > 0 ? `৳${tx.credit.toLocaleString()}` : '-'}</td>
-                        <td className="p-2 text-right font-bold text-white">৳{tx.running_balance.toLocaleString()}</td>
+                        <td className="p-2 text-right text-rose-400">{Number(tx.debit) > 0 ? `৳${Number(tx.debit).toLocaleString()}` : '-'}</td>
+                        <td className="p-2 text-right text-emerald-400">{Number(tx.credit) > 0 ? `৳${Number(tx.credit).toLocaleString()}` : '-'}</td>
+                        <td className="p-2 text-right font-bold text-white">৳{(Number(tx.running_balance) || 0).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

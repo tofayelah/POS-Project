@@ -79,6 +79,13 @@ export const CrmActivityCenter: React.FC = () => {
     loadAllData();
   }, []);
 
+  const ensureArray = <T,>(val: any): T[] => {
+    if (Array.isArray(val)) return val;
+    if (val && Array.isArray(val.data)) return val.data;
+    if (val && val.data && Array.isArray(val.data.data)) return val.data.data;
+    return [];
+  };
+
   const loadAllData = async () => {
     setLoading(true);
     try {
@@ -90,12 +97,16 @@ export const CrmActivityCenter: React.FC = () => {
         customersApi.getCustomers({ page: 1 }),
       ]);
       setDashboardMetrics(dash);
-      setActivities(actRes);
-      setComplaints(compRes);
-      setOpportunities(oppRes);
-      setCustomers((custRes.data?.data || []) as unknown as Customer[]);
+      setActivities(ensureArray<CustomerActivity>(actRes));
+      setComplaints(ensureArray<CustomerComplaint>(compRes));
+      setOpportunities(ensureArray<CustomerOpportunity>(oppRes));
+      setCustomers(ensureArray<Customer>(custRes));
     } catch (err) {
       console.error('Failed to load CRM data', err);
+      setActivities([]);
+      setComplaints([]);
+      setOpportunities([]);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -212,6 +223,11 @@ export const CrmActivityCenter: React.FC = () => {
     }
   };
 
+  const safeActivities = Array.isArray(activities) ? activities : [];
+  const safeComplaints = Array.isArray(complaints) ? complaints : [];
+  const safeOpportunities = Array.isArray(opportunities) ? opportunities : [];
+  const safeCustomers = Array.isArray(customers) ? customers : [];
+
   return (
     <div className="p-6 space-y-6 bg-slate-950 min-h-screen text-slate-100">
       {/* Header */}
@@ -260,27 +276,27 @@ export const CrmActivityCenter: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Open Activities</span>
-            <div className="text-xl font-bold text-white">{dashboardMetrics.counts.open_activities}</div>
+            <div className="text-xl font-bold text-white">{dashboardMetrics.counts?.open_activities ?? 0}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Today's Tasks</span>
-            <div className="text-xl font-bold text-indigo-400">{dashboardMetrics.counts.today_activities}</div>
+            <div className="text-xl font-bold text-indigo-400">{dashboardMetrics.counts?.today_activities ?? 0}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Pending Follow-ups</span>
-            <div className="text-xl font-bold text-amber-400">{dashboardMetrics.counts.pending_follow_ups}</div>
+            <div className="text-xl font-bold text-amber-400">{dashboardMetrics.counts?.pending_follow_ups ?? 0}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Open Complaints</span>
-            <div className="text-xl font-bold text-rose-400">{dashboardMetrics.counts.open_complaints}</div>
+            <div className="text-xl font-bold text-rose-400">{dashboardMetrics.counts?.open_complaints ?? 0}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Critical Issues</span>
-            <div className="text-xl font-bold text-rose-500">{dashboardMetrics.counts.critical_complaints}</div>
+            <div className="text-xl font-bold text-rose-500">{dashboardMetrics.counts?.critical_complaints ?? 0}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
             <span className="text-[11px] text-slate-400 block mb-1">Pipeline Value</span>
-            <div className="text-xl font-bold text-emerald-400">৳{Math.round(dashboardMetrics.pipeline_value).toLocaleString()}</div>
+            <div className="text-xl font-bold text-emerald-400">৳{Math.round(dashboardMetrics.pipeline_value ?? 0).toLocaleString()}</div>
           </div>
         </div>
       )}
@@ -297,7 +313,7 @@ export const CrmActivityCenter: React.FC = () => {
             }`}
           >
             <Activity className="w-4 h-4" />
-            {t('crm.activity.tabActivities', 'Activities & Tasks')} ({activities.length})
+            {t('crm.activity.tabActivities', 'Activities & Tasks')} ({safeActivities.length})
           </button>
           <button
             onClick={() => setActiveTab('COMPLAINTS')}
@@ -308,7 +324,7 @@ export const CrmActivityCenter: React.FC = () => {
             }`}
           >
             <AlertTriangle className="w-4 h-4" />
-            {t('crm.activity.tabComplaints', 'Service Complaints')} ({complaints.length})
+            {t('crm.activity.tabComplaints', 'Service Complaints')} ({safeComplaints.length})
           </button>
           <button
             onClick={() => setActiveTab('OPPORTUNITIES')}
@@ -319,7 +335,7 @@ export const CrmActivityCenter: React.FC = () => {
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            {t('crm.activity.tabOpportunities', 'Opportunities Pipeline')} ({opportunities.length})
+            {t('crm.activity.tabOpportunities', 'Opportunities Pipeline')} ({safeOpportunities.length})
           </button>
         </div>
 
@@ -339,14 +355,14 @@ export const CrmActivityCenter: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {activities.length === 0 ? (
+                {safeActivities.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
                       No activities logged yet.
                     </td>
                   </tr>
                 ) : (
-                  activities.map((act) => (
+                  safeActivities.map((act) => (
                     <tr key={act.id} className="hover:bg-slate-800/40">
                       <td className="p-3">
                         <span className="font-semibold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-900/60 text-[10px]">
@@ -410,14 +426,14 @@ export const CrmActivityCenter: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {complaints.length === 0 ? (
+                {safeComplaints.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
                       No customer complaints on file.
                     </td>
                   </tr>
                 ) : (
-                  complaints.map((comp) => (
+                  safeComplaints.map((comp) => (
                     <tr key={comp.id} className="hover:bg-slate-800/40">
                       <td className="p-3 font-mono font-bold text-rose-400">{comp.ticket_number}</td>
                       <td className="p-3">
@@ -482,14 +498,14 @@ export const CrmActivityCenter: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {opportunities.length === 0 ? (
+                {safeOpportunities.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">
                       No active sales opportunities in pipeline.
                     </td>
                   </tr>
                 ) : (
-                  opportunities.map((opp) => (
+                  safeOpportunities.map((opp) => (
                     <tr key={opp.id} className="hover:bg-slate-800/40">
                       <td className="p-3 font-semibold text-white">{opp.title}</td>
                       <td className="p-3">
@@ -553,7 +569,7 @@ export const CrmActivityCenter: React.FC = () => {
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                 >
                   <option value="">Select customer...</option>
-                  {customers.map((c) => (
+                  {safeCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.customer_code} - {c.name}
                     </option>
@@ -690,7 +706,7 @@ export const CrmActivityCenter: React.FC = () => {
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                 >
                   <option value="">Select customer...</option>
-                  {customers.map((c) => (
+                  {safeCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.customer_code} - {c.name}
                     </option>
@@ -821,7 +837,7 @@ export const CrmActivityCenter: React.FC = () => {
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"
                 >
                   <option value="">Select customer...</option>
-                  {customers.map((c) => (
+                  {safeCustomers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.customer_code} - {c.name}
                     </option>

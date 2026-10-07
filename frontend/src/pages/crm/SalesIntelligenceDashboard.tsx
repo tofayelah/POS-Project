@@ -188,7 +188,7 @@ export const SalesIntelligenceDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {metrics.branch_breakdown.map((b, idx) => (
+                      {(metrics.branch_breakdown || []).map((b, idx) => (
                         <tr key={idx} className="hover:bg-slate-800/40">
                           <td className="p-3 font-semibold text-white">{b.branch_name}</td>
                           <td className="p-3 text-right">{b.orders}</td>
@@ -227,7 +227,7 @@ export const SalesIntelligenceDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
-                        {metrics.top_customers.map((c, idx) => (
+                        {(metrics.top_customers || []).map((c, idx) => (
                           <tr key={idx} className="hover:bg-slate-800/40">
                             <td className="p-2">
                               <div className="font-semibold text-white">{c.customer_name}</div>
@@ -262,7 +262,7 @@ export const SalesIntelligenceDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
-                        {metrics.top_products.map((p, idx) => (
+                        {(metrics.top_products || []).map((p, idx) => (
                           <tr key={idx} className="hover:bg-slate-800/40">
                             <td className="p-2">
                               <div className="font-semibold text-white">{p.name}</div>
@@ -304,7 +304,7 @@ export const SalesIntelligenceDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {metrics.salesperson_leaderboard.map((sp, idx) => (
+                    {(metrics.salesperson_leaderboard || []).map((sp, idx) => (
                       <tr key={idx} className="hover:bg-slate-800/40">
                         <td className="p-3">
                           <div className="flex items-center gap-2">
@@ -339,19 +339,19 @@ export const SalesIntelligenceDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                   <span className="text-xs text-slate-400 block mb-1">Gross Sales in Period</span>
-                  <div className="text-xl font-bold text-white">৳{metrics.return_metrics.gross_sales.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-white">৳{(metrics.return_metrics?.gross_sales ?? 0).toLocaleString()}</div>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                   <span className="text-xs text-slate-400 block mb-1">Total Returns Count</span>
-                  <div className="text-xl font-bold text-rose-400">{metrics.return_metrics.return_count}</div>
+                  <div className="text-xl font-bold text-rose-400">{metrics.return_metrics?.return_count ?? 0}</div>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                   <span className="text-xs text-slate-400 block mb-1">Refund Total Value</span>
-                  <div className="text-xl font-bold text-rose-400">৳{metrics.return_metrics.return_value.toLocaleString()}</div>
+                  <div className="text-xl font-bold text-rose-400">৳{(metrics.return_metrics?.return_value ?? 0).toLocaleString()}</div>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                   <span className="text-xs text-slate-400 block mb-1">Return Rate %</span>
-                  <div className="text-xl font-bold text-amber-400">{metrics.return_metrics.return_rate_pct}%</div>
+                  <div className="text-xl font-bold text-amber-400">{metrics.return_metrics?.return_rate_pct ?? 0}%</div>
                 </div>
               </div>
 
@@ -370,7 +370,7 @@ export const SalesIntelligenceDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {metrics.return_metrics.by_reason.map((r, idx) => (
+                      {(metrics.return_metrics?.by_reason || []).map((r, idx) => (
                         <tr key={idx} className="hover:bg-slate-800/40">
                           <td className="p-3 font-semibold text-slate-200">{r.reason_name}</td>
                           <td className="p-3 text-right font-bold text-white">{r.count}</td>

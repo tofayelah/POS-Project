@@ -229,7 +229,7 @@ export const CustomerIntelligenceDashboard: React.FC = () => {
                     <td className="p-3 text-center text-slate-400">{cust.last_purchase_date || '-'}</td>
                     <td className="p-3 text-center font-bold text-amber-400">{cust.days_inactive} days</td>
                     <td className="p-3 text-right font-bold text-white">
-                      ৳{Number(cust.total_spent).toLocaleString()}
+                      ৳{(Number(cust.total_spent) || 0).toLocaleString()}
                     </td>
                     <td className="p-3 text-center">
                       {cust.credit_hold ? (

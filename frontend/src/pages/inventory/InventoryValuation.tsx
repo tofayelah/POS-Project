@@ -161,7 +161,7 @@ export function InventoryValuation() {
         />
         <KpiCard
           title={t('inventory.marginPercent', 'Average Margin')}
-          value={`${summary.margin_percentage.toFixed(1)}%`}
+          value={`${(Number(summary?.margin_percentage) || 0).toFixed(1)}%`}
           icon={Percent}
           color="amber"
         />
@@ -253,17 +253,22 @@ export function InventoryValuation() {
                     {formatCurrency(row.potential_profit)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-xs font-semibold">
-                    <span
-                      className={
-                        row.margin_percentage >= 20
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : row.margin_percentage > 0
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-rose-600 dark:text-rose-400'
-                      }
-                    >
-                      {row.margin_percentage.toFixed(1)}%
-                    </span>
+                    {(() => {
+                      const marginVal = Number(row.margin_percentage) || 0;
+                      return (
+                        <span
+                          className={
+                            marginVal >= 20
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : marginVal > 0
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-rose-600 dark:text-rose-400'
+                          }
+                        >
+                          {marginVal.toFixed(1)}%
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

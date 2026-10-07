@@ -334,10 +334,10 @@ export const ArAgingDashboard: React.FC = () => {
 
               {statement && (
                 <div className="flex items-center gap-4 text-slate-300 font-medium">
-                  <span>Opening: <strong>৳{statement.opening_balance.toLocaleString()}</strong></span>
-                  <span>Debits: <strong className="text-rose-400">৳{statement.total_debit.toLocaleString()}</strong></span>
-                  <span>Credits: <strong className="text-emerald-400">৳{statement.total_credit.toLocaleString()}</strong></span>
-                  <span>Closing: <strong className="text-white">৳{statement.closing_balance.toLocaleString()}</strong></span>
+                  <span>Opening: <strong>৳{(statement.opening_balance ?? 0).toLocaleString()}</strong></span>
+                  <span>Debits: <strong className="text-rose-400">৳{(statement.total_debit ?? 0).toLocaleString()}</strong></span>
+                  <span>Credits: <strong className="text-emerald-400">৳{(statement.total_credit ?? 0).toLocaleString()}</strong></span>
+                  <span>Closing: <strong className="text-white">৳{(statement.closing_balance ?? 0).toLocaleString()}</strong></span>
                 </div>
               )}
             </div>
@@ -366,9 +366,9 @@ export const ArAgingDashboard: React.FC = () => {
                         <td className="p-2 font-semibold text-slate-200">{tx.type}</td>
                         <td className="p-2 font-mono text-emerald-400">{tx.reference_number || '-'}</td>
                         <td className="p-2 text-slate-400">{tx.notes || '-'}</td>
-                        <td className="p-2 text-right text-rose-400">{tx.debit > 0 ? `৳${tx.debit.toLocaleString()}` : '-'}</td>
-                        <td className="p-2 text-right text-emerald-400">{tx.credit > 0 ? `৳${tx.credit.toLocaleString()}` : '-'}</td>
-                        <td className="p-2 text-right font-bold text-white">৳{tx.running_balance.toLocaleString()}</td>
+                        <td className="p-2 text-right text-rose-400">{Number(tx.debit) > 0 ? `৳${Number(tx.debit).toLocaleString()}` : '-'}</td>
+                        <td className="p-2 text-right text-emerald-400">{Number(tx.credit) > 0 ? `৳${Number(tx.credit).toLocaleString()}` : '-'}</td>
+                        <td className="p-2 text-right font-bold text-white">৳{(Number(tx.running_balance) || 0).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

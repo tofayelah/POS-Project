@@ -33,27 +33,28 @@ export const crmApi = {
   },
 
   requestCredit: async (customerId: number, data: { requested_credit_limit: number; requested_credit_days?: number; reason: string }): Promise<CustomerCreditRequest> => {
-    const res = await api.post(`/customers/${customerId}/credit-request`, data);
+    const res = await api.post(`/customers/${customerId}/request-credit`, data);
     return res.data.data;
   },
 
   getCreditRequests: async (status?: string): Promise<CustomerCreditRequest[]> => {
-    const res = await api.get('/credit-requests', { params: status ? { status } : {} });
-    return res.data.data;
+    const res = await api.get('/customer-credit-requests', { params: status ? { status } : {} });
+    const raw = res.data?.data ?? res.data;
+    return Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
   },
 
   approveCreditRequest: async (requestId: number, notes?: string): Promise<CustomerCreditRequest> => {
-    const res = await api.post(`/credit-requests/${requestId}/approve`, { notes });
+    const res = await api.post(`/customer-credit-requests/${requestId}/approve`, { notes });
     return res.data.data;
   },
 
   rejectCreditRequest: async (requestId: number, reason: string): Promise<CustomerCreditRequest> => {
-    const res = await api.post(`/credit-requests/${requestId}/reject`, { reason });
+    const res = await api.post(`/customer-credit-requests/${requestId}/reject`, { reason });
     return res.data.data;
   },
 
   toggleCreditHold: async (customerId: number, hold: boolean, reason?: string): Promise<{ credit_hold: boolean }> => {
-    const res = await api.post(`/customers/${customerId}/toggle-credit-hold`, { hold, reason });
+    const res = await api.post(`/customers/${customerId}/credit-hold`, { hold, reason });
     return res.data.data;
   },
 
@@ -64,12 +65,12 @@ export const crmApi = {
   },
 
   getCompanyAging: async (): Promise<CompanyAgingSummary> => {
-    const res = await api.get('/ar-aging');
+    const res = await api.get('/ar/aging-summary');
     return res.data.data;
   },
 
   getCollectionPriorities: async (): Promise<CollectionPriorityItem[]> => {
-    const res = await api.get('/ar-aging/collection-priorities');
+    const res = await api.get('/ar/collection-priorities');
     return res.data.data;
   },
 
@@ -93,7 +94,8 @@ export const crmApi = {
 
   getActivities: async (params?: Record<string, any>): Promise<CustomerActivity[]> => {
     const res = await api.get('/crm/activities', { params });
-    return res.data.data;
+    const raw = res.data?.data ?? res.data;
+    return Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
   },
 
   createActivity: async (data: Partial<CustomerActivity>): Promise<CustomerActivity> => {
@@ -108,7 +110,8 @@ export const crmApi = {
 
   getComplaints: async (params?: Record<string, any>): Promise<CustomerComplaint[]> => {
     const res = await api.get('/crm/complaints', { params });
-    return res.data.data;
+    const raw = res.data?.data ?? res.data;
+    return Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
   },
 
   createComplaint: async (data: Partial<CustomerComplaint>): Promise<CustomerComplaint> => {
@@ -123,7 +126,8 @@ export const crmApi = {
 
   getOpportunities: async (params?: Record<string, any>): Promise<CustomerOpportunity[]> => {
     const res = await api.get('/crm/opportunities', { params });
-    return res.data.data;
+    const raw = res.data?.data ?? res.data;
+    return Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
   },
 
   createOpportunity: async (data: Partial<CustomerOpportunity>): Promise<CustomerOpportunity> => {

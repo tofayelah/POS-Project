@@ -44,9 +44,10 @@ export const CustomerCreditManagement: React.FC = () => {
     try {
       const statusParam = filterStatus === 'ALL' ? undefined : filterStatus;
       const data = await crmApi.getCreditRequests(statusParam);
-      setRequests(data);
+      setRequests(Array.isArray(data) ? data : (data as any)?.data || []);
     } catch (err) {
       console.error('Failed to load credit requests', err);
+      setRequests([]);
     } finally {
       setLoading(false);
     }

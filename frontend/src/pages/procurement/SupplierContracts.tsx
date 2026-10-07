@@ -74,10 +74,10 @@ export const SupplierContracts: React.FC = () => {
         getSuppliers({ all: true }),
         getProducts({ all: true }),
       ]);
-      if (cntRes.data) setContracts(cntRes.data.data || cntRes.data);
-      if (agrRes.data) setAgreements(agrRes.data.data || agrRes.data);
-      if (supRes.data) setSuppliers(supRes.data.data || supRes.data);
-      if (prdRes.data) setProducts(prdRes.data.data || prdRes.data);
+      if (cntRes?.data) setContracts(Array.isArray(cntRes.data) ? cntRes.data : (cntRes.data as any).data || []);
+      if (agrRes?.data) setAgreements(Array.isArray(agrRes.data) ? agrRes.data : (agrRes.data as any).data || []);
+      if (supRes?.data) setSuppliers(Array.isArray(supRes.data) ? supRes.data : (supRes.data as any).data || []);
+      if (prdRes?.data) setProducts(Array.isArray(prdRes.data) ? prdRes.data : (prdRes.data as any).data || []);
     } catch (err) {
       console.error('Failed to load contract data', err);
     } finally {

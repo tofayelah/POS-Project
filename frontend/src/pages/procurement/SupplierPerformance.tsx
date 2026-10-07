@@ -45,8 +45,8 @@ export const SupplierPerformance: React.FC = () => {
         getSuppliers({ all: true }),
         getSupplierRankings(),
       ]);
-      if (supRes.data) {
-        const list = supRes.data.data || supRes.data;
+      if (supRes?.data) {
+        const list: any[] = Array.isArray(supRes.data) ? supRes.data : (supRes.data as any).data || [];
         setSuppliers(list);
         if (list.length > 0 && !selectedSupplierId) {
           setSelectedSupplierId(list[0].id);
