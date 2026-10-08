@@ -14,6 +14,8 @@ class AccountingPeriod extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'closed_at' => 'datetime',
+        'reopened_at' => 'datetime',
     ];
 
     public function company()
@@ -24,5 +26,30 @@ class AccountingPeriod extends Model
     public function fiscalYear()
     {
         return $this->belongsTo(FiscalYear::class);
+    }
+
+    public function closedBy()
+    {
+        return $this->belongsTo(User::class, 'closed_by');
+    }
+
+    public function reopenedBy()
+    {
+        return $this->belongsTo(User::class, 'reopened_by');
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->status === 'OPEN';
+    }
+
+    public function isSoftLocked(): bool
+    {
+        return $this->status === 'SOFT_LOCK' || $this->status === 'LOCKED';
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 'CLOSED';
     }
 }

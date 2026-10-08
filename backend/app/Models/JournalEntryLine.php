@@ -40,4 +40,14 @@ class JournalEntryLine extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    public function costCentre()
+    {
+        return $this->belongsTo(CostCentre::class);
+    }
+
+    public function profitCentre()
+    {
+        return $this->belongsTo(ProfitCentre::class);
+    }
 }

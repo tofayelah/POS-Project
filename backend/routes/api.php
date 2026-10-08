@@ -702,6 +702,78 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('reviews', [\App\Http\Controllers\CustomerPortalController::class, 'submitReview']);
             Route::post('returns', [\App\Http\Controllers\CustomerPortalController::class, 'submitReturnRequest']);
         });
+
+        // ================================================================
+        // PHASE 12: ADVANCED FINANCIAL MANAGEMENT ROUTES
+        // ================================================================
+        Route::prefix('financial-management')->middleware(['scope:company'])->group(function () {
+            // Budgets & Budget Controls
+            Route::get('budgets', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'index'])->middleware(['permission:budgets.view,financial_management.view']);
+            Route::post('budgets', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'store'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::get('budgets/{id}', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'show'])->middleware(['permission:budgets.view,financial_management.view']);
+            Route::put('budgets/{id}', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'update'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::post('budgets/{id}/submit', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'submit'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::post('budgets/{id}/approve', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'approve'])->middleware(['permission:budgets.approve,financial_management.manage']);
+            Route::post('budgets/{id}/activate', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'activate'])->middleware(['permission:budgets.approve,financial_management.manage']);
+            Route::post('budgets/{id}/close', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'close'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::post('budgets/{id}/revise', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'revise'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::get('budgets/{id}/vs-actual', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'budgetVsActual'])->middleware(['permission:budgets.view,financial_management.view']);
+            Route::get('budget-controls', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'getControls'])->middleware(['permission:budgets.view,financial_management.view']);
+            Route::post('budget-controls', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'storeControl'])->middleware(['permission:budgets.manage,financial_management.manage']);
+            Route::post('budget-controls/check', [\App\Http\Controllers\Api\V1\Finance\BudgetController::class, 'checkControl'])->middleware(['permission:budgets.view,financial_management.view']);
+
+            // Cash & Treasury
+            Route::get('cash-treasury/positions', [\App\Http\Controllers\Api\V1\Finance\CashTreasuryController::class, 'positions'])->middleware(['permission:cash_forecast.view,financial_management.view']);
+            Route::get('cash-treasury/forecast', [\App\Http\Controllers\Api\V1\Finance\CashTreasuryController::class, 'forecast'])->middleware(['permission:cash_forecast.view,financial_management.view']);
+            Route::post('cash-treasury/transfer', [\App\Http\Controllers\Api\V1\Finance\CashTreasuryController::class, 'transfer'])->middleware(['permission:bank_accounts.manage,financial_management.manage']);
+
+            // Bank Accounts & Reconciliation
+            Route::get('bank-accounts', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'indexAccounts'])->middleware(['permission:bank_accounts.view,financial_management.view']);
+            Route::post('bank-accounts', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'storeAccount'])->middleware(['permission:bank_accounts.manage,financial_management.manage']);
+            Route::get('bank-accounts/{id}/statements', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'indexStatements'])->middleware(['permission:bank_reconciliation.view,financial_management.view']);
+            Route::post('bank-accounts/{id}/statements', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'importStatement'])->middleware(['permission:bank_reconciliation.manage,financial_management.manage']);
+            Route::get('bank-reconciliations', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'indexReconciliations'])->middleware(['permission:bank_reconciliation.view,financial_management.view']);
+            Route::post('bank-reconciliations', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'startReconciliation'])->middleware(['permission:bank_reconciliation.manage,financial_management.manage']);
+            Route::post('bank-reconciliations/{id}/auto-match', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'autoMatch'])->middleware(['permission:bank_reconciliation.manage,financial_management.manage']);
+            Route::post('bank-reconciliations/{id}/manual-match', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'manualMatch'])->middleware(['permission:bank_reconciliation.manage,financial_management.manage']);
+            Route::post('bank-reconciliations/{id}/finalize', [\App\Http\Controllers\Api\V1\Finance\BankManagementController::class, 'finalize'])->middleware(['permission:bank_reconciliation.manage,financial_management.manage']);
+
+            // Financial Periods & Year-End Closing
+            Route::get('financial-periods', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'index'])->middleware(['permission:financial_periods.view,financial_management.view']);
+            Route::post('financial-periods/{id}/soft-lock', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'softLock'])->middleware(['permission:financial_periods.manage,financial_management.manage']);
+            Route::post('financial-periods/{id}/close', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'close'])->middleware(['permission:financial_periods.manage,financial_management.manage']);
+            Route::post('financial-periods/{id}/reopen', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'reopen'])->middleware(['permission:financial_periods.reopen,financial_management.manage']);
+            Route::get('year-end-closings', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'yearEndClosingsList'])->middleware(['permission:year_end.view,financial_management.view']);
+            Route::get('year-end-closings/preview/{fiscalYearId}', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'previewYearEnd'])->middleware(['permission:year_end.view,financial_management.view']);
+            Route::post('year-end-closings/execute', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'executeYearEnd'])->middleware(['permission:year_end.close,financial_management.manage']);
+            Route::post('year-end-closings/{id}/reverse', [\App\Http\Controllers\Api\V1\Finance\FinancialPeriodController::class, 'reverseYearEnd'])->middleware(['permission:year_end.close,financial_management.manage']);
+
+            // Cost & Profit Centres
+            Route::get('cost-centres', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'indexCostCentres'])->middleware(['permission:cost_centres.view,financial_management.view']);
+            Route::post('cost-centres', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'storeCostCentre'])->middleware(['permission:cost_centres.manage,financial_management.manage']);
+            Route::get('cost-centres/expense-report', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'costCentreExpenseReport'])->middleware(['permission:cost_centres.view,financial_management.view']);
+            Route::get('profit-centres', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'indexProfitCentres'])->middleware(['permission:profit_centres.view,financial_management.view']);
+            Route::post('profit-centres', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'storeProfitCentre'])->middleware(['permission:profit_centres.manage,financial_management.manage']);
+            Route::get('profit-centres/performance-report', [\App\Http\Controllers\Api\V1\Finance\CostProfitCentreController::class, 'profitCentrePerformanceReport'])->middleware(['permission:profit_centres.view,financial_management.view']);
+
+            // Advanced AR & AP Aging
+            Route::get('ar/aging', [\App\Http\Controllers\Api\V1\Finance\AdvancedArApController::class, 'arAging'])->middleware(['permission:financial_reports.view,financial_management.view']);
+            Route::get('ap/aging', [\App\Http\Controllers\Api\V1\Finance\AdvancedArApController::class, 'apAging'])->middleware(['permission:financial_reports.view,financial_management.view']);
+
+            // Fixed Assets & Depreciation
+            Route::get('fixed-assets/categories', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'indexCategories'])->middleware(['permission:fixed_assets.view,financial_management.view']);
+            Route::post('fixed-assets/categories', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'storeCategory'])->middleware(['permission:fixed_assets.manage,financial_management.manage']);
+            Route::get('fixed-assets', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'index'])->middleware(['permission:fixed_assets.view,financial_management.view']);
+            Route::post('fixed-assets', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'store'])->middleware(['permission:fixed_assets.manage,financial_management.manage']);
+            Route::get('fixed-assets/{id}', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'show'])->middleware(['permission:fixed_assets.view,financial_management.view']);
+            Route::post('fixed-assets/run-depreciation', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'runDepreciation'])->middleware(['permission:fixed_assets.depreciation,financial_management.manage']);
+            Route::post('fixed-assets/{id}/dispose', [\App\Http\Controllers\Api\V1\Finance\FixedAssetController::class, 'dispose'])->middleware(['permission:fixed_assets.dispose,financial_management.manage']);
+
+            // Analytics, Financial Ratios & Executive Telemetry
+            Route::get('analytics/ratios', [\App\Http\Controllers\Api\V1\Finance\FinancialAnalyticsController::class, 'ratios'])->middleware(['permission:financial_reports.view,financial_management.view']);
+            Route::get('analytics/forecast', [\App\Http\Controllers\Api\V1\Finance\FinancialAnalyticsController::class, 'forecast'])->middleware(['permission:cash_forecast.view,financial_management.view']);
+            Route::get('analytics/telemetry', [\App\Http\Controllers\Api\V1\Finance\FinancialAnalyticsController::class, 'telemetry'])->middleware(['permission:financial_reports.view,financial_management.view']);
+        });
     });
 });
 

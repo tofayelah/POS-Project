@@ -38,7 +38,11 @@ import {
   Star,
   Store,
   ShoppingBag,
-  ExternalLink
+  ExternalLink,
+  Landmark,
+  Wallet,
+  CalendarCheck,
+  FileCheck2
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -85,6 +89,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || hasPermission('users.view') || hasPermission('roles.view') || canViewPos;
   const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
   const canViewEcommerce = hasRole('Super Admin') || hasRole('Admin') || hasPermission('ecommerce.orders.view') || hasPermission('ecommerce.catalog.view') || hasPermission('ecommerce.settings.view') || canViewPos;
+  const canViewFinance = hasRole('Super Admin') || hasRole('Admin') || hasPermission('finance.dashboard.view') || hasPermission('finance.budget.view') || hasPermission('finance.treasury.view') || canViewPos;
 
   const isActive = (path: string, exact = false) => {
     if (exact) return location.pathname === path;
@@ -1210,6 +1215,188 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               {t('nav.expenses', 'Expenses')}
             </span>
           </Link>
+
+          {/* Advanced Financial Management */}
+          {canViewFinance && (
+            <>
+              <Link
+                to="/finance/dashboard"
+                id="nav-link-finance-dashboard"
+                onClick={handleLinkClick}
+                title={t('nav.financeDashboard', 'Financial Dashboard')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/dashboard')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.financeDashboard', 'Financial Dashboard')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/budgets"
+                id="nav-link-finance-budgets"
+                onClick={handleLinkClick}
+                title={t('nav.budgets', 'Budgets & Controls')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/budgets')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Percent className="w-4 h-4 shrink-0 text-indigo-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.budgets', 'Budgets & Controls')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/treasury"
+                id="nav-link-finance-treasury"
+                onClick={handleLinkClick}
+                title={t('nav.treasury', 'Cash & Treasury')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/treasury')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Wallet className="w-4 h-4 shrink-0 text-teal-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.treasury', 'Cash & Treasury')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/banks"
+                id="nav-link-finance-banks"
+                onClick={handleLinkClick}
+                title={t('nav.bankAccounts', 'Bank Accounts')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/banks')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Landmark className="w-4 h-4 shrink-0 text-blue-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.bankAccounts', 'Bank Accounts')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/bank-reconciliation"
+                id="nav-link-finance-bank-recon"
+                onClick={handleLinkClick}
+                title={t('nav.bankReconciliation', 'Bank Reconciliation')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/bank-reconciliation')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <FileCheck2 className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.bankReconciliation', 'Bank Reconciliation')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/periods"
+                id="nav-link-finance-periods"
+                onClick={handleLinkClick}
+                title={t('nav.periodClosing', 'Period & Year-End Close')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/periods')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <CalendarCheck className="w-4 h-4 shrink-0 text-amber-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.periodClosing', 'Period & Year-End Close')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/centres"
+                id="nav-link-finance-centres"
+                onClick={handleLinkClick}
+                title={t('nav.costProfitCentres', 'Cost & Profit Centres')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/centres')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Building2 className="w-4 h-4 shrink-0 text-purple-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.costProfitCentres', 'Cost & Profit Centres')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/ar"
+                id="nav-link-finance-ar"
+                onClick={handleLinkClick}
+                title={t('nav.financeArAging', 'AR Aging & Priorities')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/ar')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.financeArAging', 'AR Aging & Priorities')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/ap"
+                id="nav-link-finance-ap"
+                onClick={handleLinkClick}
+                title={t('nav.apAging', 'AP Aging & Scheduling')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/ap')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Receipt className="w-4 h-4 shrink-0 text-rose-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.apAging', 'AP Aging & Scheduling')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/fixed-assets"
+                id="nav-link-finance-fixed-assets"
+                onClick={handleLinkClick}
+                title={t('nav.fixedAssets', 'Fixed Assets')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/fixed-assets')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0 text-orange-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.fixedAssets', 'Fixed Assets')}
+                </span>
+              </Link>
+              <Link
+                to="/finance/analytics"
+                id="nav-link-finance-analytics"
+                onClick={handleLinkClick}
+                title={t('nav.financialAnalytics', 'Financial Analytics & Ratios')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/finance/analytics')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Scale className="w-4 h-4 shrink-0 text-pink-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('nav.financialAnalytics', 'Financial Analytics')}
+                </span>
+              </Link>
+            </>
+          )}
 
           {/* Tax & VAT Compliance */}
           <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${

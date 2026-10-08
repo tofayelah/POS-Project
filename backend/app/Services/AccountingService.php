@@ -128,6 +128,8 @@ class AccountingService
                     'business_unit_id' => $line['business_unit_id'] ?? null,
                     'branch_id' => $line['branch_id'] ?? null,
                     'warehouse_id' => $line['warehouse_id'] ?? null,
+                    'cost_centre_id' => $line['cost_centre_id'] ?? null,
+                    'profit_centre_id' => $line['profit_centre_id'] ?? null,
                     'reference' => $line['reference'] ?? null,
                 ]);
             }
@@ -372,6 +374,8 @@ class AccountingService
                     'business_unit_id' => $line['business_unit_id'] ?? null,
                     'branch_id' => $line['branch_id'] ?? null,
                     'warehouse_id' => $line['warehouse_id'] ?? null,
+                    'cost_centre_id' => $line['cost_centre_id'] ?? null,
+                    'profit_centre_id' => $line['profit_centre_id'] ?? null,
                     'reference' => $line['reference'] ?? null,
                 ]);
             }

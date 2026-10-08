@@ -104,6 +104,18 @@ import { StorefrontCheckout } from './pages/storefront/StorefrontCheckout';
 import { StorefrontAccount } from './pages/storefront/StorefrontAccount';
 import { StorefrontOrderTracking } from './pages/storefront/StorefrontOrderTracking';
 import { StorefrontAuth } from './pages/storefront/StorefrontAuth';
+import { FinancialManagementDashboard } from './pages/finance/FinancialManagementDashboard';
+import { BudgetManagement } from './pages/finance/BudgetManagement';
+import { BudgetVsActual } from './pages/finance/BudgetVsActual';
+import { CashTreasuryManagement } from './pages/finance/CashTreasuryManagement';
+import { BankManagement } from './pages/finance/BankManagement';
+import { BankReconciliationView } from './pages/finance/BankReconciliationView';
+import { FinancialPeriodManagement } from './pages/finance/FinancialPeriodManagement';
+import { CostProfitCentreManagement } from './pages/finance/CostProfitCentreManagement';
+import { AdvancedArManagement } from './pages/finance/AdvancedArManagement';
+import { AdvancedApManagement } from './pages/finance/AdvancedApManagement';
+import { FixedAssetManagement } from './pages/finance/FixedAssetManagement';
+import { FinancialReportsAndRatios } from './pages/finance/FinancialReportsAndRatios';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -812,6 +824,93 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <StoreSettings />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Advanced Financial Management Routes */}
+            <Route path="/finance" element={<Navigate to="/finance/dashboard" replace />} />
+            <Route path="/finance/dashboard" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FinancialManagementDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/budgets" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BudgetManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/budgets/:id/variance" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BudgetVsActual />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/treasury" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CashTreasuryManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/banks" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BankManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/bank-reconciliation" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BankReconciliationView />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/periods" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FinancialPeriodManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/centres" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CostProfitCentreManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/ar" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdvancedArManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/ap" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdvancedApManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/fixed-assets" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FixedAssetManagement />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/finance/analytics" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FinancialReportsAndRatios />
                 </AdminLayout>
               </ProtectedRoute>
             } />
