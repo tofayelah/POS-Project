@@ -130,6 +130,7 @@ import { BIAlerts } from './pages/bi/BIAlerts';
 import { ReportBuilder } from './pages/bi/ReportBuilder';
 import { SavedReports } from './pages/bi/SavedReports';
 import { LanguageProvider } from './i18n';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -140,7 +141,8 @@ export default function App() {
         <AuthProvider>
           <CompanyProvider>
             <Router>
-          <Routes>
+              <ErrorBoundary>
+                <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/accounting" element={
@@ -1034,6 +1036,7 @@ export default function App() {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+              </ErrorBoundary>
         </Router>
         </CompanyProvider>
       </AuthProvider>

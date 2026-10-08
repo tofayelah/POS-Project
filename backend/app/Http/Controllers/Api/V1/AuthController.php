@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -40,6 +42,9 @@ class AuthController extends Controller
         $user->update([
             'last_login_at' => now(),
         ]);
+
+        $throttleKey = Str::transliterate(Str::lower(trim($validated['email']))).'|'.$request->ip();
+        RateLimiter::clear($throttleKey);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 

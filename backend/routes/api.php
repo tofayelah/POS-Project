@@ -23,7 +23,7 @@ Route::get('v1/health', function () {
 });
 
 Route::middleware('web')->get('v1/sanctum/csrf-cookie', [\Laravel\Sanctum\Http\Controllers\CsrfCookieController::class, 'show']);
-Route::post('v1/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);
+Route::post('v1/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('v1/logout', [\App\Http\Controllers\Api\V1\AuthController::class, 'logout']);

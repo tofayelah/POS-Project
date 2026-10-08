@@ -146,6 +146,12 @@ class UserController extends Controller
                 ? Role::where('name', $validated['role'])->first()
                 : Role::find($validated['role_id']);
             if ($role) {
+                if ($role->name === 'Super Admin' && !$currentUser->hasRole('Super Admin')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Forbidden: Only Super Admins can assign the Super Admin role.'
+                    ], 403);
+                }
                 $user->roles()->attach($role->id);
             }
         }
@@ -171,6 +177,13 @@ class UserController extends Controller
         $targetUser = User::findOrFail($id);
 
         if (!$currentUser->hasRole('Super Admin')) {
+            if ($targetUser->hasRole('Super Admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: Only Super Admins can modify a Super Admin user.'
+                ], 403);
+            }
+
             $myCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
             $targetCompanyIds = $targetUser->companies()->pluck('companies.id')->toArray();
 
@@ -214,6 +227,12 @@ class UserController extends Controller
                 ? Role::where('name', $validated['role'])->first()
                 : (isset($validated['role_id']) ? Role::find($validated['role_id']) : null);
             if ($role) {
+                if ($role->name === 'Super Admin' && !$currentUser->hasRole('Super Admin')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Forbidden: Only Super Admins can assign the Super Admin role.'
+                    ], 403);
+                }
                 $targetUser->roles()->sync([$role->id]);
             }
         }
@@ -242,6 +261,13 @@ class UserController extends Controller
         }
 
         if (!$currentUser->hasRole('Super Admin')) {
+            if ($targetUser->hasRole('Super Admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: Only Super Admins can delete a Super Admin user.'
+                ], 403);
+            }
+
             $myCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
             $targetCompanyIds = $targetUser->companies()->pluck('companies.id')->toArray();
 
@@ -412,6 +438,13 @@ class UserController extends Controller
         $targetUser = User::findOrFail($id);
 
         if (!$currentUser->hasRole('Super Admin')) {
+            if ($targetUser->hasRole('Super Admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden: Only Super Admins can modify roles of a Super Admin user.'
+                ], 403);
+            }
+
             $myCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
             $targetCompanyIds = $targetUser->companies()->pluck('companies.id')->toArray();
 
@@ -429,6 +462,12 @@ class UserController extends Controller
         ]);
 
         $superAdminRole = Role::where('name', 'Super Admin')->first();
+        if ($superAdminRole && in_array($superAdminRole->id, $validated['role_ids']) && !$currentUser->hasRole('Super Admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden: Only Super Admins can assign the Super Admin role.',
+            ], 403);
+        }
         if ($superAdminRole && $targetUser->roles()->where('roles.id', $superAdminRole->id)->exists()) {
             if (!in_array($superAdminRole->id, $validated['role_ids'])) {
                 $otherSuperAdminCount = User::whereHas('roles', function ($q) use ($superAdminRole) {

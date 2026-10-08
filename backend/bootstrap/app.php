@@ -23,5 +23,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
+            return $request->is('api/*') || $request->is('v1/*') || $request->expectsJson();
+        });
+
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if (($request->is('api/*') || $request->is('v1/*') || $request->expectsJson()) && !config('app.debug')) {
+                if ($e instanceof \Illuminate\Validation\ValidationException ||
+                    $e instanceof \Illuminate\Auth\AuthenticationException ||
+                    $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                    return null;
+                }
+                \Illuminate\Support\Facades\Log::error($e->getMessage(), ['exception' => $e]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An internal server error occurred. Please contact system support.',
+                ], 500);
+            }
+        });
     })->create();
