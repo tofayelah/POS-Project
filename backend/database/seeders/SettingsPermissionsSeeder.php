@@ -37,7 +37,7 @@ class SettingsPermissionsSeeder extends Seeder
         foreach ($permissions as $name => $group) {
             Permission::firstOrCreate(
                 ['name' => $name],
-                ['group' => $group, 'guard_name' => 'web']
+                ['group' => $group]
             );
         }
 
