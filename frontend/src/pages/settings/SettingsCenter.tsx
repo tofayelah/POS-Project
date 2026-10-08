@@ -257,7 +257,10 @@ export const SettingsCenter: React.FC = () => {
   const isDangerousTab = currentTabItem.isDangerous;
 
   return (
-    <div className="w-full min-w-0 min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 pb-24">
+    <div
+      className="settings-center-root w-full min-w-0 min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 pb-24"
+      style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
+    >
       {/* Top Banner / Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800 w-full min-w-0">
         <div className="min-w-0">
@@ -330,9 +333,15 @@ export const SettingsCenter: React.FC = () => {
       )}
 
       {/* Main Responsive Layout: Left Nav Sidebar + Right Settings Form */}
-      <div className="flex flex-col lg:flex-row gap-6 mt-6 w-full min-w-0 items-start">
+      <div
+        className="settings-center-layout flex flex-col lg:flex-row gap-6 mt-6 w-full min-w-0 items-stretch lg:items-start"
+        style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+      >
         {/* Settings Navigation Sidebar */}
-        <aside className="w-full lg:w-64 xl:w-72 lg:shrink-0 min-w-0">
+        <aside
+          className="settings-sidebar-nav w-full lg:w-64 xl:w-72 lg:shrink-0 min-w-0"
+          style={{ boxSizing: 'border-box' }}
+        >
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 backdrop-blur-md lg:sticky lg:top-4 w-full min-w-0 shadow-sm">
             {/* Search Box */}
             <div className="relative mb-3 w-full min-w-0">
@@ -379,7 +388,10 @@ export const SettingsCenter: React.FC = () => {
         </aside>
 
         {/* Main Settings Content Area */}
-        <main className="flex-1 min-w-0 w-full">
+        <main
+          className="settings-content-main flex-1 min-w-0 w-full"
+          style={{ flex: '1 1 auto', minWidth: 0, width: '100%', boxSizing: 'border-box' }}
+        >
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 lg:p-7 backdrop-blur-md w-full min-w-0 shadow-sm min-h-[550px]">
             {/* Active Tab Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-800/80 mb-6 w-full min-w-0">
@@ -527,7 +539,10 @@ export const SettingsCenter: React.FC = () => {
                 )}
 
                 {/* Form Fields 2-Column Responsive Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 w-full min-w-0">
+                <div
+                  className="settings-form-grid grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 w-full min-w-0"
+                  style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                >
                   {Object.entries(groupSettings).map(([key, field]: [string, SettingField]) => {
                     const value = formData[key] !== undefined ? formData[key] : field.value;
                     const isBool = field.type === 'boolean';
@@ -539,7 +554,8 @@ export const SettingsCenter: React.FC = () => {
                       return (
                         <div
                           key={key}
-                          className="w-full min-w-0 flex items-center justify-between p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition"
+                          className="settings-field-card w-full min-w-0 flex items-center justify-between p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition"
+                          style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                         >
                           <div className="pr-4 min-w-0 flex-1">
                             <label
@@ -573,7 +589,8 @@ export const SettingsCenter: React.FC = () => {
                     return (
                       <div
                         key={key}
-                        className="w-full min-w-0 p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition flex flex-col justify-between"
+                        className="settings-field-card w-full min-w-0 p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition flex flex-col justify-between"
+                        style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                       >
                         <div className="w-full min-w-0 mb-3">
                           <label className="text-xs font-semibold text-slate-200 block break-words mb-1">
@@ -592,7 +609,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || '80mm'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="58mm">58mm (Small Thermal)</option>
                               <option value="80mm">80mm (Standard POS)</option>
@@ -603,7 +621,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'moving_average'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="moving_average">Moving Average (WAC)</option>
                               <option value="fifo">FIFO (First In First Out)</option>
@@ -613,7 +632,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'exclusive'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="exclusive">Exclusive (Tax added on checkout)</option>
                               <option value="inclusive">Inclusive (Prices include VAT)</option>
@@ -623,7 +643,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'nearest'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="nearest">Nearest Integer</option>
                               <option value="round_up">Round Up (Ceil)</option>
@@ -635,7 +656,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'en'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="en">English (English)</option>
                               <option value="bn">বাংলা (Bengali)</option>
@@ -645,7 +667,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'lakh_crore'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="lakh_crore">Lakh / Crore (1,00,000 / 1,00,00,000)</option>
                               <option value="international">International (100,000 / 1,000,000)</option>
@@ -655,7 +678,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'saturday'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="saturday">Saturday (শনিবার - Bangladesh Default)</option>
                               <option value="sunday">Sunday (রবিবার)</option>
@@ -666,7 +690,8 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'monthly'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="monthly">Monthly</option>
                               <option value="bi-weekly">Bi-Weekly</option>
@@ -677,20 +702,22 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'monthly'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             >
                               <option value="monthly">Monthly</option>
                               <option value="quarterly">Quarterly</option>
                               <option value="annual">Annual</option>
                             </select>
                           ) : isSensitive ? (
-                            <div className="relative w-full min-w-0">
+                            <div className="relative w-full min-w-0" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
                               <input
                                 type={showPasswordMap[key] ? 'text' : 'password'}
                                 value={value !== null && value !== undefined ? value : ''}
                                 disabled={!canEditCurrentTab}
                                 onChange={(e) => handleInputChange(key, e.target.value)}
-                                className="w-full min-w-0 pl-3.5 pr-10 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                                className="settings-field-input w-full min-w-0 pl-3.5 pr-10 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                               />
                               <button
                                 type="button"
@@ -718,7 +745,8 @@ export const SettingsCenter: React.FC = () => {
                                   handleInputChange(key, raw);
                                 }
                               }}
-                              className="w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
                             />
                           )}
                         </div>

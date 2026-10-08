@@ -107,3 +107,76 @@
   }
 }
 
+/* ERP Configuration Center - Settings Module Responsive Layout Engine */
+.settings-center-root {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.settings-center-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 1.5rem !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 1024px) {
+  .settings-center-layout {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+  }
+}
+
+.settings-sidebar-nav {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 1024px) {
+  .settings-sidebar-nav {
+    flex: 0 0 264px !important;
+    width: 264px !important;
+    min-width: 264px !important;
+    max-width: 288px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+.settings-content-main {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.settings-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1.25rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 768px) {
+  .settings-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+.settings-field-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.settings-field-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
