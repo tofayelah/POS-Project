@@ -301,9 +301,17 @@ class FinancialReportingAnalyticsService
             ->sum(DB::raw('grand_total - paid_amount'));
 
         // 4. AP Balance
-        $apBalance = (float) Purchase::where('company_id', $companyId)
-            ->where('status', '!=', 'cancelled')
-            ->sum(DB::raw('grand_total - COALESCE(paid_amount, 0)'));
+        $purchaseQuery = Purchase::where('company_id', $companyId)->where('status', '!=', 'cancelled');
+        $totalPurchases = (float) (clone $purchaseQuery)->sum('grand_total');
+        $purchaseIds = (clone $purchaseQuery)->pluck('id');
+        $paidAllocations = (float) DB::table('payment_allocations')
+            ->whereIn('allocatable_id', $purchaseIds)
+            ->where(function ($q) {
+                $q->where('allocatable_type', 'Purchase')
+                  ->orWhere('allocatable_type', 'App\\Models\\Purchase')
+                  ->orWhere('allocatable_type', 'like', '%Purchase%');
+            })->sum('amount');
+        $apBalance = max(0, round($totalPurchases - $paidAllocations, 4));
 
         // 5. Active Budget Utilization
         $activeBudget = Budget::where('company_id', $companyId)->where('status', 'ACTIVE')->first();

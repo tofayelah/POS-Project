@@ -116,6 +116,19 @@ import { AdvancedArManagement } from './pages/finance/AdvancedArManagement';
 import { AdvancedApManagement } from './pages/finance/AdvancedApManagement';
 import { FixedAssetManagement } from './pages/finance/FixedAssetManagement';
 import { FinancialReportsAndRatios } from './pages/finance/FinancialReportsAndRatios';
+import { ExecutiveDashboard } from './pages/bi/ExecutiveDashboard';
+import { SalesBI } from './pages/bi/SalesBI';
+import { ProfitabilityBI } from './pages/bi/ProfitabilityBI';
+import { InventoryBI } from './pages/bi/InventoryBI';
+import { CustomerBI } from './pages/bi/CustomerBI';
+import { SupplierBI } from './pages/bi/SupplierBI';
+import { FinanceBI } from './pages/bi/FinanceBI';
+import { POSBI } from './pages/bi/POSBI';
+import { EcommerceBI } from './pages/bi/EcommerceBI';
+import { HRBI } from './pages/bi/HRBI';
+import { BIAlerts } from './pages/bi/BIAlerts';
+import { ReportBuilder } from './pages/bi/ReportBuilder';
+import { SavedReports } from './pages/bi/SavedReports';
 import { LanguageProvider } from './i18n';
 
 const queryClient = new QueryClient();
@@ -911,6 +924,99 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <FinancialReportsAndRatios />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Advanced BI & Management Intelligence Routes */}
+            <Route path="/bi/executive" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ExecutiveDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/sales" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SalesBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/profitability" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ProfitabilityBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/inventory" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <InventoryBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/customer" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CustomerBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/supplier" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/finance" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <FinanceBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/pos" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <POSBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/ecommerce" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <EcommerceBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/hr" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <HRBI />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/alerts" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BIAlerts />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/report-builder" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ReportBuilder />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/bi/saved-reports" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SavedReports />
                 </AdminLayout>
               </ProtectedRoute>
             } />

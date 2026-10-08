@@ -811,3 +811,48 @@ Route::prefix('v1')->group(function () {
     });
 });
 
+// ================================================================
+// PHASE 13: ADVANCED BI & MANAGEMENT REPORTING
+// ================================================================
+Route::middleware('auth:sanctum')->prefix('v1/bi')->group(function () {
+    // Executive Dashboard & Preferences
+    Route::get('dashboard/executive', [\App\Http\Controllers\Api\V1\Bi\BiDashboardController::class, 'executive'])->middleware('permission:bi.view,bi.dashboard');
+    Route::get('dashboard/sales', [\App\Http\Controllers\Api\V1\Bi\BiDashboardController::class, 'sales'])->middleware('permission:bi.view,bi.dashboard');
+    Route::get('dashboard/preferences/{key}', [\App\Http\Controllers\Api\V1\Bi\BiDashboardController::class, 'getPreferences']);
+    Route::post('dashboard/preferences/{key}', [\App\Http\Controllers\Api\V1\Bi\BiDashboardController::class, 'savePreferences']);
+
+    // Specialized Domain BI
+    Route::get('sales', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'sales'])->middleware('permission:bi.view,bi.sales');
+    Route::get('profitability', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'profitability'])->middleware('permission:bi.view,bi.profitability');
+    Route::get('inventory', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'inventory'])->middleware('permission:bi.view,bi.inventory');
+    Route::get('procurement', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'procurement'])->middleware('permission:bi.view,bi.procurement');
+    Route::get('customer', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'customer'])->middleware('permission:bi.view,bi.customer');
+    Route::get('supplier', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'supplier'])->middleware('permission:bi.view,bi.supplier');
+    Route::get('pos', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'pos'])->middleware('permission:bi.view,bi.pos');
+    Route::get('ecommerce', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'ecommerce'])->middleware('permission:bi.view,bi.ecommerce');
+    Route::get('hr', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'hr'])->middleware('permission:bi.view,bi.hr');
+    Route::get('finance', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'finance'])->middleware('permission:bi.view,bi.finance');
+    Route::get('vat', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'vat'])->middleware('permission:bi.view,bi.vat');
+    Route::get('branch', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'branch'])->middleware('permission:bi.view,bi.branch');
+    Route::get('product', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'product'])->middleware('permission:bi.view,bi.product');
+    Route::get('channel', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'channel'])->middleware('permission:bi.view,bi.sales');
+    Route::get('salesperson', [\App\Http\Controllers\Api\V1\Bi\BiDomainController::class, 'salesperson'])->middleware('permission:bi.view,bi.sales');
+
+    // Management Alerts
+    Route::get('alerts', [\App\Http\Controllers\Api\V1\Bi\BiAlertController::class, 'index'])->middleware('permission:bi.view,bi.alerts');
+    Route::post('alerts/evaluate', [\App\Http\Controllers\Api\V1\Bi\BiAlertController::class, 'evaluate'])->middleware('permission:bi.view,bi.alerts');
+    Route::post('alerts/{id}/acknowledge', [\App\Http\Controllers\Api\V1\Bi\BiAlertController::class, 'acknowledge'])->middleware('permission:bi.view,bi.alerts');
+    Route::post('alerts/{id}/resolve', [\App\Http\Controllers\Api\V1\Bi\BiAlertController::class, 'resolve'])->middleware('permission:bi.view,bi.alerts');
+
+    // Report Builder & Saved Reports
+    Route::get('reports/catalog', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'catalog'])->middleware('permission:bi.view,bi.report_builder');
+    Route::post('reports/execute', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'execute'])->middleware('permission:bi.view,bi.report_builder');
+    Route::post('reports/export', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'export'])->middleware('permission:bi.view,bi.export');
+    Route::get('reports/saved', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'savedReports'])->middleware('permission:bi.view,bi.saved_reports');
+    Route::post('reports/saved', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'storeSavedReport'])->middleware('permission:bi.view,bi.saved_reports');
+    Route::get('reports/saved/{id}/run', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'runSavedReport'])->middleware('permission:bi.view,bi.saved_reports');
+    Route::put('reports/saved/{id}', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'updateSavedReport'])->middleware('permission:bi.view,bi.saved_reports');
+    Route::delete('reports/saved/{id}', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'destroySavedReport'])->middleware('permission:bi.view,bi.saved_reports');
+});
+
+

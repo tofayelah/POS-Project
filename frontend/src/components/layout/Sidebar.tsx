@@ -90,6 +90,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
   const canViewEcommerce = hasRole('Super Admin') || hasRole('Admin') || hasPermission('ecommerce.orders.view') || hasPermission('ecommerce.catalog.view') || hasPermission('ecommerce.settings.view') || canViewPos;
   const canViewFinance = hasRole('Super Admin') || hasRole('Admin') || hasPermission('finance.dashboard.view') || hasPermission('finance.budget.view') || hasPermission('finance.treasury.view') || canViewPos;
+  const canViewBi = hasRole('Super Admin') || hasRole('Admin') || hasPermission('bi.view') || hasPermission('bi.dashboard') || canViewPos;
 
   const isActive = (path: string, exact = false) => {
     if (exact) return location.pathname === path;
@@ -1532,6 +1533,177 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               {t('nav.taxReports', 'Mushak & VAT Reports')}
             </span>
           </Link>
+
+          {/* Advanced BI & Management Reporting */}
+          {canViewBi && (
+            <>
+              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+                isExpanded ? 'block' : 'lg:hidden'
+              }`}>
+                {t('bi.title', 'Management BI & Intelligence')}
+              </div>
+              <Link
+                to="/bi/executive"
+                id="nav-link-bi-executive"
+                onClick={handleLinkClick}
+                title={t('bi.executiveDashboard', 'Executive Dashboard')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/executive')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 shrink-0 text-indigo-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.executiveDashboard', 'Executive Dashboard')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/sales"
+                id="nav-link-bi-sales"
+                onClick={handleLinkClick}
+                title={t('bi.salesBi', 'Sales Intelligence')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/sales')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4 shrink-0 text-blue-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.salesBi', 'Sales Intelligence')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/profitability"
+                id="nav-link-bi-profitability"
+                onClick={handleLinkClick}
+                title={t('bi.profitabilityBi', 'Profitability & Margins')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/profitability')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.profitabilityBi', 'Profitability & Margins')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/inventory"
+                id="nav-link-bi-inventory"
+                onClick={handleLinkClick}
+                title={t('bi.inventoryBi', 'Inventory & Aging Analytics')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/inventory')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Package className="w-4 h-4 shrink-0 text-amber-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.inventoryBi', 'Inventory & Aging')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/customer"
+                id="nav-link-bi-customer"
+                onClick={handleLinkClick}
+                title={t('bi.customerBi', 'Customer Portfolio & RFM')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/customer')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Users className="w-4 h-4 shrink-0 text-indigo-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.customerBi', 'Customer & RFM')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/supplier"
+                id="nav-link-bi-supplier"
+                onClick={handleLinkClick}
+                title={t('bi.supplierBi', 'Supplier Scorecard & AP')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/supplier')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Truck className="w-4 h-4 shrink-0 text-teal-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.supplierBi', 'Supplier Scorecard')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/finance"
+                id="nav-link-bi-finance"
+                onClick={handleLinkClick}
+                title={t('bi.financeBi', 'Financial Ratios & DuPont')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/finance')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Scale className="w-4 h-4 shrink-0 text-purple-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.financeBi', 'Finance Ratios & DuPont')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/alerts"
+                id="nav-link-bi-alerts"
+                onClick={handleLinkClick}
+                title={t('bi.alerts', 'Management Alerts')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/alerts')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0 text-rose-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.alerts', 'Management Alerts')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/report-builder"
+                id="nav-link-bi-builder"
+                onClick={handleLinkClick}
+                title={t('bi.reportBuilder', 'Custom Report Builder')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/report-builder')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <FileText className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.reportBuilder', 'Report Builder')}
+                </span>
+              </Link>
+              <Link
+                to="/bi/saved-reports"
+                id="nav-link-bi-saved"
+                onClick={handleLinkClick}
+                title={t('bi.savedReports', 'Saved Reports')}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                  isActive('/bi/saved-reports')
+                    ? 'bg-slate-800 text-white font-semibold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Layers className="w-4 h-4 shrink-0 text-sky-400" />
+                <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                  {t('bi.savedReports', 'Saved Reports')}
+                </span>
+              </Link>
+            </>
+          )}
 
           {/* Organization */}
           <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
