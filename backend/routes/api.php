@@ -84,8 +84,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['put', 'patch'], 'warehouses/{warehouse}', [\App\Http\Controllers\Api\V1\WarehouseController::class, 'update'])->middleware(['permission:warehouses.update', 'scope:warehouse']);
         Route::delete('warehouses/{warehouse}', [\App\Http\Controllers\Api\V1\WarehouseController::class, 'destroy'])->middleware(['permission:warehouses.delete', 'scope:warehouse']);
         
-        // System Settings
-        Route::get('settings', [\App\Http\Controllers\Api\V1\SettingController::class, 'index'])->middleware('permission:settings.view');
+        // System Settings / Configuration Center
+        Route::prefix('settings')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\SettingController::class, 'index'])->middleware('permission:settings.view');
+            Route::get('/groups', [\App\Http\Controllers\Api\V1\SettingController::class, 'getGroups'])->middleware('permission:settings.view');
+            Route::get('/system-info', [\App\Http\Controllers\Api\V1\SettingController::class, 'systemInfo'])->middleware('permission:settings.view');
+            Route::post('/numbering/preview', [\App\Http\Controllers\Api\V1\SettingController::class, 'previewNumbering'])->middleware('permission:settings.view,settings.numbering');
+            Route::get('/{group}', [\App\Http\Controllers\Api\V1\SettingController::class, 'showGroup'])->middleware('permission:settings.view');
+            Route::match(['put', 'patch'], '/{group}', [\App\Http\Controllers\Api\V1\SettingController::class, 'updateGroup'])->middleware('permission:settings.update');
+            Route::get('/{group}/{key}', [\App\Http\Controllers\Api\V1\SettingController::class, 'showKey'])->middleware('permission:settings.view');
+            Route::match(['put', 'patch'], '/{group}/{key}', [\App\Http\Controllers\Api\V1\SettingController::class, 'updateKey'])->middleware('permission:settings.update');
+        });
         Route::match(['put', 'patch'], 'settings', [\App\Http\Controllers\Api\V1\SettingController::class, 'update'])->middleware('permission:settings.update');
         Route::get('system/status', [\App\Http\Controllers\Api\V1\System\SystemStatusController::class, 'status']);
         

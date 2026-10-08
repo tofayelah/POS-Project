@@ -129,6 +129,7 @@ import { HRBI } from './pages/bi/HRBI';
 import { BIAlerts } from './pages/bi/BIAlerts';
 import { ReportBuilder } from './pages/bi/ReportBuilder';
 import { SavedReports } from './pages/bi/SavedReports';
+import { SettingsCenter } from './pages/settings/SettingsCenter';
 import { LanguageProvider } from './i18n';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
@@ -1019,6 +1020,15 @@ export default function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <SavedReports />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* System Settings / Configuration Center */}
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SettingsCenter />
                 </AdminLayout>
               </ProtectedRoute>
             } />

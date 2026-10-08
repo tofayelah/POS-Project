@@ -87,7 +87,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   // RBAC checks for UI navigation visibility (safe default-deny)
   const canViewPos = hasRole('Super Admin') || hasRole('Admin') || hasPermission('pos.view');
   const canViewAdmin = hasRole('Super Admin') || hasRole('Admin') || hasPermission('view-users') || hasPermission('manage-users') || hasPermission('users.view') || hasPermission('roles.view') || canViewPos;
-  const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings');
+  const canViewSettings = hasRole('Super Admin') || hasRole('Admin') || hasPermission('manage-settings') || hasPermission('settings.view');
   const canViewEcommerce = hasRole('Super Admin') || hasRole('Admin') || hasPermission('ecommerce.orders.view') || hasPermission('ecommerce.catalog.view') || hasPermission('ecommerce.settings.view') || canViewPos;
   const canViewFinance = hasRole('Super Admin') || hasRole('Admin') || hasPermission('finance.dashboard.view') || hasPermission('finance.budget.view') || hasPermission('finance.treasury.view') || canViewPos;
   const canViewBi = hasRole('Super Admin') || hasRole('Admin') || hasPermission('bi.view') || hasPermission('bi.dashboard') || canViewPos;
@@ -1860,13 +1860,17 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 {t('nav.system', 'System')}
               </div>
               <Link
-                to="/dashboard"
+                to="/settings"
                 id="nav-link-settings"
                 onClick={handleLinkClick}
                 title={t('nav.settings', 'Settings')}
-                className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-xl transition-colors cursor-pointer text-xs mb-3"
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs mb-3 ${
+                  isActive('/settings')
+                    ? 'bg-indigo-600 text-white font-medium shadow-md shadow-indigo-600/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
               >
-                <Settings className="w-4 h-4 shrink-0 text-slate-400" />
+                <Settings className={`w-4 h-4 shrink-0 ${isActive('/settings') ? 'text-white' : 'text-slate-400'}`} />
                 <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
                   {t('nav.settings', 'Settings')}
                 </span>
