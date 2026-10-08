@@ -21,7 +21,7 @@ import {
   approvePurchaseOrder, 
   cancelPurchaseOrder 
 } from '../../api/purchaseOrders';
-import { formatCurrency } from '../../utils/currency';
+import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../i18n';
 import { PageHeader, TableContainer, StatusBadge, LoadingState, EmptyState } from '../../components/common';
 
