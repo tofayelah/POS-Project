@@ -952,4 +952,90 @@ class SaleTest extends TestCase
         $this->assertEquals($journalCountBefore, JournalEntry::where('company_id', $this->company->id)->count());
         $this->assertEquals($ledgerCountBefore, CustomerLedger::where('company_id', $this->company->id)->count());
     }
+
+    public function test_exempt_product_applies_zero_tax_and_posts_clean_accounting()
+    {
+        $this->mappingService->setAccountingEnabled($this->company->id, true);
+
+        // Create an exempt product
+        $exemptProduct = Product::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $this->company->id,
+            'category_id' => $this->product->category_id,
+            'unit_id' => $this->product->unit_id,
+            'name' => 'Exempt Medical Supply',
+            'code' => 'EXEMPT-' . Str::random(5),
+            'status' => 'ACTIVE',
+            'tax_type' => 'exempt',
+            'tax_rate' => 0.00,
+        ]);
+
+        $exemptVariant = ProductVariant::create([
+            'uuid' => (string) Str::uuid(),
+            'company_id' => $this->company->id,
+            'product_id' => $exemptProduct->id,
+            'sku' => 'MED-EXEMPT-01',
+            'variant_name' => 'Default',
+            'cost_price' => 100.00,
+            'selling_price' => 250.00,
+            'mrp' => 250.00,
+            'tax_rate' => null,
+            'status' => 'ACTIVE',
+        ]);
+
+        // Stock in 10 units
+        $this->inventoryService->stockIn(
+            $this->company->id,
+            $this->warehouse->id,
+            $exemptVariant->id,
+            10,
+            100.00,
+            'OPENING_STOCK',
+            1,
+            'INIT-MED-001',
+            'Opening stock for exempt item',
+            null,
+            $this->user->id
+        );
+
+        $payload = [
+            'pos_session_id' => $this->session->id,
+            'cashier_id' => $this->user->id,
+            'customer_id' => null,
+            'idempotency_key' => 'SALE-EXEMPT-TEST-001',
+            'items' => [
+                [
+                    'product_variant_id' => $exemptVariant->id,
+                    'quantity' => 2,
+                    'unit_price' => 250.00,
+                    'discount' => 0,
+                    'tax' => 0,
+                ],
+            ],
+            'sale_discount' => 0,
+            'payments' => [
+                [
+                    'method' => 'CASH',
+                    'amount' => 500.00,
+                ],
+            ],
+        ];
+
+        $sale = $this->salesService->completeSale($this->company->id, $payload);
+
+        $this->assertInstanceOf(Sale::class, $sale);
+        $this->assertEquals(0.00, (float) $sale->tax_total);
+        $this->assertEquals(500.00, (float) $sale->grand_total);
+        $this->assertEquals('PAID', $sale->payment_status);
+
+        // Verify Journal entry: AR 500, Revenue 500, NO VAT Payable line
+        $saleJournal = JournalEntry::where('company_id', $this->company->id)
+            ->where('idempotency_key', "SALE-INV-{$sale->id}")
+            ->first();
+        $this->assertNotNull($saleJournal);
+        $vatLine = $saleJournal->lines->firstWhere('account_id', $this->vatPayableAccount->id);
+        $this->assertNull($vatLine);
+        $revenueLine = $saleJournal->lines->firstWhere('account_id', $this->salesRevenueAccount->id);
+        $this->assertEquals(500.00, (float) $revenueLine->credit);
+    }
 }

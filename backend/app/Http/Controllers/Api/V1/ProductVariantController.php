@@ -17,6 +17,11 @@ class ProductVariantController extends Controller
     {
         $query = ProductVariant::with(['product', 'attributeValues.attribute', 'barcodes']);
 
+        $companyId = $request->attributes->get('company_id');
+        if ($companyId) {
+            $query->where('company_id', $companyId);
+        }
+
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->input('product_id'));
         }
@@ -50,6 +55,7 @@ class ProductVariantController extends Controller
 
     public function show(ProductVariant $variant): JsonResponse
     {
+        abort_if($variant->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $variant->load(['product', 'attributeValues.attribute', 'barcodes']);
         return response()->json([
             'success' => true,
@@ -59,6 +65,7 @@ class ProductVariantController extends Controller
 
     public function update(ProductVariantRequest $request, ProductVariant $variant): JsonResponse
     {
+        abort_if($variant->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $oldValues = [
             'sku' => $variant->sku,
             'selling_price' => $variant->selling_price,
@@ -107,6 +114,7 @@ class ProductVariantController extends Controller
 
     public function activate(Request $request, ProductVariant $variant): JsonResponse
     {
+        abort_if($variant->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $variant->update(['status' => 'active', 'updated_by' => $request->user()?->id]);
         return response()->json([
             'success' => true,
@@ -117,6 +125,7 @@ class ProductVariantController extends Controller
 
     public function deactivate(Request $request, ProductVariant $variant): JsonResponse
     {
+        abort_if($variant->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
         $variant->update(['status' => 'inactive', 'updated_by' => $request->user()?->id]);
         return response()->json([
             'success' => true,

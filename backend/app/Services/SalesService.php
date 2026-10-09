@@ -133,7 +133,8 @@ class SalesService
                 }
                 
                 // Server-authoritative tax calculation
-                $taxRate = (float) ($variant->tax_rate ?? $variant->product->tax_rate ?? 0.0);
+                $isExempt = ($variant->product?->tax_type ?? '') === 'exempt';
+                $taxRate = $isExempt ? 0.0 : (float) ($variant->tax_rate ?? $variant->product->tax_rate ?? 0.0);
                 $itemDiscount = (float) ($item['discount'] ?? 0);
                 $taxableAmount = max(0, ($item['quantity'] * $item['unit_price']) - $itemDiscount);
                 $itemTax = round($taxableAmount * ($taxRate / 100), 4);

@@ -61,6 +61,8 @@ class CheckOrganizationalScope
                 $targetId = $brand instanceof \App\Models\Brand ? $brand->company_id : \App\Models\Brand::find($brand)?->company_id;
             } elseif ($unit = $request->route('unit')) {
                 $targetId = $unit instanceof \App\Models\Unit ? $unit->company_id : \App\Models\Unit::find($unit)?->company_id;
+            } elseif ($variant = $request->route('variant')) {
+                $targetId = $variant instanceof \App\Models\ProductVariant ? $variant->company_id : \App\Models\ProductVariant::find($variant)?->company_id;
             }
         }
 
