@@ -15,9 +15,23 @@ class SystemStatusService
     {
         $environment = config('system.environment', config('app.env', 'production'));
         $backendCommitFull = (string) config('system.git_commit', '82b2d50917d50ce9e5de6b5f6c1ce8a32f1aac89');
-        $backendCommitShort = substr($backendCommitFull, 0, 7);
         $branch = (string) config('system.git_branch', 'main');
         $deployedAt = config('system.deployed_at', null);
+
+        if (file_exists(base_path('version.json'))) {
+            $versionData = json_decode(file_get_contents(base_path('version.json')), true) ?: [];
+            if (!empty($versionData['commit'])) {
+                $backendCommitFull = (string) $versionData['commit'];
+            }
+            if (!empty($versionData['branch'])) {
+                $branch = (string) $versionData['branch'];
+            }
+            if (!empty($versionData['deployed_at'])) {
+                $deployedAt = $versionData['deployed_at'];
+            }
+        }
+
+        $backendCommitShort = substr($backendCommitFull, 0, 7);
 
         // Database Connectivity Check (lightweight PDO check)
         $dbStatus = 'healthy';
