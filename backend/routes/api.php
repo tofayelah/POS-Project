@@ -90,6 +90,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/groups', [\App\Http\Controllers\Api\V1\SettingController::class, 'getGroups'])->middleware('permission:settings.view');
             Route::get('/system-info', [\App\Http\Controllers\Api\V1\SettingController::class, 'systemInfo'])->middleware('permission:settings.view');
             Route::post('/numbering/preview', [\App\Http\Controllers\Api\V1\SettingController::class, 'previewNumbering'])->middleware('permission:settings.view,settings.numbering');
+            Route::prefix('maintenance')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'index'])->middleware('permission:maintenance.view,settings.maintenance,settings.view');
+                Route::post('/backup', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'createBackup'])->middleware('permission:maintenance.backup,settings.maintenance');
+                Route::get('/backups', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'listBackups'])->middleware('permission:maintenance.view,settings.maintenance');
+                Route::get('/backup/{id}/download', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'downloadBackup']);
+                Route::get('/backups/{id}/download', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'downloadBackup']);
+                Route::post('/reset/preview', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'previewReset']);
+                Route::post('/reset', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'executeReset']);
+                Route::post('/demo/preview', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'previewDemo']);
+                Route::post('/demo', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'insertDemo'])->middleware('permission:maintenance.demo,settings.maintenance');
+                Route::post('/demo/insert', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'insertDemo'])->middleware('permission:maintenance.demo,settings.maintenance');
+                Route::post('/demo/remove', [\App\Http\Controllers\Api\V1\MaintenanceController::class, 'removeDemo']);
+            });
             Route::get('/{group}', [\App\Http\Controllers\Api\V1\SettingController::class, 'showGroup'])->middleware('permission:settings.view');
             Route::match(['put', 'patch'], '/{group}', [\App\Http\Controllers\Api\V1\SettingController::class, 'updateGroup'])->middleware('permission:settings.update');
             Route::get('/{group}/{key}', [\App\Http\Controllers\Api\V1\SettingController::class, 'showKey'])->middleware('permission:settings.view');
