@@ -60,8 +60,6 @@ services:
       POSTGRES_DB: ${DB_DATABASE:-retailcore}
       POSTGRES_USER: ${DB_USERNAME:-retailcore}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:

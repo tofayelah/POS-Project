@@ -451,29 +451,24 @@ export const SettingsCenter: React.FC = () => {
   const isDangerousTab = currentTabItem.isDangerous;
 
   return (
-    <div
-      className="settings-center-root w-full min-w-0 min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 pb-24"
-      style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
-    >
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 lg:p-6 pb-20">
       {/* Top Banner / Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800 w-full min-w-0">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
               <Settings className="w-5 h-5" />
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  {t('settings.title', 'ERP Configuration Center')}
-                </h1>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                {t('settings.title', 'ERP Configuration Center')}
                 {isDirty && (
-                  <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                  <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     {t('settings.unsavedChanges', 'Unsaved Changes')}
                   </span>
                 )}
-              </div>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+              </h1>
+              <p className="text-xs text-slate-400">
                 {t('settings.subtitle', 'Centralized enterprise settings, operational parameters, and business rules')}
               </p>
             </div>
@@ -481,14 +476,14 @@ export const SettingsCenter: React.FC = () => {
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5">
           {activeTab !== 'system' && (
             <>
               <button
                 type="button"
                 onClick={handleReset}
                 disabled={!isDirty || isSaving}
-                className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-900 border border-slate-700/80 rounded-xl hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 text-xs font-medium text-slate-300 bg-slate-900 border border-slate-700/80 rounded-xl hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {t('settings.reset', 'Reset Changes')}
@@ -498,7 +493,7 @@ export const SettingsCenter: React.FC = () => {
                 type="button"
                 onClick={handleSave}
                 disabled={!isDirty || isSaving || !canEditCurrentTab}
-                className="px-4.5 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer"
               >
                 {isSaving ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -514,43 +509,37 @@ export const SettingsCenter: React.FC = () => {
 
       {/* Notifications */}
       {successMessage && (
-        <div className="mt-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2.5 w-full min-w-0">
+        <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span className="font-medium">{successMessage}</span>
+          <span>{successMessage}</span>
         </div>
       )}
       {errorMessage && (
-        <div className="mt-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2.5 w-full min-w-0">
+        <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span className="font-medium">{errorMessage}</span>
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Main Responsive Layout: Left Nav Sidebar + Right Settings Form */}
-      <div
-        className="settings-center-layout flex flex-col lg:flex-row gap-6 mt-6 w-full min-w-0 items-stretch lg:items-start"
-        style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-      >
-        {/* Settings Navigation Sidebar */}
-        <aside
-          className="settings-sidebar-nav w-full lg:w-64 xl:w-72 lg:shrink-0 min-w-0"
-          style={{ boxSizing: 'border-box' }}
-        >
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 backdrop-blur-md lg:sticky lg:top-4 w-full min-w-0 shadow-sm">
+      {/* Main Grid: Left Tabs + Right Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+        {/* Left Tabs Column */}
+        <div className="lg:col-span-3">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 backdrop-blur-md sticky top-4">
             {/* Search Box */}
-            <div className="relative mb-3 w-full min-w-0">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500 pointer-events-none" />
+            <div className="relative mb-3">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
               <input
                 type="text"
                 placeholder={t('header.searchPlaceholder', 'Filter settings...')}
                 value={tabFilter}
                 onChange={(e) => setTabFilter(e.target.value)}
-                className="w-full pl-8.5 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             {/* Tabs List */}
-            <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto max-h-none lg:max-h-[calc(100vh-230px)] p-0.5 scrollbar-thin">
+            <nav className="space-y-1 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
               {filteredTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.key;
@@ -559,46 +548,43 @@ export const SettingsCenter: React.FC = () => {
                     key={tab.key}
                     type="button"
                     onClick={() => handleTabChange(tab.key)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition text-left shrink-0 lg:shrink cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition text-left cursor-pointer ${
                       isActive
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 font-semibold'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 truncate">
+                    <div className="flex items-center gap-2.5 truncate">
                       <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                      <span className="truncate whitespace-nowrap text-xs">
+                      <span className="truncate">
                         {language === 'bn' ? tab.bnLabel : tab.label}
                       </span>
                     </div>
                     {tab.isDangerous && !isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 ml-2" title="Sensitive Module" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Sensitive Module" />
                     )}
                   </button>
                 );
               })}
             </nav>
           </div>
-        </aside>
+        </div>
 
-        {/* Main Settings Content Area */}
-        <main
-          className="settings-content-main flex-1 min-w-0 w-full"
-          style={{ flex: '1 1 auto', minWidth: 0, width: '100%', boxSizing: 'border-box' }}
-        >
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 lg:p-7 backdrop-blur-md w-full min-w-0 shadow-sm min-h-[550px]">
+        {/* Right Content Area */}
+        <div className="lg:col-span-9">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 backdrop-blur-md min-h-[550px]">
             {/* Active Tab Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-800/80 mb-6 w-full min-w-0">
-              <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800 mb-6">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
                   {language === 'bn' ? currentTabItem.bnLabel : currentTabItem.label}
                   {activeTab !== 'system' && !canEditCurrentTab && (
-                    <span className="text-[11px] font-normal text-rose-400 flex items-center gap-1 bg-rose-500/10 px-2.5 py-0.5 rounded-lg border border-rose-500/20 shrink-0">
+                    <span className="text-[11px] font-normal text-rose-400 flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
                       <Lock className="w-3 h-3" /> Read-Only
                     </span>
                   )}
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-400 mt-0.5">
                   {groupsMeta[activeTab]?.description || 'Configurable options and behavior for this domain.'}
                 </p>
               </div>
@@ -1066,10 +1052,7 @@ export const SettingsCenter: React.FC = () => {
                   {showMaintenanceConfig && (
                     <div className="p-5 border-t border-slate-800 bg-slate-950/60">
                       <form onSubmit={handleSave} className="space-y-6">
-                        <div
-                          className="settings-form-grid grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 w-full min-w-0"
-                          style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                        >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           {Object.entries(groupSettings).map(([key, field]: [string, SettingField]) => {
                             const value = formData[key] !== undefined ? formData[key] : field.value;
                             const isBool = field.type === 'boolean';
@@ -1079,16 +1062,16 @@ export const SettingsCenter: React.FC = () => {
                               return (
                                 <div
                                   key={key}
-                                  className="settings-field-card w-full min-w-0 flex items-center justify-between p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition"
+                                  className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80 hover:border-slate-700 transition"
                                 >
-                                  <div className="pr-4 min-w-0 flex-1">
+                                  <div className="pr-3">
                                     <label
                                       onClick={() => canEditCurrentTab && handleInputChange(key, !value)}
-                                      className="text-xs font-semibold text-slate-200 block cursor-pointer break-words"
+                                      className="text-xs font-medium text-slate-200 block cursor-pointer"
                                     >
                                       {labelText}
                                     </label>
-                                    <p className="text-[11px] text-slate-400 block mt-1 leading-relaxed break-words">
+                                    <p className="text-[11px] text-slate-400 block mt-0.5">
                                       {field.description || `Enable or disable ${labelText}`}
                                     </p>
                                   </div>
@@ -1113,26 +1096,26 @@ export const SettingsCenter: React.FC = () => {
                             return (
                               <div
                                 key={key}
-                                className="settings-field-card w-full min-w-0 p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition flex flex-col justify-between"
+                                className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80 hover:border-slate-700 transition flex flex-col justify-between"
                               >
-                                <div className="w-full min-w-0 mb-3">
-                                  <label className="text-xs font-semibold text-slate-200 block break-words mb-1">
+                                <div>
+                                  <label className="text-xs font-medium text-slate-200 block">
                                     {labelText}
                                   </label>
                                   {field.description && (
-                                    <p className="text-[11px] text-slate-400 leading-relaxed break-words">
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
                                       {field.description}
                                     </p>
                                   )}
                                 </div>
 
-                                <div className="mt-auto w-full min-w-0">
+                                <div className="mt-2.5">
                                   <input
                                     type={field.type === 'integer' ? 'number' : 'text'}
                                     value={value ?? ''}
                                     disabled={!canEditCurrentTab}
                                     onChange={(e) => handleInputChange(key, e.target.value)}
-                                    className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
+                                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                                   />
                                 </div>
                               </div>
@@ -1216,11 +1199,8 @@ export const SettingsCenter: React.FC = () => {
                   </div>
                 )}
 
-                {/* Form Fields 2-Column Responsive Grid */}
-                <div
-                  className="settings-form-grid grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 w-full min-w-0"
-                  style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                >
+                {/* Form Fields Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {Object.entries(groupSettings).map(([key, field]: [string, SettingField]) => {
                     const value = formData[key] !== undefined ? formData[key] : field.value;
                     const isBool = field.type === 'boolean';
@@ -1232,17 +1212,16 @@ export const SettingsCenter: React.FC = () => {
                       return (
                         <div
                           key={key}
-                          className="settings-field-card w-full min-w-0 flex items-center justify-between p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition"
-                          style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                          className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80 hover:border-slate-700 transition"
                         >
-                          <div className="pr-4 min-w-0 flex-1">
+                          <div className="pr-3">
                             <label
                               onClick={() => canEditCurrentTab && handleInputChange(key, !value)}
-                              className="text-xs font-semibold text-slate-200 block cursor-pointer break-words"
+                              className="text-xs font-medium text-slate-200 block cursor-pointer"
                             >
                               {labelText}
                             </label>
-                            <p className="text-[11px] text-slate-400 block mt-1 leading-relaxed break-words">
+                            <p className="text-[11px] text-slate-400 block mt-0.5">
                               {field.description || `Enable or disable ${labelText}`}
                             </p>
                           </div>
@@ -1267,28 +1246,26 @@ export const SettingsCenter: React.FC = () => {
                     return (
                       <div
                         key={key}
-                        className="settings-field-card w-full min-w-0 p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700/80 transition flex flex-col justify-between"
-                        style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                        className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80 hover:border-slate-700 transition flex flex-col justify-between"
                       >
-                        <div className="w-full min-w-0 mb-3">
-                          <label className="text-xs font-semibold text-slate-200 block break-words mb-1">
+                        <div>
+                          <label className="text-xs font-medium text-slate-200 block">
                             {labelText}
                           </label>
                           {field.description && (
-                            <p className="text-[11px] text-slate-400 leading-relaxed break-words">
+                            <p className="text-[11px] text-slate-400 mt-0.5">
                               {field.description}
                             </p>
                           )}
                         </div>
 
-                        <div className="mt-auto w-full min-w-0">
+                        <div className="mt-2.5">
                           {key === 'receipt_size' ? (
                             <select
                               value={value || '80mm'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="58mm">58mm (Small Thermal)</option>
                               <option value="80mm">80mm (Standard POS)</option>
@@ -1299,8 +1276,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'moving_average'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="moving_average">Moving Average (WAC)</option>
                               <option value="fifo">FIFO (First In First Out)</option>
@@ -1310,8 +1286,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'exclusive'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="exclusive">Exclusive (Tax added on checkout)</option>
                               <option value="inclusive">Inclusive (Prices include VAT)</option>
@@ -1321,8 +1296,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'nearest'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="nearest">Nearest Integer</option>
                               <option value="round_up">Round Up (Ceil)</option>
@@ -1334,8 +1308,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'en'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="en">English (English)</option>
                               <option value="bn">বাংলা (Bengali)</option>
@@ -1345,8 +1318,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'lakh_crore'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="lakh_crore">Lakh / Crore (1,00,000 / 1,00,00,000)</option>
                               <option value="international">International (100,000 / 1,000,000)</option>
@@ -1356,8 +1328,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'saturday'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="saturday">Saturday (শনিবার - Bangladesh Default)</option>
                               <option value="sunday">Sunday (রবিবার)</option>
@@ -1368,8 +1339,7 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'monthly'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="monthly">Monthly</option>
                               <option value="bi-weekly">Bi-Weekly</option>
@@ -1380,32 +1350,30 @@ export const SettingsCenter: React.FC = () => {
                               value={value || 'monthly'}
                               disabled={!canEditCurrentTab}
                               onChange={(e) => handleInputChange(key, e.target.value)}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border cursor-pointer"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
                             >
                               <option value="monthly">Monthly</option>
                               <option value="quarterly">Quarterly</option>
                               <option value="annual">Annual</option>
                             </select>
                           ) : isSensitive ? (
-                            <div className="relative w-full min-w-0" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+                            <div className="relative">
                               <input
                                 type={showPasswordMap[key] ? 'text' : 'password'}
                                 value={value !== null && value !== undefined ? value : ''}
                                 disabled={!canEditCurrentTab}
                                 onChange={(e) => handleInputChange(key, e.target.value)}
-                                className="settings-field-input w-full min-w-0 pl-3.5 pr-10 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                                className="w-full pl-3 pr-10 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                               />
                               <button
                                 type="button"
                                 onClick={() => setShowPasswordMap((prev) => ({ ...prev, [key]: !prev[key] }))}
-                                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 focus:outline-none cursor-pointer"
+                                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-200 cursor-pointer"
                               >
                                 {showPasswordMap[key] ? (
-                                  <EyeOff className="w-4 h-4" />
+                                  <EyeOff className="w-3.5 h-3.5" />
                                 ) : (
-                                  <Eye className="w-4 h-4" />
+                                  <Eye className="w-3.5 h-3.5" />
                                 )}
                               </button>
                             </div>
@@ -1423,8 +1391,7 @@ export const SettingsCenter: React.FC = () => {
                                   handleInputChange(key, raw);
                                 }
                               }}
-                              className="settings-field-input w-full min-w-0 px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition box-border"
-                              style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                           )}
                         </div>
@@ -1434,19 +1401,19 @@ export const SettingsCenter: React.FC = () => {
                 </div>
 
                 {/* Bottom Save Action Bar */}
-                <div className="pt-5 mt-6 flex items-center justify-end gap-3 border-t border-slate-800 w-full min-w-0">
+                <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
                   <button
                     type="button"
                     onClick={handleReset}
                     disabled={!isDirty || isSaving}
-                    className="px-4 py-2.5 text-xs font-medium text-slate-300 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                    className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
                   >
                     {t('settings.reset', 'Reset')}
                   </button>
                   <button
                     type="submit"
                     disabled={!isDirty || isSaving || !canEditCurrentTab}
-                    className="px-5 py-2.5 text-xs font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-40 transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
+                    className="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-40 transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
                   >
                     {isSaving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                     {isSaving ? t('settings.saving', 'Saving...') : t('settings.saveChanges', 'Save Configuration')}
@@ -1455,7 +1422,7 @@ export const SettingsCenter: React.FC = () => {
               </form>
             )}
           </div>
-        </main>
+        </div>
       </div>
       {/* ========================================================
           MULTI-STEP DATA RESET MODAL
