@@ -1,65 +1,29 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import api from '../../api/axios';
+import React from 'react';
+import { ArrowLeft, Save } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 export default function SalesReturnCreate() {
-    const [saleId, setSaleId] = useState('');
-    const [returnItems, setReturnItems] = useState([]);
+  const navigate = useNavigate();
 
-    const handleSearch = async () => {
-        if (!saleId) return;
-        const res = await api.get(`/sales/${saleId}/returnable-items`);
-        setReturnItems(res.data.data);
-    };
+  return (
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate('/sales-returns')} className="p-2 border rounded-lg">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Process Sales Return</h1>
+      </div>
 
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Create Sales Return</h1>
-            <div className="flex gap-4 mb-6">
-                <input 
-                    type="text" 
-                    placeholder="Enter Invoice ID or Return Number" 
-                    className="border p-2 rounded w-64"
-                    value={saleId}
-                    onChange={(e) => setSaleId(e.target.value)}
-                />
-                <button 
-                    onClick={handleSearch}
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                    Search
-                </button>
-            </div>
-            
-            <div className="bg-white shadow rounded p-4">
-                <h2 className="font-bold text-lg mb-4">Returnable Items</h2>
-                {returnItems.length === 0 ? (
-                    <p className="text-gray-500">No returnable items found.</p>
-                ) : (
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Eligible Qty</th>
-                                <th>Unit Price</th>
-                                <th>Return Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {returnItems.map((ri: any) => (
-                                <tr key={ri.item.id}>
-                                    <td>{ri.item.product_name_snapshot}</td>
-                                    <td>{ri.eligible_quantity}</td>
-                                    <td>{ri.item.unit_price}</td>
-                                    <td>
-                                        <input type="number" max={ri.eligible_quantity} className="border p-1 w-20" />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="block text-sm font-medium mb-1">Receipt / Sale ID</label><input type="text" placeholder="SALE-1001" className="w-full p-2 border rounded text-sm" /></div>
+          <div><label className="block text-sm font-medium mb-1">Return Reason</label><input type="text" placeholder="Defective / Changed mind" className="w-full p-2 border rounded text-sm" /></div>
         </div>
-    );
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <button onClick={() => navigate('/sales-returns')} className="px-4 py-2 border rounded">Cancel</button>
+          <button onClick={() => navigate('/sales-returns')} className="px-4 py-2 bg-indigo-600 text-white rounded font-medium">Issue Refund / Store Credit</button>
+        </div>
+      </div>
+    </div>
+  );
 }

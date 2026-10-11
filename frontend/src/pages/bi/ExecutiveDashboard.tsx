@@ -324,14 +324,16 @@ export const ExecutiveDashboard: React.FC = () => {
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data?.top_products?.length ? (
-                  data.top_products.map((p) => (
-                    <div key={p.id} className="py-2.5 flex items-center justify-between text-sm">
+                  data.top_products.map((p, idx) => (
+                    <div key={p.id ?? p.sku ?? `top-prod-${idx}`} className="py-2.5 flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.sku} • {formatNumber(p.total_quantity)} units</p>
+                        <p className="text-xs text-gray-400">
+                          {p.sku ? `${p.sku} • ` : ''}{formatNumber(p.total_quantity ?? p.quantity ?? 0)} units
+                        </p>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(p.total_revenue)}
+                        {formatCurrency(p.total_revenue ?? p.revenue ?? 0)}
                       </span>
                     </div>
                   ))
@@ -351,14 +353,14 @@ export const ExecutiveDashboard: React.FC = () => {
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data?.top_branches?.length ? (
-                  data.top_branches.map((b) => (
-                    <div key={b.id} className="py-2.5 flex items-center justify-between text-sm">
+                  data.top_branches.map((b, idx) => (
+                    <div key={b.id ?? b.name ?? `top-branch-${idx}`} className="py-2.5 flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium text-gray-800 dark:text-gray-200">{b.name}</p>
-                        <p className="text-xs text-gray-400">{formatNumber(b.transactions)} txns</p>
+                        <p className="text-xs text-gray-400">{formatNumber(b.transactions ?? 0)} txns</p>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(b.total_revenue)}
+                        {formatCurrency(b.total_revenue ?? 0)}
                       </span>
                     </div>
                   ))
@@ -378,14 +380,14 @@ export const ExecutiveDashboard: React.FC = () => {
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {data?.channel_breakdown?.length ? (
-                  data.channel_breakdown.map((c, i) => (
-                    <div key={i} className="py-2.5 flex items-center justify-between text-sm">
+                  data.channel_breakdown.map((c, idx) => (
+                    <div key={c.channel ?? `channel-${idx}`} className="py-2.5 flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium text-gray-800 dark:text-gray-200">{c.channel}</p>
-                        <p className="text-xs text-gray-400">{formatNumber(c.orders_count)} orders</p>
+                        <p className="text-xs text-gray-400">{formatNumber(c.orders_count ?? c.orders ?? 0)} orders</p>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(c.total_revenue)}
+                        {formatCurrency(c.total_revenue ?? c.sales ?? 0)}
                       </span>
                     </div>
                   ))
