@@ -38,8 +38,8 @@ export function CatalogManagement() {
 
   const handleTogglePublish = async (p: CatalogProduct) => {
     try {
-      setUpdatingId(p.id);
-      await ecommerceApi.updateCatalogPublishing(p.id, {
+      setUpdatingId(Number(p.id));
+      await ecommerceApi.updateCatalogPublishing(Number(p.id), {
         is_published: !p.is_published,
         visibility: p.visibility || 'BOTH',
       });
@@ -53,9 +53,9 @@ export function CatalogManagement() {
 
   const handleToggleBadge = async (p: CatalogProduct, field: 'featured' | 'new_arrival' | 'best_seller') => {
     try {
-      setUpdatingId(p.id);
+      setUpdatingId(Number(p.id));
       const updatedValue = !p[field];
-      await ecommerceApi.updateCatalogPublishing(p.id, {
+      await ecommerceApi.updateCatalogPublishing(Number(p.id), {
         is_published: p.is_published,
         [field]: updatedValue,
       });

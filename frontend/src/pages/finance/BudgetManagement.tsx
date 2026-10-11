@@ -240,7 +240,7 @@ export const BudgetManagement: React.FC = () => {
                       <div className="flex items-center justify-center gap-2">
                         {b.status === 'DRAFT' && (
                           <button
-                            onClick={() => handleBudgetLifecycle(b.id, 'submit')}
+                            onClick={() => handleBudgetLifecycle(Number(b.id), 'submit')}
                             className="px-2 py-1 text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 rounded"
                           >
                             Submit
@@ -248,7 +248,7 @@ export const BudgetManagement: React.FC = () => {
                         )}
                         {b.status === 'SUBMITTED' && (
                           <button
-                            onClick={() => handleBudgetLifecycle(b.id, 'approve')}
+                            onClick={() => handleBudgetLifecycle(Number(b.id), 'approve')}
                             className="px-2 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
                           >
                             Approve
@@ -256,7 +256,7 @@ export const BudgetManagement: React.FC = () => {
                         )}
                         {b.status === 'APPROVED' && (
                           <button
-                            onClick={() => handleBudgetLifecycle(b.id, 'activate')}
+                            onClick={() => handleBudgetLifecycle(Number(b.id), 'activate')}
                             className="px-2 py-1 text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded"
                           >
                             Activate
@@ -264,7 +264,7 @@ export const BudgetManagement: React.FC = () => {
                         )}
                         {b.status === 'ACTIVE' && (
                           <button
-                            onClick={() => handleBudgetLifecycle(b.id, 'revise')}
+                            onClick={() => handleBudgetLifecycle(Number(b.id), 'revise')}
                             className="px-2 py-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 rounded flex items-center"
                           >
                             <History className="w-3 h-3 mr-1" /> Revise

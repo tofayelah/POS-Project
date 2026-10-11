@@ -38,7 +38,7 @@ export const LeaveManagement: React.FC = () => {
   });
 
   // Rejection Modal
-  const [rejectAppId, setRejectAppId] = useState<number | null>(null);
+  const [rejectAppId, setRejectAppId] = useState<number | string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
 
   // Create Leave Type Modal
@@ -80,10 +80,10 @@ export const LeaveManagement: React.FC = () => {
     }
   };
 
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (id: number | string) => {
     setSubmitting(true);
     try {
-      await hrApi.approveLeave(id);
+      await hrApi.approveLeave(Number(id));
       setMsg({ type: 'success', text: 'Leave application approved.' });
       loadData();
     } catch (err: any) {
@@ -98,7 +98,7 @@ export const LeaveManagement: React.FC = () => {
     if (!rejectAppId) return;
     setSubmitting(true);
     try {
-      await hrApi.rejectLeave(rejectAppId, rejectReason);
+      await hrApi.rejectLeave(Number(rejectAppId), rejectReason);
       setMsg({ type: 'success', text: 'Leave application rejected.' });
       setRejectAppId(null);
       setRejectReason('');
@@ -306,7 +306,7 @@ export const LeaveManagement: React.FC = () => {
                       <span className="text-[10px] text-slate-400">{app.employee?.employee_number}</span>
                     </td>
                     <td className="py-3 px-4 text-white font-medium">
-                      {app.leave_type?.name}
+                      {typeof app.leave_type === 'object' ? app.leave_type?.name : app.leave_type}
                     </td>
                     <td className="py-3 px-4 font-mono text-slate-300">
                       {app.from_date} to {app.to_date}
@@ -384,7 +384,7 @@ export const LeaveManagement: React.FC = () => {
                 balances.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-800/20">
                     <td className="py-3 px-4 text-white font-medium">EMP #{b.employee_id}</td>
-                    <td className="py-3 px-4 text-slate-300">{b.leave_type?.name || 'Leave'}</td>
+                    <td className="py-3 px-4 text-slate-300">{typeof b.leave_type === 'object' ? b.leave_type?.name : b.leave_type || 'Leave'}</td>
                     <td className="py-3 px-4 text-slate-400">{b.year}</td>
                     <td className="py-3 px-4 text-slate-300">{b.accrued_days || b.entitled_days || 0}</td>
                     <td className="py-3 px-4 text-rose-400">{b.used_days || b.taken_days || 0}</td>

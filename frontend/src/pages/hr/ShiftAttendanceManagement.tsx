@@ -108,13 +108,13 @@ export const ShiftAttendanceManagement: React.FC = () => {
     setMsg(null);
     try {
       const adj = await hrApi.requestAdjustment({
-        attendance_id: selectedAttendance.id,
+        attendance_id: Number(selectedAttendance.id),
         reason: adjustReason,
         new_check_in: adjustCheckIn || undefined,
         new_check_out: adjustCheckOut || undefined,
       });
       // Auto approve for admin
-      await hrApi.approveAdjustment(adj.id);
+      await hrApi.approveAdjustment(Number(adj.id));
       setMsg({ type: 'success', text: 'Attendance adjusted and approved.' });
       setIsAdjustmentModalOpen(false);
       setSelectedAttendance(null);

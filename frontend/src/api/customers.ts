@@ -25,6 +25,7 @@ export interface Customer {
   payment_terms?: string;
   opening_balance: number;
   current_balance?: number;
+  points_balance?: number;
   notes?: string;
   status: 'ACTIVE' | 'INACTIVE';
   group?: CustomerGroup;
@@ -95,4 +96,3 @@ export const getCustomerBalance = async (
   const res = await api.get(`/customers/${id}/balance`);
   return res.data;
 };
-

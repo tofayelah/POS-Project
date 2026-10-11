@@ -84,7 +84,7 @@ export function VariantBuilder({
   // Cartesian product generator
   const handleGenerateMatrix = () => {
     const activeAttrs = attributes.filter(
-      (a) => selectedAttributeIds.includes(a.id) && (selectedValuesMap[a.id]?.length || 0) > 0
+      (a) => selectedAttributeIds.includes(Number(a.id)) && (selectedValuesMap[Number(a.id)]?.length || 0) > 0
     );
 
     if (activeAttrs.length === 0) {
@@ -93,8 +93,8 @@ export function VariantBuilder({
     }
 
     const valueArrays: AttributeValue[][] = activeAttrs.map((attr) => {
-      const selectedValIds = selectedValuesMap[attr.id] || [];
-      return (attr.values || []).filter((val) => selectedValIds.includes(val.id));
+      const selectedValIds = selectedValuesMap[Number(attr.id)] || [];
+      return (attr.values || []).filter((val) => selectedValIds.includes(Number(val.id)));
     });
 
     const cartesian = (arrays: AttributeValue[][]): AttributeValue[][] => {
@@ -111,7 +111,7 @@ export function VariantBuilder({
       const nameParts = combo.map((v) => v.value);
       const codeParts = combo.map((v) => (v.code || v.value).toUpperCase().replace(/[^A-Z0-9]/g, ''));
       const sku = `${prefix}-${codeParts.join('-')}`;
-      const attrIds = combo.map((v) => v.id);
+      const attrIds = combo.map((v) => Number(v.id));
 
       return {
         sku,
@@ -203,12 +203,12 @@ export function VariantBuilder({
         {/* Attribute Pills */}
         <div className="flex flex-wrap gap-2">
           {attributes.map((attr) => {
-            const isSelected = selectedAttributeIds.includes(attr.id);
+            const isSelected = selectedAttributeIds.includes(Number(attr.id));
             return (
               <button
                 key={attr.id}
                 type="button"
-                onClick={() => handleToggleAttribute(attr.id)}
+                onClick={() => handleToggleAttribute(Number(attr.id))}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-xs'
@@ -225,7 +225,7 @@ export function VariantBuilder({
         {selectedAttributeIds.length > 0 && (
           <div className="space-y-3 pt-2 border-t border-slate-200">
             {selectedAttributeIds.map((attrId) => {
-              const attr = attributes.find((a) => a.id === attrId);
+              const attr = attributes.find((a) => Number(a.id) === attrId);
               if (!attr) return null;
               const selectedValues = selectedValuesMap[attrId] || [];
 
@@ -234,12 +234,12 @@ export function VariantBuilder({
                   <div className="text-xs font-semibold text-slate-700 mb-2">{attr.name} Values:</div>
                   <div className="flex flex-wrap gap-2">
                     {(attr.values || []).map((val) => {
-                      const isValSelected = selectedValues.includes(val.id);
+                      const isValSelected = selectedValues.includes(Number(val.id));
                       return (
                         <button
                           key={val.id}
                           type="button"
-                          onClick={() => handleToggleValue(attr.id, val.id)}
+                          onClick={() => handleToggleValue(Number(attr.id), Number(val.id))}
                           className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                             isValSelected
                               ? 'bg-blue-100 text-blue-800 border border-blue-300'

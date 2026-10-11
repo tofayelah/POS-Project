@@ -34,7 +34,7 @@ export const PayrollManagement: React.FC = () => {
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
 
   // Settle modal
-  const [settleRunId, setSettleRunId] = useState<number | null>(null);
+  const [settleRunId, setSettleRunId] = useState<number | string | null>(null);
   const [settleMethod, setSettleMethod] = useState<string>('BANK_TRANSFER');
 
   // Create Period Modal
@@ -105,11 +105,11 @@ export const PayrollManagement: React.FC = () => {
     }
   };
 
-  const handleCalculate = async (runId: number) => {
+  const handleCalculate = async (runId: number | string) => {
     setActionLoading(true);
     try {
-      const run = await hrApi.calculatePayrollRun(runId);
-      setMsg({ type: 'success', text: `Calculated successfully. Gross: ৳${run.total_gross.toLocaleString()}, Net: ৳${run.total_net.toLocaleString()}` });
+      const run = await hrApi.calculatePayrollRun(Number(runId));
+      setMsg({ type: 'success', text: `Calculated successfully. Gross: ৳${(run.total_gross || 0).toLocaleString()}, Net: ৳${(run.total_net || 0).toLocaleString()}` });
       loadData();
       if (selectedRun?.id === runId) setSelectedRun(run);
     } catch (err: any) {
@@ -119,10 +119,10 @@ export const PayrollManagement: React.FC = () => {
     }
   };
 
-  const handleApprove = async (runId: number) => {
+  const handleApprove = async (runId: number | string) => {
     setActionLoading(true);
     try {
-      const run = await hrApi.approvePayrollRun(runId);
+      const run = await hrApi.approvePayrollRun(Number(runId));
       setMsg({ type: 'success', text: 'Payroll run APPROVED for posting.' });
       loadData();
       if (selectedRun?.id === runId) setSelectedRun(run);
@@ -133,10 +133,10 @@ export const PayrollManagement: React.FC = () => {
     }
   };
 
-  const handlePost = async (runId: number) => {
+  const handlePost = async (runId: number | string) => {
     setActionLoading(true);
     try {
-      const run = await hrApi.postPayrollRun(runId);
+      const run = await hrApi.postPayrollRun(Number(runId));
       setMsg({ type: 'success', text: `POSTED to General Ledger! Authoritative journal entry #${run.journal_entry_id} created.` });
       loadData();
       if (selectedRun?.id === runId) setSelectedRun(run);
@@ -152,7 +152,7 @@ export const PayrollManagement: React.FC = () => {
     if (!settleRunId) return;
     setActionLoading(true);
     try {
-      await hrApi.settlePayrollRun(settleRunId, { payment_method: settleMethod });
+      await hrApi.settlePayrollRun(Number(settleRunId), { payment_method: settleMethod });
       setMsg({ type: 'success', text: 'Payroll payout settled and recorded.' });
       setSettleRunId(null);
       loadData();
@@ -163,9 +163,9 @@ export const PayrollManagement: React.FC = () => {
     }
   };
 
-  const openRunDetails = async (runId: number) => {
+  const openRunDetails = async (runId: number | string) => {
     try {
-      const run = await hrApi.getPayrollRun(runId);
+      const run = await hrApi.getPayrollRun(Number(runId));
       setSelectedRun(run);
     } catch (err) {
       console.error('Failed to load run details', err);

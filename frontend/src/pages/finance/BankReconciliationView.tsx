@@ -36,7 +36,7 @@ export const BankReconciliationView: React.FC = () => {
       const accRes = await financeApi.getBankAccounts();
       setAccounts(accRes.data.data);
 
-      const targetAccId = accId || (accRes.data.data.length > 0 ? accRes.data.data[0].id : 1);
+      const targetAccId = accId || (accRes.data.data.length > 0 ? Number(accRes.data.data[0].id) : 1);
       setSelectedAccountId(targetAccId);
 
       const reconRes = await financeApi.getReconciliations({ bank_account_id: targetAccId });
@@ -44,7 +44,7 @@ export const BankReconciliationView: React.FC = () => {
 
       if (reconRes.data.data.length > 0) {
         // Load detailed reconciliation with matches
-        const detailRes = await financeApi.getReconciliation(reconRes.data.data[0].id);
+        const detailRes = await financeApi.getReconciliation(Number(reconRes.data.data[0].id));
         setActiveReconciliation(detailRes.data.data);
       } else {
         setActiveReconciliation(null);
@@ -75,7 +75,7 @@ export const BankReconciliationView: React.FC = () => {
       });
       setShowNewModal(false);
       setActionSuccess('Reconciliation session initiated');
-      const detailRes = await financeApi.getReconciliation(res.data.data.id);
+      const detailRes = await financeApi.getReconciliation(Number(res.data.data.id));
       setActiveReconciliation(detailRes.data.data);
       fetchAccountsAndReconciliations(selectedAccountId);
     } catch (err: any) {
@@ -87,9 +87,9 @@ export const BankReconciliationView: React.FC = () => {
     if (!activeReconciliation) return;
     try {
       setLoading(true);
-      const res = await financeApi.autoMatchReconciliation(activeReconciliation.id);
+      const res = await financeApi.autoMatchReconciliation(Number(activeReconciliation.id));
       setActionSuccess(`Auto-match complete: ${res.data.data?.matches_created || 0} matches identified.`);
-      const detailRes = await financeApi.getReconciliation(activeReconciliation.id);
+      const detailRes = await financeApi.getReconciliation(Number(activeReconciliation.id));
       setActiveReconciliation(detailRes.data.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Auto-match engine failed');
@@ -101,9 +101,9 @@ export const BankReconciliationView: React.FC = () => {
   const handleUnmatch = async (matchId: number) => {
     if (!activeReconciliation) return;
     try {
-      await financeApi.unmatchReconciliation(activeReconciliation.id, matchId);
+      await financeApi.unmatchReconciliation(Number(activeReconciliation.id), matchId);
       setActionSuccess('Match unlinked successfully');
-      const detailRes = await financeApi.getReconciliation(activeReconciliation.id);
+      const detailRes = await financeApi.getReconciliation(Number(activeReconciliation.id));
       setActiveReconciliation(detailRes.data.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to unmatch line');
@@ -114,9 +114,9 @@ export const BankReconciliationView: React.FC = () => {
     if (!activeReconciliation) return;
     try {
       setLoading(true);
-      await financeApi.finalizeReconciliation(activeReconciliation.id);
+      await financeApi.finalizeReconciliation(Number(activeReconciliation.id));
       setActionSuccess('Reconciliation finalized and locked successfully');
-      const detailRes = await financeApi.getReconciliation(activeReconciliation.id);
+      const detailRes = await financeApi.getReconciliation(Number(activeReconciliation.id));
       setActiveReconciliation(detailRes.data.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Cannot finalize reconciliation');

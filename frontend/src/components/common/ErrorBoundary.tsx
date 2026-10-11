@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return this.props.fallback;
       }
 
-      const isDev = Boolean(import.meta.env.DEV);
+      const isDev = Boolean((import.meta as any).env?.DEV);
 
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">

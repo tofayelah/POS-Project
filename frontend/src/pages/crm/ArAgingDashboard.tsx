@@ -274,7 +274,7 @@ export const ArAgingDashboard: React.FC = () => {
                           Customer 360
                         </Link>
                         <button
-                          onClick={() => openStatement(item.customer_id, item.name)}
+                          onClick={() => openStatement(Number(item.customer_id!), item.name || '')}
                           className="px-2.5 py-1 bg-amber-600/80 hover:bg-amber-500 text-white rounded text-[11px] font-medium flex items-center gap-1 transition-colors"
                         >
                           <FileText className="w-3 h-3" /> Statement

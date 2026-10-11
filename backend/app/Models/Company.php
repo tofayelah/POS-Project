@@ -15,6 +15,19 @@ class Company extends Model
 
     protected $guarded = ['id'];
 
+    protected $appends = ['logo_url'];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (empty($this->logo_path)) {
+            return null;
+        }
+        if (Str::startsWith($this->logo_path, ['http://', 'https://', 'data:image/'])) {
+            return $this->logo_path;
+        }
+        return asset($this->logo_path);
+    }
+
     protected static function boot()
     {
         parent::boot();

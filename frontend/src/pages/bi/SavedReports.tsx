@@ -39,9 +39,9 @@ export const SavedReports: React.FC = () => {
   };
 
   const handleRun = async (report: BiSavedReport) => {
-    setExecutingId(report.id);
+    setExecutingId(Number(report.id));
     try {
-      const resp = await biApi.runSavedReport(report.id);
+      const resp = await biApi.runSavedReport(Number(report.id));
       setActiveResults({ report, data: resp.data.data });
     } catch (err) {
       console.error('Failed to run saved report', err);
@@ -145,7 +145,7 @@ export const SavedReports: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => handleDelete(report.id)}
+                  onClick={() => handleDelete(Number(report.id))}
                   className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition"
                 >
                   <Trash2 className="w-4 h-4" />

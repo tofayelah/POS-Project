@@ -112,13 +112,13 @@ export function ReviewModeration() {
                   <td className="py-3.5 px-4 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <button
-                        onClick={() => handleUpdateStatus(r.id, 'APPROVED')}
+                        onClick={() => handleUpdateStatus(Number(r.id), 'APPROVED')}
                         className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-semibold"
                       >
                         Approve
                       </button>
                       <button
-                        onClick={() => handleUpdateStatus(r.id, 'REJECTED')}
+                        onClick={() => handleUpdateStatus(Number(r.id), 'REJECTED')}
                         className="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded text-xs font-semibold"
                       >
                         Reject

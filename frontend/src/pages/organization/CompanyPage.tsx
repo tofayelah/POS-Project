@@ -33,7 +33,10 @@ import {
   ArrowRight,
   UserCheck,
   Lock,
-  Search
+  Search,
+  Image as ImageIcon,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { Company, BusinessType, CreateCompanyPayload, TenantFeatures } from '../../types/organization';
@@ -60,7 +63,7 @@ export function CompanyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | string | null>(null);
 
   // Filter & Search State
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
@@ -77,6 +80,12 @@ export function CompanyPage() {
   const [editingTargetCompany, setEditingTargetCompany] = useState<Company | null>(null);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Logo Upload State
+  const [newTenantLogoFileName, setNewTenantLogoFileName] = useState<string | null>(null);
+  const [logoValidationError, setLogoValidationError] = useState<string | null>(null);
+  const [editLogoFileName, setEditLogoFileName] = useState<string | null>(null);
+  const [logoEditValidationError, setLogoEditValidationError] = useState<string | null>(null);
 
   // New Tenant Form State
   const [newTenant, setNewTenant] = useState<CreateCompanyPayload>({
@@ -95,6 +104,7 @@ export function CompanyPage() {
     timezone: 'Asia/Dhaka',
     tax_number: '',
     address: '',
+    logo_path: '',
     status: 'active',
     features_enabled: {
       imei_serial_tracking: true,
@@ -125,6 +135,7 @@ export function CompanyPage() {
     currency_code: 'BDT',
     timezone: 'Asia/Dhaka',
     tax_number: '',
+    logo_path: '',
     status: 'active' as 'active' | 'inactive',
     features_enabled: {} as TenantFeatures,
   });
@@ -168,7 +179,7 @@ export function CompanyPage() {
     await switchCompany(comp);
     setActiveTenantCompany(comp);
     setActiveCompany(comp);
-    setSuccessMessage(`Switched active workspace to "${comp.name}" (${comp.subdomain || 'apex'}.sonaribd.com). Data isolation guard updated.`);
+    setSuccessMessage(`Switched active workspace to "${comp?.name || 'Company'}" (${comp?.subdomain || 'apex'}.sonaribd.com). Data isolation guard updated.`);
     setTimeout(() => setSuccessMessage(null), 4000);
   };
 
@@ -178,6 +189,51 @@ export function CompanyPage() {
     navigator.clipboard.writeText(url);
     setCopiedId(comp.id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Logo File Upload Handler
+  const handleLogoChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isEdit: boolean
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      const msg = 'Invalid file type. Please select a PNG, JPG/JPEG, or WebP image.';
+      if (isEdit) setLogoEditValidationError(msg);
+      else setLogoValidationError(msg);
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      const msg = 'File size exceeds 2 MB limit. Please select a smaller logo image.';
+      if (isEdit) setLogoEditValidationError(msg);
+      else setLogoValidationError(msg);
+      return;
+    }
+
+    if (isEdit) setLogoEditValidationError(null);
+    else setLogoValidationError(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      if (isEdit) {
+        setEditFormData((prev) => ({ ...prev, logo_path: result }));
+        setEditLogoFileName(file.name);
+      } else {
+        setNewTenant((prev) => ({ ...prev, logo_path: result }));
+        setNewTenantLogoFileName(file.name);
+      }
+    };
+    reader.onerror = () => {
+      const msg = 'Failed to read image file.';
+      if (isEdit) setLogoEditValidationError(msg);
+      else setLogoValidationError(msg);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Open Register Modal with Auto Defaults
@@ -201,9 +257,12 @@ export function CompanyPage() {
       timezone: 'Asia/Dhaka',
       tax_number: '',
       address: '',
+      logo_path: '',
       status: 'active',
       features_enabled: { ...config.defaultFeatures },
     });
+    setNewTenantLogoFileName(null);
+    setLogoValidationError(null);
     setModalError(null);
     setIsRegisterModalOpen(true);
   };
@@ -289,9 +348,12 @@ export function CompanyPage() {
       currency_code: target.currency_code || 'BDT',
       timezone: target.timezone || 'Asia/Dhaka',
       tax_number: target.tax_number || target.vat_registration || '',
-      status: target.status || 'active',
+      logo_path: target.logo_path || target.logo_url || target.logo || '',
+      status: target.status === 'inactive' ? 'inactive' : 'active',
       features_enabled: target.features_enabled || {},
     });
+    setEditLogoFileName(target.logo_path ? 'Current Saved Logo' : null);
+    setLogoEditValidationError(null);
     setModalError(null);
     setIsEditModalOpen(true);
   };
@@ -328,6 +390,7 @@ export function CompanyPage() {
         country: editFormData.country.trim(),
         currency_code: editFormData.currency_code.trim(),
         timezone: editFormData.timezone.trim(),
+        logo_path: editFormData.logo_path || null,
         status: editFormData.status,
         features_enabled: editFormData.features_enabled,
       };
@@ -370,13 +433,14 @@ export function CompanyPage() {
   // Filtered Companies
   const filteredCompanies = useMemo(() => {
     return companies.filter((c) => {
+      if (!c) return false;
       const matchType = selectedTypeFilter === 'ALL' || c.business_type === selectedTypeFilter;
-      const q = searchQuery.toLowerCase().trim();
+      const q = (searchQuery || '').toLowerCase().trim();
       const matchQuery = !q || 
-        c.name.toLowerCase().includes(q) ||
-        (c.subdomain && c.subdomain.toLowerCase().includes(q)) ||
-        (c.owner_name && c.owner_name.toLowerCase().includes(q)) ||
-        c.code.toLowerCase().includes(q);
+        Boolean(c.name && c.name.toLowerCase().includes(q)) ||
+        Boolean(c.subdomain && c.subdomain.toLowerCase().includes(q)) ||
+        Boolean(c.owner_name && c.owner_name.toLowerCase().includes(q)) ||
+        Boolean(c.code && c.code.toLowerCase().includes(q));
       return matchType && matchQuery;
     });
   }, [companies, selectedTypeFilter, searchQuery]);
@@ -473,10 +537,10 @@ export function CompanyPage() {
               </span>
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm uppercase shadow-xs">
-                  {activeCompany.name.charAt(0)}
+                  {(String(activeCompany?.name || 'C')).charAt(0)}
                 </div>
                 <div>
-                  <div className="font-bold text-sm text-white">{activeCompany.name}</div>
+                  <div className="font-bold text-sm text-white">{activeCompany?.name || 'Company'}</div>
                   <div className="text-[11px] text-indigo-300 font-mono">
                     {activeCompany.subdomain || 'apex'}.sonaribd.com
                   </div>
@@ -613,21 +677,37 @@ export function CompanyPage() {
               }`}
             >
               <div className="p-5 space-y-4">
-                {/* Card Top: Avatar, Title, Active Badge */}
+                {/* Card Top: Avatar / Saved Logo, Title, Active Badge */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm uppercase shadow-xs shrink-0 ${
-                      isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}>
-                      {comp.name.charAt(0)}
+                    {comp?.logo_path ? (
+                      <img
+                        src={comp.logo_path}
+                        alt={comp.name}
+                        className="w-10 h-10 rounded-xl object-contain bg-white border border-slate-200 shadow-xs p-1 shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm uppercase shadow-xs shrink-0 ${
+                        isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                      style={{ display: comp?.logo_path ? 'none' : 'flex' }}
+                    >
+                      {(String(comp?.name || 'C')).charAt(0)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-1">
-                          {comp.name}
+                          {comp?.name || 'Company'}
                         </h3>
                       </div>
-                      <span className="text-[11px] font-mono text-slate-400">Code: {comp.code}</span>
+                      <span className="text-[11px] font-mono text-slate-400">Code: {comp?.code || '—'}</span>
                     </div>
                   </div>
 
@@ -814,7 +894,16 @@ export function CompanyPage() {
               </div>
               <div>
                 <span className="text-slate-400 block font-medium">Company Name</span>
-                <span className="text-slate-800 font-semibold text-sm">{activeCompany.name}</span>
+                <div className="flex items-center gap-2.5 mt-1">
+                  {activeCompany.logo_path ? (
+                    <img
+                      src={activeCompany.logo_path}
+                      alt={activeCompany.name}
+                      className="w-9 h-9 rounded-lg object-contain bg-white border border-slate-200 p-0.5 shadow-2xs shrink-0"
+                    />
+                  ) : null}
+                  <span className="text-slate-800 font-semibold text-sm">{activeCompany.name}</span>
+                </div>
               </div>
               <div>
                 <span className="text-slate-400 block font-medium">Subdomain Access URL</span>
@@ -1192,6 +1281,83 @@ export function CompanyPage() {
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
+
+                  {/* Company Logo Upload Field (Optional) */}
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-100 space-y-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Company Logo (Optional)</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">PNG, JPG, WebP (Max 2MB)</span>
+                    </label>
+
+                    {logoValidationError && (
+                      <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{logoValidationError}</span>
+                      </div>
+                    )}
+
+                    {newTenant.logo_path ? (
+                      <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="flex items-center gap-3 truncate">
+                          <img
+                            src={newTenant.logo_path}
+                            alt="Logo preview"
+                            className="w-12 h-12 rounded-lg object-contain bg-white border border-slate-200 shadow-2xs p-1 shrink-0"
+                          />
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">
+                              {newTenantLogoFileName || 'Selected Logo'}
+                            </p>
+                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Logo preview ready
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <label className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg cursor-pointer transition-colors">
+                            Replace
+                            <input
+                              type="file"
+                              id="input-new-tenant-logo"
+                              accept="image/png, image/jpeg, image/jpg, image/webp"
+                              className="hidden"
+                              onChange={(e) => handleLogoChange(e, false)}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewTenant((prev) => ({ ...prev, logo_path: undefined }));
+                              setNewTenantLogoFileName(null);
+                              setLogoValidationError(null);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Remove selected logo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50/60 hover:bg-indigo-50/20 rounded-xl cursor-pointer transition-all group">
+                        <Upload className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 mb-1 transition-colors" />
+                        <span className="text-xs font-semibold text-slate-700 group-hover:text-indigo-700">
+                          Click to upload company logo
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, or WebP up to 2MB</span>
+                        <input
+                          type="file"
+                          id="input-new-tenant-logo"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={(e) => handleLogoChange(e, false)}
+                        />
+                      </label>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1451,6 +1617,83 @@ export function CompanyPage() {
                   onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none"
                 />
+              </div>
+
+              {/* Company Logo Upload Control (Edit Modal) */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="block font-semibold text-slate-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Company Logo (Optional)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">PNG, JPG, WebP (Max 2MB)</span>
+                </label>
+
+                {logoEditValidationError && (
+                  <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>{logoEditValidationError}</span>
+                  </div>
+                )}
+
+                {editFormData.logo_path ? (
+                  <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div className="flex items-center gap-3 truncate">
+                      <img
+                        src={editFormData.logo_path}
+                        alt="Logo preview"
+                        className="w-12 h-12 rounded-lg object-contain bg-white border border-slate-200 shadow-2xs p-1 shrink-0"
+                      />
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-slate-800 truncate">
+                          {editLogoFileName || 'Current Saved Company Logo'}
+                        </p>
+                        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Logo Saved
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg cursor-pointer transition-colors">
+                        Replace
+                        <input
+                          type="file"
+                          id="input-edit-tenant-logo"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={(e) => handleLogoChange(e, true)}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditFormData((prev) => ({ ...prev, logo_path: '' }));
+                          setEditLogoFileName(null);
+                          setLogoEditValidationError(null);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="Remove logo"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50/60 hover:bg-indigo-50/20 rounded-xl cursor-pointer transition-all group">
+                    <Upload className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 mb-1 transition-colors" />
+                    <span className="text-xs font-semibold text-slate-700 group-hover:text-indigo-700">
+                      Click to upload company logo
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, or WebP up to 2MB</span>
+                    <input
+                      type="file"
+                      id="input-edit-tenant-logo"
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      className="hidden"
+                      onChange={(e) => handleLogoChange(e, true)}
+                    />
+                  </label>
+                )}
               </div>
 
               {/* Feature Toggles */}

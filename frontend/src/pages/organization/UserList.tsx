@@ -133,7 +133,7 @@ export function UserList() {
     setFormEmail(user.email);
     setFormPassword('');
     setFormRole(user.roles?.[0]?.name || user.role || 'company_admin');
-    setFormStatus(user.status || 'active');
+    setFormStatus(user.status === 'inactive' ? 'inactive' : 'active');
     setModalError(null);
     setIsModalOpen(true);
   };
@@ -179,7 +179,7 @@ export function UserList() {
           return;
         }
 
-        await updateUser(editingUser.id, {
+        await updateUser(Number(editingUser.id), {
           name: formName.trim(),
           email: formEmail.trim(),
           password: formPassword.trim() ? formPassword : undefined,
@@ -205,10 +205,10 @@ export function UserList() {
 
     try {
       if (actionType === 'remove-access') {
-        await removeUserFromCompany(companyId, targetUser.id);
+        await removeUserFromCompany(companyId, Number(targetUser.id));
         setFeedbackMessage(`Access removed for ${targetUser.name} from current company.`);
       } else if (actionType === 'delete') {
-        await deleteUser(targetUser.id);
+        await deleteUser(Number(targetUser.id));
         setFeedbackMessage(`User ${targetUser.name} deleted successfully.`);
       }
 

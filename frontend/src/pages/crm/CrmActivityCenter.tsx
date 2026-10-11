@@ -139,9 +139,9 @@ export const CrmActivityCenter: React.FC = () => {
   };
 
   const handleCompleteActivity = async () => {
-    if (!completingActivity) return;
+    if (!completingActivity || completingActivity.id === undefined) return;
     try {
-      await crmApi.completeActivity(completingActivity.id, completionNotes);
+      await crmApi.completeActivity(Number(completingActivity.id), completionNotes);
       setCompletingActivity(null);
       setCompletionNotes('');
       loadAllData();
@@ -175,9 +175,9 @@ export const CrmActivityCenter: React.FC = () => {
   };
 
   const handleResolveComplaint = async () => {
-    if (!resolvingComplaint) return;
+    if (!resolvingComplaint || resolvingComplaint.id === undefined) return;
     try {
-      await crmApi.resolveComplaint(resolvingComplaint.id, resolutionText);
+      await crmApi.resolveComplaint(Number(resolvingComplaint.id), resolutionText);
       setResolvingComplaint(null);
       setResolutionText('');
       loadAllData();
@@ -532,7 +532,7 @@ export const CrmActivityCenter: React.FC = () => {
                       <td className="p-3 text-right">
                         <select
                           value={opp.stage}
-                          onChange={(e) => handleUpdateOpportunityStage(opp.id, e.target.value)}
+                          onChange={(e) => handleUpdateOpportunityStage(Number(opp.id!), e.target.value)}
                           className="bg-slate-950 border border-slate-700 text-slate-200 rounded px-2 py-1 text-[11px] focus:outline-none"
                         >
                           <option value="PROSPECT">PROSPECT</option>

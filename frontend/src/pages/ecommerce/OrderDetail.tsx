@@ -52,7 +52,7 @@ export function OrderDetail() {
     if (!order) return;
     try {
       setProcessingAction(true);
-      await ecommerceApi.createShipment(order.id, {
+      await ecommerceApi.createShipment(Number(order.id), {
         carrier_name: carrierName,
         tracking_number: trackingNumber,
       });
@@ -97,7 +97,7 @@ export function OrderDetail() {
     if (!reason || !order) return;
     try {
       setProcessingAction(true);
-      await ecommerceApi.cancelOrder(order.id, reason);
+      await ecommerceApi.cancelOrder(Number(order.id), reason);
       loadOrder();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to cancel order');

@@ -106,7 +106,7 @@ export const CostProfitCentreManagement: React.FC = () => {
   const handleViewCostReport = async (cc: CostCentre) => {
     try {
       setSelectedCostCentre(cc);
-      const res = await financeApi.getCostCentreExpenseReport(cc.id);
+      const res = await financeApi.getCostCentreExpenseReport(Number(cc.id));
       setCostExpenseReport(res.data.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to load expense report');
@@ -116,7 +116,7 @@ export const CostProfitCentreManagement: React.FC = () => {
   const handleViewProfitReport = async (pc: ProfitCentre) => {
     try {
       setSelectedProfitCentre(pc);
-      const res = await financeApi.getProfitCentreReport(pc.id);
+      const res = await financeApi.getProfitCentreReport(Number(pc.id));
       setProfitabilityReport(res.data.data);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to load profitability report');

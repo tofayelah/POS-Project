@@ -263,7 +263,7 @@ export const PosCustomerModal: React.FC<PosCustomerModalProps> = ({
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
-                          {c.name.charAt(0).toUpperCase()}
+                          {(c.name || 'C').charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">

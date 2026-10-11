@@ -70,14 +70,14 @@ export function StorageLocationList() {
     setModalError(null);
     if (location) {
       setEditingLocation(location);
-      setFormWarehouseId(location.warehouse_id);
+      setFormWarehouseId(location.warehouse_id ? Number(location.warehouse_id) : '');
       setFormName(location.name);
       setFormCode(location.code);
       setFormDescription(location.description || '');
       setFormIsActive(location.is_active);
     } else {
       setEditingLocation(null);
-      setFormWarehouseId(warehouses.length > 0 ? warehouses[0].id : '');
+      setFormWarehouseId(warehouses.length > 0 ? Number(warehouses[0].id) : '');
       setFormName('');
       setFormCode('');
       setFormDescription('');
@@ -108,7 +108,7 @@ export function StorageLocationList() {
 
     try {
       if (editingLocation) {
-        await updateStorageLocation(editingLocation.id, {
+        await updateStorageLocation(Number(editingLocation.id), {
           name: formName.trim(),
           description: formDescription.trim() || null,
           is_active: formIsActive,
@@ -138,7 +138,7 @@ export function StorageLocationList() {
     if (!deletingLocation) return;
     setDeleting(true);
     try {
-      await deleteStorageLocation(deletingLocation.id);
+      await deleteStorageLocation(Number(deletingLocation.id));
       setFeedbackMessage(`Storage location "${deletingLocation.name}" removed successfully.`);
       setDeletingLocation(null);
       await loadData();

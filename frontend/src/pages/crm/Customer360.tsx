@@ -66,7 +66,7 @@ export const Customer360: React.FC = () => {
         const idNum = parseInt(urlId, 10);
         setSelectedCustomerId(idNum);
       } else if (list.length > 0) {
-        setSelectedCustomerId(list[0].id);
+        setSelectedCustomerId(Number(list[0].id));
       }
     } catch (err) {
       console.error('Failed to load customers', err);

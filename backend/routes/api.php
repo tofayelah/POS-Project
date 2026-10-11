@@ -55,10 +55,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // Organizational Hierarchy: Company
         Route::get('company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
         Route::match(['put', 'patch'], 'company', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update'])->middleware('permission:company.update,companies.update');
+        Route::post('company/logo', [\App\Http\Controllers\Api\V1\CompanyController::class, 'uploadLogo'])->middleware('permission:company.update,companies.update');
+        Route::delete('company/logo', [\App\Http\Controllers\Api\V1\CompanyController::class, 'deleteLogo'])->middleware('permission:company.update,companies.update');
         Route::get('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'index']);
         Route::post('companies', [\App\Http\Controllers\Api\V1\CompanyController::class, 'store'])->middleware('permission:company.create,companies.create');
         Route::get('companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'show']);
         Route::match(['put', 'patch'], 'companies/{company}', [\App\Http\Controllers\Api\V1\CompanyController::class, 'update'])->middleware('permission:company.update,companies.update');
+        Route::post('companies/{company}/logo', [\App\Http\Controllers\Api\V1\CompanyController::class, 'uploadLogo'])->middleware('permission:company.update,companies.update');
+        Route::delete('companies/{company}/logo', [\App\Http\Controllers\Api\V1\CompanyController::class, 'deleteLogo'])->middleware('permission:company.update,companies.update');
         Route::get('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'companyUsers'])->middleware('permission:users.view');
         Route::post('companies/{company}/users', [\App\Http\Controllers\Api\V1\UserController::class, 'assignCompanyUser'])->middleware('permission:users.company_access,users.update');
         Route::delete('companies/{company}/users/{user}', [\App\Http\Controllers\Api\V1\UserController::class, 'removeCompanyUser'])->middleware('permission:users.company_access,users.update');

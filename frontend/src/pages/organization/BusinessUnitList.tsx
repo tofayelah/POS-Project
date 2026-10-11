@@ -64,7 +64,7 @@ export function BusinessUnitList() {
       setFormName(unit.name);
       setFormCode(unit.code);
       setFormDescription(unit.description || '');
-      setFormStatus(unit.status || 'active');
+      setFormStatus(unit.status === 'inactive' ? 'inactive' : 'active');
     } else {
       setEditingUnit(null);
       setFormName('');
@@ -92,7 +92,7 @@ export function BusinessUnitList() {
 
     try {
       if (editingUnit) {
-        await updateBusinessUnit(editingUnit.id, {
+        await updateBusinessUnit(Number(editingUnit.id), {
           name: formName.trim(),
           code: formCode.trim().toUpperCase(),
           description: formDescription.trim() || null,
@@ -122,7 +122,7 @@ export function BusinessUnitList() {
     if (!deletingUnit) return;
     setDeleting(true);
     try {
-      await deleteBusinessUnit(deletingUnit.id);
+      await deleteBusinessUnit(Number(deletingUnit.id));
       setFeedbackMessage('Business Unit deleted successfully.');
       setDeletingUnit(null);
       loadBusinessUnits();

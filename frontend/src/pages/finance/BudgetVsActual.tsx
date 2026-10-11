@@ -41,8 +41,8 @@ export const BudgetVsActual: React.FC = () => {
     financeApi.getBudgets().then((res) => {
       setBudgets(res.data.data);
       if (!id && res.data.data.length > 0) {
-        setSelectedBudgetId(res.data.data[0].id);
-        fetchVarianceData(res.data.data[0].id);
+        setSelectedBudgetId(Number(res.data.data[0].id));
+        fetchVarianceData(Number(res.data.data[0].id));
       }
     });
 

@@ -58,8 +58,8 @@ export const FixedAssetManagement: React.FC = () => {
       setAssets(astRes.data.data);
       setCategories(catRes.data.data);
       setPeriods(perRes.data.data);
-      if (catRes.data.data.length > 0) setCategoryId(catRes.data.data[0].id);
-      if (perRes.data.data.length > 0) setDeprecPeriodId(perRes.data.data[0].id);
+      if (catRes.data.data.length > 0) setCategoryId(Number(catRes.data.data[0].id));
+      if (perRes.data.data.length > 0) setDeprecPeriodId(Number(perRes.data.data[0].id));
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Error loading fixed assets');
     } finally {
@@ -112,7 +112,7 @@ export const FixedAssetManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedAsset) return;
     try {
-      await financeApi.disposeAsset(selectedAsset.id, {
+      await financeApi.disposeAsset(Number(selectedAsset.id), {
         disposal_date: disposalDate,
         disposal_type: disposalType,
         proceeds_amount: proceedsAmount,

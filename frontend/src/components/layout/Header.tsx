@@ -75,7 +75,7 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
               className="flex items-center gap-2 px-2.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200/80 rounded-lg text-left transition-colors text-xs cursor-pointer"
             >
               <div className="w-6 h-6 rounded bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs shrink-0">
-                {(activeCompany.name || 'R').charAt(0)}
+                {(String(activeCompany?.name || 'R')).charAt(0)}
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5 font-semibold text-slate-800">
@@ -127,7 +127,7 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
                             <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs uppercase shrink-0 mt-0.5 ${
                               isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'
                             }`}>
-                              {companyName.charAt(0)}
+                              {(String(companyName || 'R')).charAt(0)}
                             </div>
                             <div>
                               <div className="text-xs font-semibold leading-tight line-clamp-1">

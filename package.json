@@ -7,7 +7,8 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsx frontend/src/tests/posReceiptBranding.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

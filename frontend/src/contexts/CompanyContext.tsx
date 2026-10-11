@@ -72,7 +72,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       const newComp = e.detail as Company | undefined;
       if (newComp && newComp.id) {
         if (newComp.id !== activeCompanyId) {
-          setActiveCompanyId(newComp.id);
+          setActiveCompanyId(Number(newComp.id));
         }
         setLocalCompany(newComp);
       }
@@ -84,7 +84,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   // Switch company handler
   const switchCompany = useCallback(async (companyOrId: Company | number) => {
-    const targetId = typeof companyOrId === 'number' ? companyOrId : companyOrId.id;
+    const targetId = typeof companyOrId === 'number' ? companyOrId : Number(companyOrId.id);
     setActiveCompanyId(targetId);
 
     if (typeof companyOrId === 'object') {

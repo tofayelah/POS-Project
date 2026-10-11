@@ -69,6 +69,8 @@ export interface PosSession {
   pos_terminal_id: number;
   cashier_id: number;
   session_number: string;
+  terminal_code?: string;
+  branch?: { id: number; name: string } | null;
   opening_cash: number | string;
   closing_cash?: number | string | null;
   expected_cash?: number | string | null;
@@ -108,6 +110,7 @@ export interface CustomerPoints {
   customer_name: string;
   points_balance: number;
   redemption_value: number;
+  redemption_rate?: number;
   min_redemption_points: number;
   can_redeem: boolean;
   recent_ledger: any[];

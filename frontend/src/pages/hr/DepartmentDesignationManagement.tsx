@@ -106,20 +106,20 @@ export const DepartmentDesignationManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteDepartment = async (id: number) => {
+  const handleDeleteDepartment = async (id: number | string) => {
     if (!window.confirm('Are you sure you want to delete this department?')) return;
     try {
-      await hrApi.deleteDepartment(id);
+      await hrApi.deleteDepartment(Number(id));
       loadAll();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete department');
     }
   };
 
-  const handleDeleteDesignation = async (id: number) => {
+  const handleDeleteDesignation = async (id: number | string) => {
     if (!window.confirm('Are you sure you want to delete this designation?')) return;
     try {
-      await hrApi.deleteDesignation(id);
+      await hrApi.deleteDesignation(Number(id));
       loadAll();
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Failed to delete designation');
@@ -128,14 +128,15 @@ export const DepartmentDesignationManagement: React.FC = () => {
 
   const filteredDepartments = departments.filter(
     (d) =>
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.code.toLowerCase().includes(search.toLowerCase())
+      (d.name && d.name.toLowerCase().includes(search.toLowerCase())) ||
+      (d.code && d.code.toLowerCase().includes(search.toLowerCase()))
   );
 
   const filteredDesignations = designations.filter(
     (d) =>
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.code.toLowerCase().includes(search.toLowerCase())
+      (d.title && d.title.toLowerCase().includes(search.toLowerCase())) ||
+      (d.name && d.name.toLowerCase().includes(search.toLowerCase())) ||
+      (d.code && d.code.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -268,7 +269,7 @@ export const DepartmentDesignationManagement: React.FC = () => {
                   <td className="py-3 px-4 text-right space-x-2">
                     <button
                       onClick={() => {
-                        setEditingDeptId(dept.id);
+                        setEditingDeptId(Number(dept.id));
                         setDeptForm({
                           name: dept.name,
                           code: dept.code,
@@ -324,7 +325,7 @@ export const DepartmentDesignationManagement: React.FC = () => {
                   <td className="py-3 px-4 text-right space-x-2">
                     <button
                       onClick={() => {
-                        setEditingDesigId(desig.id);
+                        setEditingDesigId(Number(desig.id));
                         setDesigForm({
                           name: desig.name,
                           code: desig.code,

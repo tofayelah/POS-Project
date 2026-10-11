@@ -141,7 +141,7 @@ export function StockCounts() {
   }, [fetchCounts]);
 
   // Open detail modal and load complete count data
-  const handleOpenDetail = async (countId: number) => {
+  const handleOpenDetail = async (countId: number | string) => {
     try {
       const res = await getStockCount(countId);
       const countData: StockCount = res?.data || res;

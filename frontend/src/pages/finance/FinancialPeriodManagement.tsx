@@ -66,7 +66,7 @@ export const FinancialPeriodManagement: React.FC = () => {
   const handleOpenCheck = async (period: FinancialPeriodExtended) => {
     try {
       setSelectedPeriod(period);
-      const res = await financeApi.getPeriodClosingChecks(period.id);
+      const res = await financeApi.getPeriodClosingChecks(Number(period.id));
       setClosingCheck(res.data.data);
       setShowCheckModal(true);
     } catch (err: any) {
@@ -100,7 +100,7 @@ export const FinancialPeriodManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedPeriod) return;
     try {
-      await financeApi.reopenPeriod(selectedPeriod.id, { reason: reopenReason });
+      await financeApi.reopenPeriod(Number(selectedPeriod.id), { reason: reopenReason });
       setActionSuccess('Period reopened with supervisory audit log');
       setShowReopenModal(false);
       setReopenReason('');
@@ -320,7 +320,7 @@ export const FinancialPeriodManagement: React.FC = () => {
                     <td className="px-6 py-3 text-center">
                       {!y.is_rolled_back && (
                         <button
-                          onClick={() => handleRollbackYearEnd(y.id)}
+                          onClick={() => handleRollbackYearEnd(Number(y.id))}
                           className="text-xs text-rose-600 hover:text-rose-800 underline"
                         >
                           Rollback
@@ -378,14 +378,14 @@ export const FinancialPeriodManagement: React.FC = () => {
               <div className="flex gap-2">
                 {selectedPeriod.status === 'OPEN' && (
                   <button
-                    onClick={() => handleSoftLock(selectedPeriod.id)}
+                    onClick={() => handleSoftLock(Number(selectedPeriod.id))}
                     className="px-3 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded font-medium flex items-center"
                   >
                     <Lock className="w-3.5 h-3.5 mr-1" /> Soft-Lock (Block General Posting)
                   </button>
                 )}
                 <button
-                  onClick={() => handleClose(selectedPeriod.id)}
+                  onClick={() => handleClose(Number(selectedPeriod.id))}
                   disabled={!closingCheck?.can_close}
                   className="px-3 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded font-medium flex items-center"
                 >

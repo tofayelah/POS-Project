@@ -78,7 +78,7 @@ export function SupplierPaymentModal({
           allocations: [
             {
               allocatable_type: 'Purchase',
-              allocatable_id: invoice.id,
+              allocatable_id: Number(invoice.id),
               amount: numAmount,
             },
           ],

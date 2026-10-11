@@ -319,7 +319,7 @@ export const AdvanceLoanManagement: React.FC = () => {
                     <td className="py-3 px-4 text-right space-x-2">
                       {adv.status === 'SUBMITTED' && (
                         <button
-                          onClick={() => handleApproveAdvance(adv.id)}
+                          onClick={() => handleApproveAdvance(Number(adv.id))}
                           disabled={submitting}
                           className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
                         >
@@ -329,7 +329,7 @@ export const AdvanceLoanManagement: React.FC = () => {
                       {adv.status === 'APPROVED' && (
                         <button
                           onClick={() => {
-                            setDisburseId(adv.id);
+                            setDisburseId(Number(adv.id));
                             setDisburseType('ADVANCE');
                           }}
                           disabled={submitting}
@@ -406,7 +406,7 @@ export const AdvanceLoanManagement: React.FC = () => {
                       {loan.status === 'APPROVED' && (
                         <button
                           onClick={() => {
-                            setDisburseId(loan.id);
+                            setDisburseId(Number(loan.id));
                             setDisburseType('LOAN');
                           }}
                           disabled={submitting}

@@ -54,19 +54,23 @@ export interface PosReceiptModalProps {
   companyWebsite?: string;
   companyLogo?: string;
   branchName?: string;
+  isCompanyLoading?: boolean;
+  hasCompanyProfile?: boolean;
 }
 
 export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
   isOpen,
   onClose,
   saleData,
-  companyName = 'RETAILCORE POS_ERP',
-  companyAddress = 'Dhaka, Bangladesh',
-  companyPhone = '+880 1700-000000',
-  companyBin = 'BIN-0012345678-0101',
-  companyWebsite = 'www.retailcore-erp.com',
+  companyName,
+  companyAddress,
+  companyPhone,
+  companyBin,
+  companyWebsite,
   companyLogo,
   branchName,
+  isCompanyLoading = false,
+  hasCompanyProfile,
 }) => {
   const [printFormat, setPrintFormat] = useState<'58mm' | '80mm' | 'a4'>('80mm');
   const [printError, setPrintError] = useState<string | null>(null);
@@ -75,7 +79,14 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
 
   if (!isOpen || !saleData) return null;
 
+  const isProfileMissing = hasCompanyProfile !== undefined ? !hasCompanyProfile : (!companyName && !isCompanyLoading);
+  const isIdentityBlocked = isCompanyLoading || isProfileMissing || !companyName;
+
   const handlePrint = (format: '58mm' | '80mm' | 'a4') => {
+    if (isIdentityBlocked) {
+      setPrintError('Printing is blocked because the active company profile is unavailable or loading.');
+      return;
+    }
     setPrintFormat(format);
     setPrintError(null);
     try {
@@ -92,6 +103,10 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
   };
 
   const handleReprint = async () => {
+    if (isIdentityBlocked) {
+      setPrintError('Reprinting is blocked because the active company profile is unavailable or loading.');
+      return;
+    }
     setIsReprintCopy(true);
     setReprintCounter((prev) => prev + 1);
     if (saleData?.saleId) {
@@ -196,7 +211,12 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
             <button
               type="button"
               onClick={() => handlePrint(printFormat)}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              disabled={isIdentityBlocked}
+              className={`px-3 py-1.5 font-bold text-xs rounded flex items-center gap-1.5 transition-colors shadow-xs ${
+                isIdentityBlocked
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
+              }`}
             >
               <Printer className="w-4 h-4" />
               Print ({printFormat === '58mm' ? '58mm' : printFormat === '80mm' ? '80mm' : 'A4'})
@@ -206,8 +226,13 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
             <button
               type="button"
               onClick={handleReprint}
-              title="Reprint sales slip with audit log tracking"
-              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded flex items-center gap-1 transition-colors border border-slate-700 cursor-pointer"
+              disabled={isIdentityBlocked}
+              title={isIdentityBlocked ? 'Printing disabled until company profile is available' : 'Reprint sales slip with audit log tracking'}
+              className={`px-2.5 py-1.5 text-xs font-semibold rounded flex items-center gap-1 transition-colors border ${
+                isIdentityBlocked
+                  ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 cursor-pointer'
+              }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reprint
@@ -224,7 +249,18 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
           </div>
         </div>
 
-        {/* Print Warning / Error Message if any */}
+        {/* Company Identity Status / Error Banner */}
+        {isIdentityBlocked && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-800 flex items-center justify-between gap-2 print:hidden">
+            <span className="font-semibold">
+              {isCompanyLoading
+                ? 'Loading authorized company profile... Printing is paused until loading completes.'
+                : 'Active company profile is unavailable. Printing is disabled until company profile setup is complete.'}
+            </span>
+          </div>
+        )}
+
+        {/* Print Error Message */}
         {printError && (
           <div className="bg-amber-50 px-4 py-2 text-xs text-amber-800 border-b border-amber-200 flex justify-between items-center print:hidden">
             <span>{printError}</span>
@@ -256,11 +292,18 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                     <img src={companyLogo} alt="Logo" className="max-h-7 object-contain" />
                   </div>
                 )}
-                <h1 className="font-black text-xs uppercase tracking-wider">{companyName}</h1>
+                {companyName ? (
+                  <h1 className="font-black text-xs uppercase tracking-wider">{companyName}</h1>
+                ) : (
+                  <div className="text-[9px] font-bold text-red-600 uppercase border border-red-300 bg-red-50 p-1 rounded">
+                    *** UNAVAILABLE COMPANY IDENTITY ***
+                  </div>
+                )}
                 {activeBranch && <p className="text-[9px] font-bold uppercase">{activeBranch}</p>}
-                <p className="text-[8.5px] text-slate-600">{companyAddress}</p>
-                <p className="text-[8.5px] text-slate-600">Tel: {companyPhone}</p>
-                <p className="text-[8.5px] font-semibold text-slate-700">BIN: {companyBin}</p>
+                {companyAddress && <p className="text-[8.5px] text-slate-600">{companyAddress}</p>}
+                {companyPhone && <p className="text-[8.5px] text-slate-600">Tel: {companyPhone}</p>}
+                {companyWebsite && <p className="text-[8.5px] text-slate-600">{companyWebsite}</p>}
+                {companyBin && <p className="text-[8.5px] font-semibold text-slate-700">BIN: {companyBin}</p>}
                 <div className="mt-1 inline-block px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-bold text-[8.5px] tracking-wide uppercase">
                   {saleData.receiptType === 'SALES_RETURN' ? 'Return & Refund Slip' : 'Tax Invoice / Sales Slip'}
                 </div>
@@ -470,12 +513,18 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                     <img src={companyLogo} alt="Logo" className="max-h-10 object-contain" />
                   </div>
                 )}
-                <h1 className="font-bold text-base uppercase tracking-wider">{companyName}</h1>
+                {companyName ? (
+                  <h1 className="font-bold text-base uppercase tracking-wider">{companyName}</h1>
+                ) : (
+                  <div className="text-xs font-bold text-red-600 uppercase border border-red-300 bg-red-50 p-1.5 rounded">
+                    *** UNAVAILABLE COMPANY IDENTITY ***
+                  </div>
+                )}
                 {activeBranch && <p className="text-[11px] font-bold uppercase">{activeBranch}</p>}
-                <p className="text-[11px] text-slate-600">{companyAddress}</p>
-                <p className="text-[11px] text-slate-600">Tel: {companyPhone}</p>
+                {companyAddress && <p className="text-[11px] text-slate-600">{companyAddress}</p>}
+                {companyPhone && <p className="text-[11px] text-slate-600">Tel: {companyPhone}</p>}
                 {companyWebsite && <p className="text-[10px] text-slate-600">{companyWebsite}</p>}
-                <p className="text-[11px] font-semibold text-slate-700">BIN / VAT Reg: {companyBin}</p>
+                {companyBin && <p className="text-[11px] font-semibold text-slate-700">BIN / VAT Reg: {companyBin}</p>}
                 <div className="mt-1.5 inline-block px-2 py-0.5 bg-slate-100 border border-slate-300 rounded font-bold text-[10px] tracking-wide uppercase">
                   {saleData.receiptType === 'SALES_RETURN' ? 'Sales Return & Refund Voucher' : 'TAX INVOICE / SALES SLIP'}
                 </div>
@@ -709,12 +758,18 @@ export const PosReceiptModal: React.FC<PosReceiptModalProps> = ({
                   {companyLogo && (
                     <img src={companyLogo} alt="Logo" className="max-h-12 object-contain mb-2" />
                   )}
-                  <h1 className="font-extrabold text-2xl tracking-tight text-slate-900">{companyName}</h1>
+                  {companyName ? (
+                    <h1 className="font-extrabold text-2xl tracking-tight text-slate-900">{companyName}</h1>
+                  ) : (
+                    <div className="text-sm font-bold text-red-600 uppercase border border-red-300 bg-red-50 p-2 rounded mb-1">
+                      *** UNAVAILABLE COMPANY IDENTITY ***
+                    </div>
+                  )}
                   {activeBranch && <p className="text-xs font-bold text-slate-700 uppercase mt-0.5">{activeBranch}</p>}
-                  <p className="text-xs text-slate-600 mt-1">{companyAddress}</p>
-                  <p className="text-xs text-slate-600">Phone: {companyPhone}</p>
+                  {companyAddress && <p className="text-xs text-slate-600 mt-1">{companyAddress}</p>}
+                  {companyPhone && <p className="text-xs text-slate-600">Phone: {companyPhone}</p>}
                   {companyWebsite && <p className="text-xs text-slate-600">Website: {companyWebsite}</p>}
-                  <p className="text-xs font-semibold text-slate-700">BIN / VAT Registration: {companyBin}</p>
+                  {companyBin && <p className="text-xs font-semibold text-slate-700">BIN / VAT Registration: {companyBin}</p>}
                 </div>
                 <div className="text-right">
                   {(isReprintCopy || saleData.isReprint) && (

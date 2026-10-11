@@ -136,7 +136,7 @@ export function StockBatches() {
   }, [batches, statusFilter, searchQuery]);
 
   // Handle open batch detail
-  const handleOpenDetail = async (id: number) => {
+  const handleOpenDetail = async (id: number | string) => {
     try {
       const res = await getStockBatch(id);
       setSelectedBatch(res?.data || res);

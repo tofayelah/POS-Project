@@ -224,14 +224,14 @@ export const BIAlerts: React.FC = () => {
                   />
                   {alert.status === 'ACTIVE' && (
                     <button
-                      onClick={() => handleAcknowledge(alert.id)}
+                      onClick={() => handleAcknowledge(Number(alert.id))}
                       className="px-3 py-1.5 text-xs font-medium bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 rounded-lg transition whitespace-nowrap"
                     >
                       Acknowledge
                     </button>
                   )}
                   <button
-                    onClick={() => handleResolve(alert.id)}
+                    onClick={() => handleResolve(Number(alert.id))}
                     className="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition whitespace-nowrap shadow-sm"
                   >
                     Resolve

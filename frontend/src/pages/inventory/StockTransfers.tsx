@@ -238,7 +238,7 @@ export function StockTransfers() {
   };
 
   // 3. Load Transfer Details
-  const handleOpenDetail = async (transferId: number) => {
+  const handleOpenDetail = async (transferId: number | string) => {
     setIsDetailLoading(true);
     setDetailTransfer(null);
     try {

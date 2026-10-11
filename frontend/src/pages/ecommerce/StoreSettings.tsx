@@ -68,7 +68,7 @@ export function StoreSettings() {
       setSuccess(null);
       setError(null);
 
-      await ecommerceApi.updateStore(store.id, {
+      await ecommerceApi.updateStore(Number(store.id!), {
         name: formData.name,
         currency: formData.currency,
         guest_checkout_enabled: formData.guest_checkout_enabled,

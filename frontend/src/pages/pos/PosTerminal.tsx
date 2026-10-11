@@ -151,7 +151,7 @@ export const loadInitialCartBackup = (): PosCartBackup | null => {
 export function PosTerminal() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { company } = useCompany();
+  const { company, loading: isCompanyLoading } = useCompany();
   const { language, setLanguage } = useLanguage();
 
   // Cached initial backup for restoring state on refresh
@@ -2777,13 +2777,15 @@ export function PosTerminal() {
         isOpen={receiptModalOpen}
         onClose={() => setReceiptModalOpen(false)}
         saleData={lastCompletedSale}
-        companyName={company?.legal_name || company?.name || 'RETAILCORE SUPERSTORE'}
-        companyAddress={company?.address || 'Dhaka, Bangladesh'}
-        companyPhone={company?.phone || '+880 1700-000000'}
-        companyBin={company?.vat_registration || company?.tax_number || 'BIN-0012345678-0101'}
-        companyWebsite={company?.website || 'www.retailcore-erp.com'}
+        companyName={company?.legal_name || company?.name}
+        companyAddress={company?.address || undefined}
+        companyPhone={company?.phone || undefined}
+        companyBin={company?.vat_registration || company?.tax_number || undefined}
+        companyWebsite={company?.website || undefined}
         companyLogo={company?.logo_path || undefined}
         branchName={session?.branch?.name || (session as any)?.branch_name}
+        isCompanyLoading={isCompanyLoading}
+        hasCompanyProfile={Boolean(company)}
       />
 
       <PosHoldModal

@@ -331,7 +331,7 @@ export function ProductDetailsModal({
             <button
               onClick={() => {
                 onClose();
-                onEdit(product.id);
+                onEdit(Number(product.id));
               }}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors cursor-pointer"
             >

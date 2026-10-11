@@ -41,7 +41,7 @@ export function DocumentHeader({
               <img src={company.logo_path} alt={companyName} className="h-10 w-auto object-contain rounded" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-base shadow-xs shrink-0">
-                {companyName.charAt(0)}
+                {(companyName || 'R').charAt(0)}
               </div>
             )}
             <div>

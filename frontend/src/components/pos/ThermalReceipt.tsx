@@ -98,9 +98,15 @@ export const ThermalReceipt: React.FC<ThermalReceiptProps> = ({ data, paperSize:
             <img src={data.logoUrl} alt="Logo" className="max-h-8 object-contain" />
           </div>
         )}
-        <h1 className={`${is58mm ? 'text-xs' : 'text-sm'} font-black uppercase tracking-wider`}>
-          {data.companyName}
-        </h1>
+        {data.companyName ? (
+          <h1 className={`${is58mm ? 'text-xs' : 'text-sm'} font-black uppercase tracking-wider`}>
+            {data.companyName}
+          </h1>
+        ) : (
+          <div className="text-[9px] font-bold text-red-600 uppercase border border-black p-1">
+            *** UNAVAILABLE COMPANY IDENTITY ***
+          </div>
+        )}
         {data.branchName && (
           <p className={`${is58mm ? 'text-[9px]' : 'text-[10px]'} font-bold uppercase`}>{data.branchName}</p>
         )}

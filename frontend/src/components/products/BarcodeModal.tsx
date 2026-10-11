@@ -37,7 +37,7 @@ export function BarcodeModal({ isOpen, onClose, variant, productName, onUpdated 
     setLoading(true);
     setError(null);
     try {
-      const res = await getBarcodes({ product_variant_id: variant.id });
+      const res = await getBarcodes({ product_variant_id: Number(variant.id) });
       setBarcodes(res.data || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load barcodes.');
@@ -173,7 +173,7 @@ export function BarcodeModal({ isOpen, onClose, variant, productName, onUpdated 
                     <div className="flex items-center gap-2">
                       {!b.is_primary && (
                         <button
-                          onClick={() => handleSetPrimary(b.id)}
+                          onClick={() => handleSetPrimary(Number(b.id!))}
                           title="Set as Primary Barcode"
                           className="px-2.5 py-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         >
@@ -181,7 +181,7 @@ export function BarcodeModal({ isOpen, onClose, variant, productName, onUpdated 
                         </button>
                       )}
                       <button
-                        onClick={() => handleDeleteBarcode(b.id)}
+                        onClick={() => handleDeleteBarcode(Number(b.id!))}
                         title="Delete Barcode"
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       >

@@ -67,9 +67,9 @@ export const CustomerCreditManagement: React.FC = () => {
     setSubmitting(true);
     try {
       if (actionType === 'APPROVE') {
-        await crmApi.approveCreditRequest(activeRequest.id, notes);
+        await crmApi.approveCreditRequest(Number(activeRequest.id), notes);
       } else {
-        await crmApi.rejectCreditRequest(activeRequest.id, notes);
+        await crmApi.rejectCreditRequest(Number(activeRequest.id), notes);
       }
       setActiveRequest(null);
       setActionType(null);

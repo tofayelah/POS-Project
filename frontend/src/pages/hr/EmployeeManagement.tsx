@@ -265,11 +265,11 @@ export const EmployeeManagement: React.FC = () => {
                       <div className="flex flex-col">
                         <span className="font-medium text-white flex items-center gap-1.5">
                           <Building className="w-3 h-3 text-sky-400" />
-                          {emp.department?.name || '—'}
+                          {typeof emp.department === 'object' ? emp.department?.name : emp.department || '—'}
                         </span>
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
                           <Briefcase className="w-3 h-3 text-indigo-400" />
-                          {emp.designation?.name || 'Unassigned'}
+                          {typeof emp.designation === 'object' ? emp.designation?.name : emp.designation || 'Unassigned'}
                         </span>
                       </div>
                     </td>

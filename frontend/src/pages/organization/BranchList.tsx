@@ -73,16 +73,16 @@ export function BranchList() {
   const handleOpenModal = (branch?: Branch) => {
     if (branch) {
       setEditingBranch(branch);
-      setFormBuId(branch.business_unit_id);
+      setFormBuId(branch.business_unit_id ? Number(branch.business_unit_id) : '');
       setFormName(branch.name);
       setFormCode(branch.code);
       setFormPhone(branch.phone || '');
       setFormEmail(branch.email || '');
       setFormAddress(branch.address || '');
-      setFormStatus(branch.status || 'active');
+      setFormStatus(branch.status === 'inactive' ? 'inactive' : 'active');
     } else {
       setEditingBranch(null);
-      setFormBuId(businessUnits.length > 0 ? businessUnits[0].id : '');
+      setFormBuId(businessUnits.length > 0 ? Number(businessUnits[0].id) : '');
       setFormName('');
       setFormCode('');
       setFormPhone('');
@@ -114,7 +114,7 @@ export function BranchList() {
 
     try {
       if (editingBranch) {
-        await updateBranch(editingBranch.id, {
+        await updateBranch(Number(editingBranch.id), {
           business_unit_id: Number(formBuId),
           name: formName.trim(),
           code: formCode.trim().toUpperCase(),
@@ -150,7 +150,7 @@ export function BranchList() {
     if (!deletingBranch) return;
     setDeleting(true);
     try {
-      await deleteBranch(deletingBranch.id);
+      await deleteBranch(Number(deletingBranch.id));
       setFeedbackMessage('Branch deleted successfully.');
       setDeletingBranch(null);
       loadData();

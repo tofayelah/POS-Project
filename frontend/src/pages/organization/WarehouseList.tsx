@@ -102,16 +102,16 @@ export function WarehouseList() {
   const handleOpenModal = (warehouse?: Warehouse) => {
     if (warehouse) {
       setEditingWarehouse(warehouse);
-      setFormBuId(warehouse.business_unit_id);
-      setFormBranchId(warehouse.branch_id || '');
+      setFormBuId(warehouse.business_unit_id ? Number(warehouse.business_unit_id) : '');
+      setFormBranchId(warehouse.branch_id ? Number(warehouse.branch_id) : '');
       setFormName(warehouse.name);
       setFormCode(warehouse.code);
       setFormAddress(warehouse.address || '');
       setFormType(isBranchWarehouse(warehouse.warehouse_type) ? 'BRANCH' : 'MAIN');
-      setFormStatus(warehouse.status || 'active');
+      setFormStatus(warehouse.status === 'inactive' ? 'inactive' : 'active');
     } else {
       setEditingWarehouse(null);
-      const defaultBuId = businessUnits.length > 0 ? businessUnits[0].id : '';
+      const defaultBuId = businessUnits.length > 0 ? Number(businessUnits[0].id) : '';
       setFormBuId(defaultBuId);
       setFormBranchId('');
       setFormName('');
@@ -158,7 +158,7 @@ export function WarehouseList() {
 
     try {
       if (editingWarehouse) {
-        await updateWarehouse(editingWarehouse.id, payload);
+        await updateWarehouse(Number(editingWarehouse.id), payload);
         setFeedbackMessage('Warehouse updated successfully.');
       } else {
         await createWarehouse(payload);
@@ -178,7 +178,7 @@ export function WarehouseList() {
     if (!deletingWarehouse) return;
     setDeleting(true);
     try {
-      await deleteWarehouse(deletingWarehouse.id);
+      await deleteWarehouse(Number(deletingWarehouse.id));
       setFeedbackMessage('Warehouse deleted successfully.');
       setDeletingWarehouse(null);
       loadData();

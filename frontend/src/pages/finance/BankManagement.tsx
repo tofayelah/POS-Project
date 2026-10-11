@@ -56,7 +56,7 @@ export const BankManagement: React.FC = () => {
       setAccounts(accRes.data.data);
       setStatements(stmtRes.data.data);
       if (accRes.data.data.length > 0) {
-        setImportBankAccountId(accRes.data.data[0].id);
+        setImportBankAccountId(Number(accRes.data.data[0].id));
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Error loading bank accounts');
