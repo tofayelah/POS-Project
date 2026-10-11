@@ -31,13 +31,16 @@ class SetCurrentCompanyScope
                 }
                 $companyId = $requestedCompanyId;
             } else {
-                // Default to user's assigned company or first available company
-                $companyId = $user->company_id ?? $user->companies()->first()?->id ?? Company::first()?->id ?? 1;
+                // Default to user's assigned company or first authorized company
+                $companyId = $user->company_id ?? $user->companies()->first()?->id;
+
+                // Only Super Admin can fall back to system default company if unassigned
+                if (!$companyId && $user->hasRole('Super Admin')) {
+                    $companyId = Company::first()?->id ?? 1;
+                }
             }
         } else {
-            // For unauthenticated requests (like login), we don't enforce user access, 
-            // but we can pass through the requested company ID if there is one. 
-            // Or default to Company::first().
+            // For unauthenticated requests (like login)
             $companyId = $requestedCompanyId ?? Company::first()?->id;
         }
 

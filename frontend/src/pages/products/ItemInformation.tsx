@@ -1,52 +1,231 @@
-import React from 'react';
-import { Info, ArrowLeft, Barcode, Layers, Tag } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { Info, ArrowLeft, Barcode as BarcodeIcon, Layers, Tag, Scale, AlertCircle, Edit, CheckCircle, XCircle, Package } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { getProduct } from '../../api/products';
+import api from '../../api/axios';
+import { Product } from '../../types/product';
 
 export const ItemInformation: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const productId = searchParams.get('id');
 
-  return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4">
+  const [product, setProduct] = useState<Product | null>(null);
+  const [inventoryStock, setInventoryStock] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (productId) {
+      loadDetails(Number(productId));
+    } else {
+      setError('No product ID provided.');
+      setIsLoading(false);
+    }
+  }, [productId]);
+
+  const loadDetails = async (id: number) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await getProduct(id);
+      if (res.success && res.data) {
+        setProduct(res.data);
+      }
+
+      // Load total stock across warehouses
+      try {
+        const invRes = await api.get('/inventory', { params: { product_id: id } });
+        if (invRes.data?.data) {
+          const items = invRes.data.data;
+          const totalQty = items.reduce((sum: number, item: any) => sum + Number(item.quantity_on_hand || item.available_quantity || 0), 0);
+          setInventoryStock(totalQty);
+        }
+      } catch (invErr) {
+        console.warn('Inventory stock retrieval fallback', invErr);
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to load product details.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-12 text-center text-slate-400">
+        Loading product master details...
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto space-y-4">
         <button
           onClick={() => navigate('/products')}
-          className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" /> Back to Products
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Info className="w-6 h-6 text-indigo-600" />
-            Item Master Information
-          </h1>
-          <p className="text-sm text-slate-500">Detailed overview of product attributes, stock, and history</p>
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+          <span>{error || 'Product record not found.'}</span>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
-          <div className="w-full h-48 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center text-slate-400">
-            <Tag className="w-12 h-12" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Standard Retail Item</h2>
-          <p className="text-xs text-slate-500">SKU: SKU-1001</p>
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Retail Price:</span> <span className="font-semibold">$49.99</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Cost Price:</span> <span className="font-semibold">$25.00</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Tax Rate:</span> <span className="font-semibold">5%</span></div>
+  const variants = product.variants || [];
+
+  return (
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/products')}
+            className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Info className="w-6 h-6 text-indigo-600" />
+              Item Master Details
+            </h1>
+            <p className="text-sm text-slate-500">Comprehensive overview of SKU, barcodes, tax rates, reorder thresholds, and stock</p>
           </div>
         </div>
 
-        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-6">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white">Inventory Breakdown</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900">
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase">Total Stock</span>
-              <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100 mt-1">120 Units</p>
+        <button
+          onClick={() => navigate(`/products/${product.id}/edit`)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-xs transition-colors"
+        >
+          <Edit className="w-4 h-4" /> Edit Master
+        </button>
+      </div>
+
+      {/* Overview Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Column: Product Identity Card */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+          <div className="w-full h-36 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center text-indigo-500 font-bold text-4xl">
+            {product.name.charAt(0).toUpperCase()}
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{product.name}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-1">Code: {product.product_code || 'N/A'}</p>
+          </div>
+
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Category:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.category?.name || 'General'}</span>
             </div>
-            <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900">
-              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Reorder Level</span>
-              <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mt-1">15 Units</p>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Brand:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.brand?.name || 'Generic'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Unit of Measure:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.unit?.name || 'Piece'} ({product.unit?.short_code || 'pcs'})</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Structure:</span>
+              <span className="font-semibold uppercase text-indigo-600 text-xs">{product.product_type} ({variants.length} SKUs)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Default VAT / Tax Rate:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.tax_rate}% ({product.tax_type})</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Status:</span>
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                product.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {product.status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Columns: Stock Summary & Details */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Stock Metrics Card */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Inventory & Reorder Status
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900">
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase">Total Current Stock</span>
+                <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100 mt-1">
+                  {inventoryStock} <span className="text-sm font-normal text-indigo-700">{product.unit?.short_code || 'pcs'}</span>
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900">
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase">Reorder Threshold</span>
+                <p className="text-3xl font-bold text-amber-900 dark:text-amber-100 mt-1">
+                  {product.reorder_level || 0} <span className="text-sm font-normal text-amber-700">{product.unit?.short_code || 'pcs'}</span>
+                </p>
+              </div>
+            </div>
+
+            {product.description && (
+              <div className="pt-2 text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Description: </span>
+                {product.description}
+              </div>
+            )}
+          </div>
+
+          {/* Variant Master Table */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Sellable Variants Matrix ({variants.length} SKUs)
+            </h3>
+
+            <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-600">
+                    <th className="py-2.5 px-3 font-semibold">SKU Code</th>
+                    <th className="py-2.5 px-3 font-semibold">Variant Name</th>
+                    <th className="py-2.5 px-2 font-semibold text-right">Cost (৳)</th>
+                    <th className="py-2.5 px-2 font-semibold text-right">Selling (৳)</th>
+                    <th className="py-2.5 px-2 font-semibold text-right">Wholesale (৳)</th>
+                    <th className="py-2.5 px-2 font-semibold text-right">MRP (৳)</th>
+                    <th className="py-2.5 px-3 font-semibold">Barcodes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {variants.map((v) => (
+                    <tr key={v.id} className="hover:bg-slate-50/50">
+                      <td className="p-2.5 font-mono font-semibold text-indigo-700">{v.sku}</td>
+                      <td className="p-2.5 text-slate-800 font-medium">{v.variant_name || 'Default'}</td>
+                      <td className="p-2.5 text-right font-mono">৳{Number(v.cost_price || 0).toFixed(2)}</td>
+                      <td className="p-2.5 text-right font-mono font-bold text-slate-900">৳{Number(v.selling_price || 0).toFixed(2)}</td>
+                      <td className="p-2.5 text-right font-mono text-slate-600">৳{Number(v.wholesale_price || v.selling_price || 0).toFixed(2)}</td>
+                      <td className="p-2.5 text-right font-mono text-slate-600">৳{Number(v.mrp || v.selling_price || 0).toFixed(2)}</td>
+                      <td className="p-2.5 font-mono text-slate-500">
+                        {v.barcodes && v.barcodes.length > 0 ? (
+                          v.barcodes.map((b: any) => (
+                            <span key={b.id || b.barcode} className="inline-block px-1.5 py-0.5 bg-slate-100 rounded text-[11px] mr-1">
+                              {b.barcode}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400">None</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

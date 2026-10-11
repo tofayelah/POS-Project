@@ -289,7 +289,7 @@ export function VariantBuilder({
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Step 2: Variant Matrix ({variants.length} SKUs)
             </span>
           </div>
@@ -297,7 +297,7 @@ export function VariantBuilder({
             <button
               type="button"
               onClick={handleAddManualRow}
-              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> Add custom SKU
             </button>
@@ -305,34 +305,34 @@ export function VariantBuilder({
         </div>
 
         {variants.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-slate-400 text-xs">
+          <div className="text-center py-8 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-slate-600 text-xs font-medium">
             No variants created yet. Select attributes above or click 'Add Single Row' to begin.
           </div>
         ) : (
           <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-600">
-                  <th className="py-2.5 px-3 font-semibold">SKU *</th>
-                  <th className="py-2.5 px-3 font-semibold">Variant Name *</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Cost (৳)</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Selling (৳) *</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">Wholesale (৳)</th>
-                  <th className="py-2.5 px-2 font-semibold w-24">MRP (৳)</th>
-                  <th className="py-2.5 px-3 font-semibold w-36">Barcode</th>
-                  <th className="py-2.5 px-2 font-semibold text-center w-12">Action</th>
+                <tr className="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold uppercase text-xs tracking-wider">
+                  <th className="py-2.5 px-3">SKU *</th>
+                  <th className="py-2.5 px-3">Variant Name *</th>
+                  <th className="py-2.5 px-2 w-24">Cost (৳)</th>
+                  <th className="py-2.5 px-2 w-24">Selling (৳) *</th>
+                  <th className="py-2.5 px-2 w-24">Wholesale (৳)</th>
+                  <th className="py-2.5 px-2 w-24">MRP (৳)</th>
+                  <th className="py-2.5 px-3 w-36">Barcode</th>
+                  <th className="py-2.5 px-2 text-center w-12">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {variants.map((v, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="p-2">
                       <input
                         type="text"
                         value={v.sku}
                         onChange={(e) => handleUpdateRow(idx, 'sku', e.target.value)}
                         placeholder="SKU Code"
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-mono bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-mono font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder:text-slate-500"
                         required
                       />
                     </td>
@@ -342,7 +342,7 @@ export function VariantBuilder({
                         value={v.variant_name}
                         onChange={(e) => handleUpdateRow(idx, 'variant_name', e.target.value)}
                         placeholder="Variant description"
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-semibold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder:text-slate-500"
                         required
                       />
                     </td>
@@ -353,7 +353,7 @@ export function VariantBuilder({
                         min="0"
                         value={v.cost_price}
                         onChange={(e) => handleUpdateRow(idx, 'cost_price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono"
                       />
                     </td>
                     <td className="p-2">
@@ -363,7 +363,7 @@ export function VariantBuilder({
                         min="0"
                         value={v.selling_price}
                         onChange={(e) => handleUpdateRow(idx, 'selling_price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right font-medium text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono"
                         required
                       />
                     </td>
@@ -374,7 +374,7 @@ export function VariantBuilder({
                         min="0"
                         value={v.wholesale_price}
                         onChange={(e) => handleUpdateRow(idx, 'wholesale_price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono"
                       />
                     </td>
                     <td className="p-2">
@@ -384,7 +384,7 @@ export function VariantBuilder({
                         min="0"
                         value={v.mrp}
                         onChange={(e) => handleUpdateRow(idx, 'mrp', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded text-right font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 font-mono"
                       />
                     </td>
                     <td className="p-2">
@@ -393,14 +393,14 @@ export function VariantBuilder({
                         value={v.barcode}
                         onChange={(e) => handleUpdateRow(idx, 'barcode', e.target.value)}
                         placeholder="Barcode (Optional)"
-                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-mono bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-mono font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder:text-slate-500"
                       />
                     </td>
                     <td className="p-2 text-center">
                       <button
                         type="button"
                         onClick={() => handleRemoveRow(idx)}
-                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                        className="p-1 text-slate-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
                         title="Remove SKU"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -19,6 +19,8 @@ class ProductService
     public function createProduct(array $data, ?int $userId = null): Product
     {
         return DB::transaction(function () use ($data, $userId) {
+            $this->validateTenantOwnership($data);
+
             $variantsData = $data['variants'] ?? [];
             unset($data['variants']);
 
@@ -59,6 +61,9 @@ class ProductService
                 'category_id' => $product->category_id,
                 'status' => $product->status,
             ];
+
+            $data['company_id'] = $product->company_id;
+            $this->validateTenantOwnership($data);
 
             $variantsData = $data['variants'] ?? null;
             unset($data['variants']);
@@ -201,6 +206,33 @@ class ProductService
                         ]
                     );
                 }
+            }
+        }
+    }
+
+    protected function validateTenantOwnership(array $data): void
+    {
+        $companyId = $data['company_id'] ?? null;
+        if (! $companyId) return;
+
+        if (! empty($data['category_id'])) {
+            $validCategory = \App\Models\Category::where('id', $data['category_id'])->where('company_id', $companyId)->exists();
+            if (! $validCategory) {
+                throw new ConflictHttpException("The selected category does not belong to your company.");
+            }
+        }
+
+        if (! empty($data['brand_id'])) {
+            $validBrand = \App\Models\Brand::where('id', $data['brand_id'])->where('company_id', $companyId)->exists();
+            if (! $validBrand) {
+                throw new ConflictHttpException("The selected brand does not belong to your company.");
+            }
+        }
+
+        if (! empty($data['unit_id'])) {
+            $validUnit = \App\Models\Unit::where('id', $data['unit_id'])->where('company_id', $companyId)->exists();
+            if (! $validUnit) {
+                throw new ConflictHttpException("The selected unit does not belong to your company.");
             }
         }
     }

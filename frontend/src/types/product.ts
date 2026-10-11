@@ -10,7 +10,7 @@ export interface Barcode {
 }
 
 export interface AttributeValue {
-  id: number | string;
+  id?: number | string;
   attribute_id?: number | string;
   value: string;
   code?: string;
@@ -66,11 +66,13 @@ export interface Product {
   name: string;
   sku?: string;
   product_code?: string;
+  unit_id?: number | string;
   unit?: Unit | any;
   category_id?: number | string;
   category?: Category | any;
   brand_id?: number | string;
   brand?: Brand | any;
+  has_variants?: boolean;
   price?: number;
   status?: string;
   product_type?: string;
@@ -89,6 +91,7 @@ export interface ProductFilterParams {
   search?: string;
   category_id?: number | string;
   brand_id?: number | string;
+  product_type?: string;
   status?: string;
   page?: number;
   per_page?: number;

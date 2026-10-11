@@ -57,7 +57,7 @@ class User extends Authenticatable
     {
         $roles = $this->relationLoaded('roles') ? $this->roles : $this->roles()->get();
         if ($roles->isEmpty()) {
-            return strtolower($role) !== 'super admin';
+            return false;
         }
         return $roles->contains(fn($r) => strtolower($r->name) === strtolower($role));
     }
@@ -73,7 +73,7 @@ class User extends Authenticatable
             : $this->roles()->with('permissions')->get();
 
         if ($roles->isEmpty()) {
-            return true;
+            return false;
         }
 
         $perms = $roles->flatMap(function ($role) {
@@ -83,7 +83,7 @@ class User extends Authenticatable
         });
 
         if ($perms->isEmpty()) {
-            return true;
+            return false;
         }
 
         return $perms->contains(fn($p) => strtolower($p->name) === strtolower($permission));

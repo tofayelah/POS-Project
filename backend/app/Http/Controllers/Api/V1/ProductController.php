@@ -87,8 +87,13 @@ class ProductController extends Controller
 
     public function store(ProductRequest $request): JsonResponse
     {
+        $data = $request->validated();
+        if ($companyId = $request->attributes->get('company_id')) {
+            $data['company_id'] = $companyId;
+        }
+
         $product = $this->productService->createProduct(
-            $request->validated(),
+            $data,
             $request->user()?->id
         );
 
@@ -119,9 +124,14 @@ class ProductController extends Controller
     public function update(ProductRequest $request, Product $product): JsonResponse
     {
         abort_if($product->company_id !== request()->attributes->get('company_id'), 403, 'Unauthorized.');
+        $data = $request->validated();
+        if ($companyId = $request->attributes->get('company_id')) {
+            $data['company_id'] = $companyId;
+        }
+
         $updatedProduct = $this->productService->updateProduct(
             $product,
-            $request->validated(),
+            $data,
             $request->user()?->id
         );
 

@@ -24,10 +24,10 @@ class CheckPermission
             ], 401);
         }
 
-        if ($user->status === 'inactive') {
+        if ($user->status !== 'active') {
             return response()->json([
                 'success' => false,
-                'message' => 'Your account is inactive. Please contact an administrator.',
+                'message' => 'Your account is inactive or suspended. Please contact an administrator.',
             ], 403);
         }
 

@@ -1,8 +1,85 @@
 @import "tailwindcss";
 
+/* Enforce Class-Based Dark Variant in Tailwind v4 so prefers-color-scheme media query does not trigger dark text on light elements */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
+  :root {
+    --color-primary: #4338ca;
+    --color-primary-hover: #3730a3;
+    --color-bg-page: #f8fafc;
+    --color-bg-card: #ffffff;
+    --color-text-main: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-muted: #64748b;
+    --color-border: #e2e8f0;
+    --color-table-header: #f1f5f9;
+    --color-input-bg: #ffffff;
+    --color-input-text: #0f172a;
+    --color-input-placeholder: #64748b;
+    --color-success: #15803d;
+    --color-warning: #b45309;
+    --color-danger: #b91c1c;
+    --color-focus-ring: #6366f1;
+  }
+
   html, body, #root {
-    @apply m-0 h-full overflow-hidden;
+    @apply m-0 h-full overflow-hidden font-sans;
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+  }
+
+  /* Universal High-Contrast Form Control & Typography Rules */
+  h1, h2, h3, h4, h5, h6 {
+    color: #0f172a !important;
+  }
+
+  p, span, label, div {
+    /* Ensure high readability for body text unless overridden by intentional status colors */
+    color: inherit;
+  }
+
+  input, select, textarea {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #6366f1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+  }
+
+  select option {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Table Contrast Enforcements */
+  table thead tr th {
+    color: #0f172a !important;
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+
+  table tbody tr td {
+    color: #0f172a !important;
+  }
+
+  /* Buttons & Badges */
+  .btn-primary {
+    background-color: #4338ca !important;
+    color: #ffffff !important;
+  }
+
+  .btn-primary:hover {
+    background-color: #3730a3 !important;
   }
 }
 
