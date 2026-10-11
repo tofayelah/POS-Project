@@ -7,7 +7,9 @@ interface AccountingHealthProps {
 }
 
 export function AccountingHealth({ health }: AccountingHealthProps) {
-  const isHealthy = health.unbalanced_journals === 0;
+  const unbalanced = health?.unbalanced_journals ?? 0;
+  const posted = health?.posted_journals ?? 0;
+  const isHealthy = unbalanced === 0;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
@@ -35,15 +37,15 @@ export function AccountingHealth({ health }: AccountingHealthProps) {
               <FileText className="w-4 h-4" />
               Posted Journals
             </div>
-            <p className="text-2xl font-extrabold text-slate-900">{health.posted_journals.toLocaleString()}</p>
+            <p className="text-2xl font-extrabold text-slate-900">{posted.toLocaleString()}</p>
           </div>
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <div className="flex items-center gap-2 mb-2 text-slate-500 font-bold text-sm">
               <AlertTriangle className="w-4 h-4" />
               Unbalanced
             </div>
-            <p className={`text-2xl font-extrabold ${health.unbalanced_journals > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-              {health.unbalanced_journals.toLocaleString()}
+            <p className={`text-2xl font-extrabold ${unbalanced > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              {unbalanced.toLocaleString()}
             </p>
           </div>
         </div>

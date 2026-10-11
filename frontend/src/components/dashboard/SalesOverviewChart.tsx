@@ -11,8 +11,9 @@ interface SalesOverviewChartProps {
   salesTrend: DashboardSummary['sales_trend'];
 }
 
-export function SalesOverviewChart({ salesTrend }: SalesOverviewChartProps) {
+export function SalesOverviewChart({ salesTrend = [] }: SalesOverviewChartProps) {
   const { t } = useLanguage();
+  const trendData = salesTrend || [];
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
@@ -25,7 +26,7 @@ export function SalesOverviewChart({ salesTrend }: SalesOverviewChartProps) {
         </p>
       </div>
       <div className="flex-1 min-h-[300px] w-full">
-        {salesTrend.length === 0 ? (
+        {trendData.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <p className="text-slate-400 text-sm font-medium">
               {t('dashboard.noSalesData', 'No sales data available for this period.')}

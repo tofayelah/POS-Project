@@ -9,7 +9,10 @@ interface RecentTransactionsProps {
   recentPurchases: DashboardSummary['recent_purchases'];
 }
 
-export function RecentTransactions({ recentSales, recentPurchases }: RecentTransactionsProps) {
+export function RecentTransactions({ recentSales = [], recentPurchases = [] }: RecentTransactionsProps) {
+  const salesList = recentSales || [];
+  const purchaseList = recentPurchases || [];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Recent Sales */}
@@ -18,7 +21,7 @@ export function RecentTransactions({ recentSales, recentPurchases }: RecentTrans
           <h3 className="font-extrabold text-lg text-slate-900">Recent Sales</h3>
         </div>
         <div className="overflow-x-auto">
-          {recentSales.length === 0 ? (
+          {salesList.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-sm font-medium">No recent sales.</div>
           ) : (
             <table className="w-full text-left text-sm whitespace-nowrap">
@@ -58,7 +61,7 @@ export function RecentTransactions({ recentSales, recentPurchases }: RecentTrans
           <h3 className="font-extrabold text-lg text-slate-900">Recent Purchases</h3>
         </div>
         <div className="overflow-x-auto">
-          {recentPurchases.length === 0 ? (
+          {purchaseList.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-sm font-medium">No recent purchases.</div>
           ) : (
             <table className="w-full text-left text-sm whitespace-nowrap">

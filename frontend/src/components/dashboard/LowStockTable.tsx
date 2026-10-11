@@ -5,7 +5,9 @@ interface LowStockTableProps {
   lowStockDetails: DashboardSummary['low_stock_details'];
 }
 
-export function LowStockTable({ lowStockDetails }: LowStockTableProps) {
+export function LowStockTable({ lowStockDetails = [] }: LowStockTableProps) {
+  const items = lowStockDetails || [];
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
       <div className="mb-4 flex items-center justify-between">
@@ -15,7 +17,7 @@ export function LowStockTable({ lowStockDetails }: LowStockTableProps) {
         </div>
       </div>
       <div className="overflow-x-auto flex-1">
-        {lowStockDetails.length === 0 ? (
+        {items.length === 0 ? (
           <div className="h-32 flex items-center justify-center">
             <p className="text-slate-400 text-sm font-medium">No low stock items.</p>
           </div>

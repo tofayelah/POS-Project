@@ -400,33 +400,33 @@ export function Dashboard() {
                 <KpiCard
                   id="kpi-total-sales"
                   title={t('dashboard.totalSales', 'Total Sales')}
-                  value={formatCurrency(summary.net_sales)}
+                  value={formatCurrency(summary?.net_sales)}
                   icon={TrendingUp}
                   color="blue"
                   badgeText={t('dashboard.selectedPeriod', 'Period')}
-                  subtitle={`Gross: ${formatCurrency(summary.gross_sales)}`}
+                  subtitle={`Gross: ${formatCurrency(summary?.gross_sales)}`}
                 />
                 <KpiCard
                   id="kpi-total-items"
                   title={t('dashboard.totalItems', 'Total Items')}
-                  value={summary.total_products.toLocaleString()}
+                  value={(summary?.total_products ?? 0).toLocaleString()}
                   icon={Package}
                   color="orange"
                   badgeText={t('dashboard.inCatalog', 'Catalog')}
-                  subtitle={`${summary.low_stock} ${t('dashboard.lowStockAlerts', 'Low Stock')}`}
+                  subtitle={`${summary?.low_stock ?? 0} ${t('dashboard.lowStockAlerts', 'Low Stock')}`}
                 />
                 <KpiCard
                   id="kpi-net-profit"
                   title={t('dashboard.netProfit', 'Net Profit')}
-                  value={formatCurrency(summary.net_profit)}
+                  value={formatCurrency(summary?.net_profit)}
                   icon={DollarSign}
                   color="purple"
-                  badgeText={`${summary.gross_margin}% Margin`}
+                  badgeText={`${summary?.gross_margin ?? 0}% Margin`}
                   trend={{
-                    value: `${summary.gross_margin}%`,
-                    isPositive: Number(summary.net_profit) >= 0
+                    value: `${summary?.gross_margin ?? 0}%`,
+                    isPositive: Number(summary?.net_profit ?? 0) >= 0
                   }}
-                  subtitle={`Gross Profit: ${formatCurrency(summary.gross_profit)}`}
+                  subtitle={`Gross Profit: ${formatCurrency(summary?.gross_profit)}`}
                 />
               </div>
 

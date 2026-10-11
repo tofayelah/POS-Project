@@ -150,15 +150,14 @@ export default defineConfig({
               return;
             }
 
-            // Generic fallback for any other /api/v1/bi/* calls
-            if (req.url.includes('/bi/')) {
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({
-                status: 'success',
-                data: {},
-              }));
-              return;
-            }
+            // Generic mock fallback for all other /api/v1/* requests
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              status: 'success',
+              data: [],
+            }));
+            return;
           }
           next();
         });

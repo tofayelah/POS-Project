@@ -75,11 +75,11 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
               className="flex items-center gap-2 px-2.5 py-1.5 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200/80 rounded-lg text-left transition-colors text-xs cursor-pointer"
             >
               <div className="w-6 h-6 rounded bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs shrink-0">
-                {activeCompany.name.charAt(0)}
+                {(activeCompany.name || 'R').charAt(0)}
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                  <span className="max-w-[120px] md:max-w-[150px] truncate">{activeCompany.name}</span>
+                  <span className="max-w-[120px] md:max-w-[150px] truncate">{activeCompany.name || 'RetailCore'}</span>
                   <span className="hidden md:flex items-center text-[10px] font-mono text-indigo-700 bg-white px-1.5 py-0.2 rounded border border-indigo-200">
                     <Globe className="w-2.5 h-2.5 mr-0.5 text-indigo-500" />
                     {activeCompany.subdomain || 'apex'}.sonaribd.com
@@ -112,11 +112,12 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
                   </div>
 
                   <div className="max-h-64 overflow-y-auto py-1">
-                    {companies.map((c) => {
+                    {companies.map((c, idx) => {
                       const isSelected = c.id === activeCompany.id;
+                      const companyName = c.name || 'Company';
                       return (
                         <button
-                          key={c.id}
+                          key={c.id || idx}
                           onClick={() => handleSwitchTenant(c)}
                           className={`w-full px-3 py-2 text-left flex items-start justify-between transition-colors cursor-pointer ${
                             isSelected ? 'bg-indigo-50/80 text-indigo-950' : 'hover:bg-slate-50 text-slate-700'
@@ -126,11 +127,11 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
                             <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs uppercase shrink-0 mt-0.5 ${
                               isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'
                             }`}>
-                              {c.name.charAt(0)}
+                              {companyName.charAt(0)}
                             </div>
                             <div>
                               <div className="text-xs font-semibold leading-tight line-clamp-1">
-                                {c.name}
+                                {companyName}
                               </div>
                               <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
                                 <Globe className="w-2.5 h-2.5 text-slate-400" />

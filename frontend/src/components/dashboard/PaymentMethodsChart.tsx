@@ -7,10 +7,10 @@ interface PaymentMethodsChartProps {
   paymentMethods: DashboardSummary['payment_methods'];
 }
 
-export function PaymentMethodsChart({ paymentMethods }: PaymentMethodsChartProps) {
+export function PaymentMethodsChart({ paymentMethods = [] }: PaymentMethodsChartProps) {
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#64748b'];
 
-  const data = paymentMethods.map(p => ({
+  const data = (paymentMethods || []).map(p => ({
     name: p.payment_method || 'Unknown',
     value: Number(p.total)
   }));

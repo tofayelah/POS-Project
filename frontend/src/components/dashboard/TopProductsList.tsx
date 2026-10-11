@@ -6,7 +6,9 @@ interface TopProductsListProps {
   products: DashboardSummary['top_products'];
 }
 
-export function TopProductsList({ products }: TopProductsListProps) {
+export function TopProductsList({ products = [] }: TopProductsListProps) {
+  const productList = products || [];
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
       <div className="mb-6">
@@ -14,7 +16,7 @@ export function TopProductsList({ products }: TopProductsListProps) {
         <p className="text-sm text-slate-500 font-medium">By sales amount</p>
       </div>
       <div className="flex-1 overflow-y-auto pr-2 space-y-5">
-        {products.length === 0 ? (
+        {productList.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <p className="text-slate-400 text-sm font-medium">No product sales data available.</p>
           </div>
