@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const defaultBaseUrl = (import.meta as any).env?.VITE_API_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: (import.meta as any).env?.VITE_API_URL || '/api/v1',
+  baseURL: defaultBaseUrl,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -9,17 +11,17 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
   // Multi-Tenant Isolation Headers
-  const activeCompanyId = localStorage.getItem('active_company_id') || '1';
+  const activeCompanyId = typeof localStorage !== 'undefined' ? (localStorage.getItem('active_company_id') || '1') : '1';
   config.headers['X-Company-ID'] = activeCompanyId;
 
   // Subdomain detection or storage
-  let activeSubdomain = localStorage.getItem('active_subdomain');
+  let activeSubdomain = typeof localStorage !== 'undefined' ? localStorage.getItem('active_subdomain') : null;
   if (!activeSubdomain && typeof window !== 'undefined') {
     const hostParts = window.location.hostname.split('.');
     if (hostParts.length > 2 && hostParts[0] !== 'www') {

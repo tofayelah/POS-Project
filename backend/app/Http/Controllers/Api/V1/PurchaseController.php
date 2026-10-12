@@ -188,6 +188,13 @@ class PurchaseController extends Controller
             ], 422);
         }
 
+        if ($supplier->status === 'INACTIVE') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected supplier is currently inactive and cannot be used for new purchases.',
+            ], 422);
+        }
+
         // Duplicate invoice validation (same company + same supplier + same supplier_invoice_number)
         $duplicate = Purchase::where('company_id', $companyId)
             ->where('supplier_id', $supplier->id)

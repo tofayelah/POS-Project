@@ -72,15 +72,15 @@ export const BudgetVsActual: React.FC = () => {
         <div className="flex items-center gap-3">
           <Link
             to="/finance/budgets"
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('finance.varianceTitle', 'Budget vs. Actual Variance Analysis')}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-500 mt-0.5">
               {variance?.budget_name || 'Budget'} (v{variance?.version || 1}) — {variance?.fiscal_year || 'Current Fiscal Year'}
             </p>
           </div>
@@ -89,7 +89,7 @@ export const BudgetVsActual: React.FC = () => {
           <select
             value={selectedBudgetId}
             onChange={(e) => handleBudgetSelect(Number(e.target.value))}
-            className="px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+            className="px-3 py-2 text-sm border rounded-lg bg-white font-medium"
           >
             {budgets.map((b) => (
               <option key={b.id} value={b.id}>
@@ -100,7 +100,7 @@ export const BudgetVsActual: React.FC = () => {
           <button
             onClick={() => fetchVarianceData(selectedBudgetId)}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -108,34 +108,34 @@ export const BudgetVsActual: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {/* Variance KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t('finance.allocatedBudget', 'Allocated Budget')}
           </span>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-gray-900 mt-2">
             {formatBDT(variance?.total_budget)}
           </div>
           <p className="text-xs text-gray-500 mt-1">Authorized expenditure ceiling</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t('finance.actualSpend', 'Actual GL Spend')}
           </span>
-          <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
+          <div className="text-2xl font-bold text-indigo-600 mt-2">
             {formatBDT(variance?.total_actual)}
           </div>
           <p className="text-xs text-gray-500 mt-1">General Ledger posted actuals</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t('finance.variance', 'Net Variance')}
           </span>
@@ -149,11 +149,11 @@ export const BudgetVsActual: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t('finance.burnRate', 'Consumption')}
           </span>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-gray-900 mt-2">
             {consumptionPct}%
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
@@ -168,15 +168,15 @@ export const BudgetVsActual: React.FC = () => {
       </div>
 
       {/* Account Line Breakdown Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.accountBreakdown', 'Account Line Variance Breakdown')}
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">{t('finance.account', 'GL Account')}</th>
                 <th className="px-6 py-3 text-right">{t('finance.budgeted', 'Budgeted')}</th>
@@ -186,7 +186,7 @@ export const BudgetVsActual: React.FC = () => {
                 <th className="px-6 py-3 text-center">{t('common.status', 'Health')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {!variance?.lines || variance.lines.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
@@ -195,9 +195,9 @@ export const BudgetVsActual: React.FC = () => {
                 </tr>
               ) : (
                 variance.lines.map((line, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr key={idx} className="hover:bg-gray-50:bg-gray-700/50">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900 dark:text-white">
+                      <div className="font-semibold text-gray-900">
                         {line.account_name}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
@@ -207,7 +207,7 @@ export const BudgetVsActual: React.FC = () => {
                     <td className="px-6 py-4 text-right font-medium">
                       {formatBDT(line.allocated_amount)}
                     </td>
-                    <td className="px-6 py-4 text-right font-medium text-indigo-600 dark:text-indigo-400">
+                    <td className="px-6 py-4 text-right font-medium text-indigo-600">
                       {formatBDT(line.actual_amount)}
                     </td>
                     <td className={`px-6 py-4 text-right font-bold ${
@@ -221,10 +221,10 @@ export const BudgetVsActual: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                         line.status === 'UNDER_BUDGET'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400'
+                          ? 'bg-emerald-100 text-emerald-800'
                           : line.status === 'OVER_BUDGET'
-                          ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-blue-100 text-blue-800'
                       }`}>
                         {line.status}
                       </span>

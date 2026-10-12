@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/useAuth';
 import { CompanyProvider } from './contexts/CompanyContext';
+import { V2SystemProvider } from './context/V2SystemContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import Accounting from "./pages/Accounting";
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -141,7 +142,8 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <CompanyProvider>
-            <Router>
+            <V2SystemProvider>
+              <Router>
               <ErrorBoundary>
                 <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -276,6 +278,11 @@ export default function App() {
             <Route path="/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
             <Route path="/suppliers/new" element={<Navigate to="/purchases/suppliers/new" replace />} />
             <Route path="/suppliers/:id/edit" element={<Navigate to="/purchases/suppliers/:id/edit" replace />} />
+            <Route path="/purchase/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
+            <Route path="/purchase/suppliers/new" element={<Navigate to="/purchases/suppliers/new" replace />} />
+            <Route path="/purchase/suppliers/:id/edit" element={<Navigate to="/purchases/suppliers/:id/edit" replace />} />
+            <Route path="/procurement/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
+            <Route path="/procurement/suppliers/new" element={<Navigate to="/purchases/suppliers/new" replace />} />
             <Route path="/purchases/suppliers" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -1046,10 +1053,11 @@ export default function App() {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-              </ErrorBoundary>
-        </Router>
-        </CompanyProvider>
-      </AuthProvider>
+        </ErrorBoundary>
+      </Router>
+    </V2SystemProvider>
+  </CompanyProvider>
+</AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );

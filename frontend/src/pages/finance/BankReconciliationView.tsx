@@ -135,10 +135,10 @@ export const BankReconciliationView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.bankReconTitle', 'Automated Bank Reconciliation Engine')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.bankReconSubtitle', 'Statement Feed vs GL Subledger Auto-Matching & Discrepancy Auditing')}
           </p>
         </div>
@@ -146,7 +146,7 @@ export const BankReconciliationView: React.FC = () => {
           <select
             value={selectedAccountId}
             onChange={(e) => handleAccountChange(Number(e.target.value))}
-            className="px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+            className="px-3 py-2 text-sm border rounded-lg bg-white font-medium"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>{a.bank_name} - {a.account_name}</option>
@@ -162,7 +162,7 @@ export const BankReconciliationView: React.FC = () => {
           <button
             onClick={() => fetchAccountsAndReconciliations(selectedAccountId)}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -170,14 +170,14 @@ export const BankReconciliationView: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500 rounded text-emerald-700 dark:text-emerald-300 text-sm flex justify-between">
+        <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded text-emerald-700 text-sm flex justify-between">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm flex justify-between">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm flex justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
@@ -187,27 +187,27 @@ export const BankReconciliationView: React.FC = () => {
       {activeReconciliation ? (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Statement Closing Balance
               </span>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+              <div className="text-2xl font-bold text-gray-900 mt-2">
                 {formatBDT(activeReconciliation.statement_closing_balance)}
               </div>
               <p className="text-xs text-gray-400 mt-1">As per bank statement feed</p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 GL Cash Book Balance
               </span>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">
+              <div className="text-2xl font-bold text-blue-600 mt-2">
                 {formatBDT(activeReconciliation.gl_closing_balance)}
               </div>
               <p className="text-xs text-gray-400 mt-1">General Ledger posted balance</p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Unreconciled Difference
               </span>
@@ -221,7 +221,7 @@ export const BankReconciliationView: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Reconciliation Status
@@ -229,8 +229,8 @@ export const BankReconciliationView: React.FC = () => {
                 <div className="mt-2">
                   <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
                     activeReconciliation.status === 'RECONCILED'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400'
-                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
                   }`}>
                     {activeReconciliation.status}
                   </span>
@@ -260,23 +260,23 @@ export const BankReconciliationView: React.FC = () => {
           </div>
 
           {/* Matched Transactions Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <div>
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                <h2 className="text-base font-bold text-gray-900">
                   Reconciled Matches & Line Alignments
                 </h2>
                 <p className="text-xs text-gray-500">
                   Exact, reference, date window and manual match pairings
                 </p>
               </div>
-              <span className="text-xs bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full font-medium">
+              <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-medium">
                 {activeReconciliation.matches?.length || 0} Matched Lines
               </span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-6 py-3">Bank Statement Line</th>
                     <th className="px-6 py-3">General Ledger Journal Line</th>
@@ -285,7 +285,7 @@ export const BankReconciliationView: React.FC = () => {
                     <th className="px-6 py-3 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200">
                   {!activeReconciliation.matches || activeReconciliation.matches.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
@@ -294,9 +294,9 @@ export const BankReconciliationView: React.FC = () => {
                     </tr>
                   ) : (
                     activeReconciliation.matches.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <tr key={m.id} className="hover:bg-gray-50:bg-gray-700/50">
                         <td className="px-6 py-3">
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900">
                             {m.bank_statement_line?.description || 'Statement Line'}
                           </div>
                           <div className="text-xs text-gray-400 font-mono">
@@ -304,7 +304,7 @@ export const BankReconciliationView: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-3">
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900">
                             Voucher: {m.journal_entry_line?.journal_entry?.voucher_number || 'JV-ENTRY'}
                           </div>
                           <div className="text-xs text-gray-400">
@@ -312,11 +312,11 @@ export const BankReconciliationView: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-3">
-                          <span className="text-xs font-mono px-2 py-0.5 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded">
+                          <span className="text-xs font-mono px-2 py-0.5 bg-blue-50 text-blue-700 rounded">
                             {m.match_type}
                           </span>
                         </td>
-                        <td className="px-6 py-3 text-right font-bold text-gray-900 dark:text-white">
+                        <td className="px-6 py-3 text-right font-bold text-gray-900">
                           {formatBDT(m.matched_amount)}
                         </td>
                         <td className="px-6 py-3 text-center">
@@ -339,9 +339,9 @@ export const BankReconciliationView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <FileCheck2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+          <h3 className="text-base font-bold text-gray-900">
             No Active Reconciliation Session
           </h3>
           <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
@@ -359,8 +359,8 @@ export const BankReconciliationView: React.FC = () => {
       {/* New Reconciliation Session Modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Start Bank Reconciliation
             </h3>
             <form onSubmit={handleCreateReconciliation} className="space-y-4">
@@ -371,7 +371,7 @@ export const BankReconciliationView: React.FC = () => {
                   required
                   value={statementDate}
                   onChange={(e) => setStatementDate(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
@@ -381,7 +381,7 @@ export const BankReconciliationView: React.FC = () => {
                   required
                   value={stmtClosingBal}
                   onChange={(e) => setStmtClosingBal(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-3">

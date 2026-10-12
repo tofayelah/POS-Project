@@ -299,7 +299,7 @@ export function UserList() {
       )}
 
       {/* Search & Filter Toolbar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center shadow-2xs">
         <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -307,19 +307,19 @@ export function UserList() {
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <Filter className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+            <Filter className="w-4 h-4 text-slate-500" />
             <span>Role:</span>
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600"
           >
             <option value="all">All Roles</option>
             {roles.map((r) => (
@@ -332,10 +332,10 @@ export function UserList() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/60 text-xs uppercase font-medium text-slate-400 border-b border-slate-800">
+          <table className="w-full text-left text-sm text-slate-800">
+            <thead className="bg-slate-100 text-xs uppercase font-bold text-slate-800 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Role</th>
@@ -344,13 +344,13 @@ export function UserList() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-indigo-400" />
-                      <span>Loading organization users...</span>
+                      <RefreshCw className="w-6 h-6 animate-spin text-indigo-600" />
+                      <span className="font-semibold text-slate-700">Loading organization users...</span>
                     </div>
                   </td>
                 </tr>
@@ -358,8 +358,8 @@ export function UserList() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <Users className="w-8 h-8 text-slate-600" />
-                      <p className="font-medium text-slate-400">No users found</p>
+                      <Users className="w-8 h-8 text-slate-400" />
+                      <p className="font-bold text-slate-800">No users found</p>
                       <p className="text-xs text-slate-500">
                         {search || roleFilter !== 'all'
                           ? 'Try changing your search or filter parameters'
@@ -379,51 +379,51 @@ export function UserList() {
                     .toUpperCase();
 
                   return (
-                    <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-indigo-600/20 text-indigo-400 font-semibold text-xs flex items-center justify-center border border-indigo-500/30">
+                          <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
                             {initials}
                           </div>
                           <div>
-                            <div className="font-medium text-white">{user.name}</div>
-                            <div className="text-xs text-slate-400 flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
+                            <div className="font-bold text-slate-900">{user.name}</div>
+                            <div className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                              <Mail className="w-3 h-3 text-slate-400" />
                               {user.email}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700">
-                          <Shield className="w-3 h-3 text-indigo-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                          <Shield className="w-3 h-3 text-indigo-600" />
                           {roleName}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
                             (user.status || 'active') === 'active'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                              : 'bg-rose-100 text-rose-900 border border-rose-300'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              (user.status || 'active') === 'active' ? 'bg-emerald-400' : 'bg-rose-400'
+                              (user.status || 'active') === 'active' ? 'bg-emerald-600' : 'bg-rose-600'
                             }`}
                           />
                           {(user.status || 'active').charAt(0).toUpperCase() + (user.status || 'active').slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-400">
+                      <td className="px-6 py-4 text-xs font-medium text-slate-600">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleOpenEditModal(user)}
-                            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-indigo-600 transition-colors border border-transparent hover:border-slate-200 cursor-pointer"
                             title="Edit User"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -433,7 +433,7 @@ export function UserList() {
                               setTargetUser(user);
                               setActionType('remove-access');
                             }}
-                            className="p-1.5 hover:bg-slate-800 rounded-lg text-amber-400 hover:text-amber-300 transition-colors"
+                            className="p-1.5 hover:bg-amber-50 rounded-lg text-amber-600 hover:text-amber-800 transition-colors border border-transparent hover:border-amber-200 cursor-pointer"
                             title="Remove from Company"
                           >
                             <UserMinus className="w-4 h-4" />
@@ -443,7 +443,7 @@ export function UserList() {
                               setTargetUser(user);
                               setActionType('delete');
                             }}
-                            className="p-1.5 hover:bg-slate-800 rounded-lg text-rose-400 hover:text-rose-300 transition-colors"
+                            className="p-1.5 hover:bg-rose-50 rounded-lg text-rose-600 hover:text-rose-800 transition-colors border border-transparent hover:border-rose-200 cursor-pointer"
                             title="Delete User"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -461,10 +461,10 @@ export function UserList() {
 
       {/* Create / Assign / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-semibold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-md p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <h3 className="text-lg font-bold text-slate-900">
                 {modalMode === 'create'
                   ? 'Create New User'
                   : modalMode === 'assign'
@@ -473,15 +473,15 @@ export function UserList() {
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {modalError && (
-              <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-xs">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-semibold">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
                 <span>{modalError}</span>
               </div>
             )}
@@ -489,13 +489,13 @@ export function UserList() {
             <form onSubmit={handleSaveUser} className="space-y-4">
               {modalMode === 'assign' ? (
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Select User <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select User <span className="text-rose-600">*</span>
                   </label>
                   <select
                     value={formAssignUserId}
                     onChange={(e) => setFormAssignUserId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600"
                     required
                   >
                     <option value="">-- Choose User --</option>
@@ -514,35 +514,35 @@ export function UserList() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Full Name <span className="text-rose-400">*</span>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Full Name <span className="text-rose-600">*</span>
                     </label>
                     <input
                       type="text"
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
                       placeholder="e.g. Arif Rahman"
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Email Address <span className="text-rose-400">*</span>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Email Address <span className="text-rose-600">*</span>
                     </label>
                     <input
                       type="email"
                       value={formEmail}
                       onChange={(e) => setFormEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
                       {modalMode === 'edit' ? 'New Password (leave blank to keep current)' : 'Password *'}
                     </label>
                     <input
@@ -550,7 +550,7 @@ export function UserList() {
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                       required={modalMode === 'create'}
                     />
                   </div>
@@ -558,13 +558,13 @@ export function UserList() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Security Role <span className="text-rose-400">*</span>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Security Role <span className="text-rose-600">*</span>
                 </label>
                 <select
                   value={formRole}
                   onChange={(e) => setFormRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   required
                 >
                   {roles.map((r) => (
@@ -577,11 +577,11 @@ export function UserList() {
 
               {modalMode !== 'assign' && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Status</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value as 'active' | 'inactive')}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -589,18 +589,18 @@ export function UserList() {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer shadow-2xs"
                 >
                   {saving && <RefreshCw className="w-4 h-4 animate-spin" />}
                   <span>{modalMode === 'create' ? 'Create User' : modalMode === 'assign' ? 'Assign' : 'Save Changes'}</span>
@@ -613,15 +613,15 @@ export function UserList() {
 
       {/* Confirmation Dialog */}
       {actionType && targetUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
               <AlertCircle className="w-6 h-6 flex-shrink-0" />
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-lg font-bold text-slate-900">
                 {actionType === 'remove-access' ? 'Remove Company Access?' : 'Delete User?'}
               </h3>
             </div>
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-slate-600">
               {actionType === 'remove-access'
                 ? `Are you sure you want to remove ${targetUser.name}'s access from ${company?.name || 'this company'}? They will no longer be able to log in or manage this tenant.`
                 : `Are you sure you want to permanently delete user ${targetUser.name}? This action cannot be undone.`}
@@ -633,7 +633,7 @@ export function UserList() {
                   setActionType(null);
                   setTargetUser(null);
                 }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -641,7 +641,7 @@ export function UserList() {
                 type="button"
                 onClick={handleConfirmAction}
                 disabled={actionProcessing}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
               >
                 {actionProcessing && <RefreshCw className="w-4 h-4 animate-spin" />}
                 <span>{actionType === 'remove-access' ? 'Remove Access' : 'Delete'}</span>

@@ -132,10 +132,10 @@ export const CostProfitCentreManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.centresTitle', 'Cost & Profit Centre Architecture')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.centresSubtitle', 'Departmental Expense Attribution, Contribution Margins & Operating Profitability')}
           </p>
         </div>
@@ -158,7 +158,7 @@ export const CostProfitCentreManagement: React.FC = () => {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -166,21 +166,21 @@ export const CostProfitCentreManagement: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500 rounded text-emerald-700 dark:text-emerald-300 text-sm flex justify-between">
+        <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded text-emerald-700 text-sm flex justify-between">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm flex justify-between">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm flex justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
       )}
 
       {/* Tab Switcher */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="flex border-b border-gray-200">
         <button
           onClick={() => {
             setActiveTab('cost');
@@ -188,7 +188,7 @@ export const CostProfitCentreManagement: React.FC = () => {
           }}
           className={`py-3 px-6 text-sm font-semibold border-b-2 flex items-center gap-2 ${
             activeTab === 'cost'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -201,7 +201,7 @@ export const CostProfitCentreManagement: React.FC = () => {
           }}
           className={`py-3 px-6 text-sm font-semibold border-b-2 flex items-center gap-2 ${
             activeTab === 'profit'
-              ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+              ? 'border-emerald-600 text-emerald-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -212,10 +212,10 @@ export const CostProfitCentreManagement: React.FC = () => {
       {/* COST CENTRES TAB */}
       {activeTab === 'cost' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-6 py-3">Code</th>
                     <th className="px-6 py-3">Cost Centre Name</th>
@@ -226,7 +226,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     <th className="px-6 py-3 text-center">Reports</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200">
                   {costCentres.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
@@ -235,11 +235,11 @@ export const CostProfitCentreManagement: React.FC = () => {
                     </tr>
                   ) : (
                     costCentres.map((cc) => (
-                      <tr key={cc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900 dark:text-white">
+                      <tr key={cc.id} className="hover:bg-gray-50:bg-gray-700/50">
+                        <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900">
                           {cc.code}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 font-semibold text-gray-900">
                           {cc.name}
                         </td>
                         <td className="px-6 py-4 text-xs">{cc.manager_name || '—'}</td>
@@ -272,9 +272,9 @@ export const CostProfitCentreManagement: React.FC = () => {
 
           {/* Cost Centre Expense Breakdown Details */}
           {selectedCostCentre && costExpenseReport && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
               <div className="flex justify-between items-center border-b pb-3">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                <h3 className="text-base font-bold text-gray-900">
                   Cost Centre Expenses: {selectedCostCentre.name} ({selectedCostCentre.code})
                 </h3>
                 <span className="text-sm font-bold text-rose-600">
@@ -282,13 +282,13 @@ export const CostProfitCentreManagement: React.FC = () => {
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Authorized Budget Ceiling</span>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                  <div className="text-xl font-bold text-gray-900 mt-1">
                     {formatBDT(selectedCostCentre.budget_limit)}
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Remaining Spending Headroom</span>
                   <div className={`text-xl font-bold mt-1 ${
                     (selectedCostCentre.budget_limit - costExpenseReport.total_expenses) >= 0 ? 'text-emerald-600' : 'text-rose-600'
@@ -305,10 +305,10 @@ export const CostProfitCentreManagement: React.FC = () => {
       {/* PROFIT CENTRES TAB */}
       {activeTab === 'profit' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-6 py-3">Code</th>
                     <th className="px-6 py-3">Profit Centre Name</th>
@@ -318,7 +318,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     <th className="px-6 py-3 text-center">Reports</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-200">
                   {profitCentres.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
@@ -327,11 +327,11 @@ export const CostProfitCentreManagement: React.FC = () => {
                     </tr>
                   ) : (
                     profitCentres.map((pc) => (
-                      <tr key={pc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900 dark:text-white">
+                      <tr key={pc.id} className="hover:bg-gray-50:bg-gray-700/50">
+                        <td className="px-6 py-4 font-mono text-xs font-bold text-gray-900">
                           {pc.code}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 font-semibold text-gray-900">
                           {pc.name}
                         </td>
                         <td className="px-6 py-4 text-right font-medium">
@@ -365,34 +365,34 @@ export const CostProfitCentreManagement: React.FC = () => {
 
           {/* Profit Centre Details */}
           {selectedProfitCentre && profitabilityReport && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
               <div className="flex justify-between items-center border-b pb-3">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                <h3 className="text-base font-bold text-gray-900">
                   Operating Profitability: {selectedProfitCentre.name} ({selectedProfitCentre.code})
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Attributed Revenue</span>
                   <div className="text-xl font-bold text-emerald-600 mt-1">
                     {formatBDT(profitabilityReport.revenue)}
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Direct Costs</span>
                   <div className="text-xl font-bold text-rose-600 mt-1">
                     {formatBDT(profitabilityReport.direct_costs)}
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Contribution Margin</span>
                   <div className="text-xl font-bold text-indigo-600 mt-1">
                     {formatBDT(profitabilityReport.contribution_margin)}
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <span className="text-xs text-gray-500 uppercase font-bold">Operating Margin %</span>
-                  <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                  <div className="text-xl font-bold text-gray-900 mt-1">
                     {profitabilityReport.margin_pct}%
                   </div>
                 </div>
@@ -405,8 +405,8 @@ export const CostProfitCentreManagement: React.FC = () => {
       {/* Add Cost Centre Modal */}
       {showCostModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Create Cost Centre
             </h3>
             <form onSubmit={handleCreateCostCentre} className="space-y-4">
@@ -418,7 +418,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                   value={costCode}
                   onChange={(e) => setCostCode(e.target.value)}
                   placeholder="CC-MKT-01"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
@@ -429,7 +429,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                   value={costName}
                   onChange={(e) => setCostName(e.target.value)}
                   placeholder="Marketing & Brand Activation"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -440,7 +440,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     value={costManager}
                     onChange={(e) => setCostManager(e.target.value)}
                     placeholder="Manager Name"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -449,7 +449,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     type="number"
                     value={costBudgetLimit}
                     onChange={(e) => setCostBudgetLimit(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -458,7 +458,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                 <select
                   value={costParentId}
                   onChange={(e) => setCostParentId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 >
                   <option value="">None (Top-Level Centre)</option>
                   {costCentres.map((c) => (
@@ -489,8 +489,8 @@ export const CostProfitCentreManagement: React.FC = () => {
       {/* Add Profit Centre Modal */}
       {showProfitModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Create Profit Centre
             </h3>
             <form onSubmit={handleCreateProfitCentre} className="space-y-4">
@@ -502,7 +502,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                   value={profitCode}
                   onChange={(e) => setProfitCode(e.target.value)}
                   placeholder="PC-ONLINE-01"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
@@ -513,7 +513,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                   value={profitName}
                   onChange={(e) => setProfitName(e.target.value)}
                   placeholder="E-Commerce & Digital Channels"
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -523,7 +523,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     type="number"
                     value={profitTargetRev}
                     onChange={(e) => setProfitTargetRev(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -532,7 +532,7 @@ export const CostProfitCentreManagement: React.FC = () => {
                     type="number"
                     value={profitTargetMargin}
                     onChange={(e) => setProfitTargetMargin(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>

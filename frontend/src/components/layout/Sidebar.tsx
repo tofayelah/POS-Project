@@ -115,7 +115,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         id="app-sidebar"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`bg-slate-900 flex flex-col shrink-0 h-full border-r border-slate-800 transition-all duration-300 ease-in-out ${
+        className={`bg-[#F8FAFC] flex flex-col shrink-0 h-full border-r border-[#E2E8F0] shadow-[1px_0_4px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
           // Mobile state
           isMobileOpen
             ? 'fixed inset-y-0 left-0 z-50 w-72 shadow-2xl translate-x-0 flex'
@@ -126,16 +126,16 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         }`}
       >
         {/* Header / Brand */}
-        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+        <div className="p-4 border-b border-[#E2E8F0] bg-white/75 backdrop-blur-xs flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xs shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-extrabold text-base shadow-sm ring-1 ring-indigo-500/20 shrink-0">
               {activeCompany?.name?.charAt(0) || 'R'}
             </div>
             <div className={`min-w-0 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'lg:opacity-0'}`}>
-              <span className="text-white font-semibold tracking-tight text-sm block truncate" id="sidebar-company-name">
+              <span className="text-slate-900 font-extrabold tracking-tight text-sm block truncate" id="sidebar-company-name">
                 {activeCompany?.name || 'RetailCore ERP'}
               </span>
-              <span className="text-[10px] text-indigo-400 font-mono block truncate">
+              <span className="text-xs text-indigo-600 font-medium block truncate">
                 {activeCompany?.subdomain || 'tenant'}.sonaribd.com
               </span>
             </div>
@@ -145,7 +145,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 text-slate-500 hover:text-slate-900 rounded-lg transition-colors cursor-pointer"
             aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
@@ -153,9 +153,9 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         </div>
 
         {/* Scrollable Navigation */}
-        <nav className="mt-3 px-3 space-y-1 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-700">
+        <nav className="mt-3 px-3 space-y-1 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
           {/* Dashboard */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-2 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-2 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.overview', 'Overview')}
@@ -165,13 +165,13 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-dashboard"
             onClick={handleLinkClick}
             title={t('nav.dashboard', 'Dashboard')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-xs font-medium cursor-pointer ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-[13px] cursor-pointer ${
               isActive('/dashboard', true)
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
-            <LayoutDashboard className="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" />
+            <LayoutDashboard className="w-5 h-5 shrink-0 text-slate-500" />
             <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
               {t('nav.dashboard', 'Dashboard')}
             </span>
@@ -180,7 +180,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           {/* POS Management */}
           {canViewPos && (
             <>
-              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+              <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
                 isExpanded ? 'block' : 'lg:hidden'
               }`}>
                 {t('nav.pos', 'POS')}
@@ -190,10 +190,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-open-pos-session"
                 onClick={handleLinkClick}
                 title={t('nav.openPosSession', 'Open POS Counter Session')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   location.pathname === '/pos'
-                    ? 'bg-emerald-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-emerald-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShoppingCart className="w-5 h-5 shrink-0 text-emerald-400" />
@@ -206,10 +206,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-pos-terminals"
                 onClick={handleLinkClick}
                 title={t('nav.posTerminalManagement', 'POS Terminal Management')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/pos/terminals')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Monitor className="w-4 h-4 shrink-0 text-blue-400" />
@@ -222,10 +222,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-pos-shifts"
                 onClick={handleLinkClick}
                 title={t('posShift.title', 'Shift & Drawer Management')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/pos/shifts')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -238,10 +238,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-payment-methods"
                 onClick={handleLinkClick}
                 title={t('nav.paymentMethods', 'Payment Methods')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/pos/payment-methods')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <CreditCard className="w-4 h-4 shrink-0 text-teal-400" />
@@ -254,10 +254,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-loyalty-settings"
                 onClick={handleLinkClick}
                 title={t('nav.loyaltySettings', 'Loyalty Settings')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/pos/loyalty-settings')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Award className="w-4 h-4 shrink-0 text-amber-400" />
@@ -269,7 +269,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
 
           {/* Product Master */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.productMaster', 'Product Master')}
@@ -279,10 +279,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-item-information"
             onClick={handleLinkClick}
             title={t('nav.itemInformation', 'Item Information')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/products/item-information')
-                ? 'bg-slate-800 text-cyan-300 font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Barcode className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -295,10 +295,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-products"
             onClick={handleLinkClick}
             title={t('nav.products', 'Products & SKUs')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/products', true)
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Shirt className="w-4 h-4 shrink-0 text-blue-400" />
@@ -311,10 +311,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-categories"
             onClick={handleLinkClick}
             title={t('nav.categories', 'Categories')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/categories')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <FolderTree className="w-4 h-4 shrink-0 text-amber-400" />
@@ -327,10 +327,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-brands"
             onClick={handleLinkClick}
             title={t('nav.brands', 'Brands')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/brands')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Tag className="w-4 h-4 shrink-0 text-rose-400" />
@@ -343,10 +343,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-units"
             onClick={handleLinkClick}
             title={t('nav.units', 'Units of Measure')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/units')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Scale className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -359,10 +359,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-attributes"
             onClick={handleLinkClick}
             title={t('nav.attributes', 'Attributes & Values')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/attributes')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0 text-violet-400" />
@@ -372,7 +372,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           </Link>
 
           {/* Inventory Management */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.inventory', 'Inventory')}
@@ -382,10 +382,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-inventory"
             onClick={handleLinkClick}
             title={t('nav.stockLevels', 'Stock Levels')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory', true)
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Package className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -398,10 +398,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-movements"
             onClick={handleLinkClick}
             title={t('nav.stockMovements', 'Stock Movements')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/movements')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <History className="w-4 h-4 shrink-0 text-slate-400" />
@@ -414,10 +414,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-adjustments"
             onClick={handleLinkClick}
             title={t('nav.stockAdjustments', 'Stock Adjustments')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/adjustments')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4 shrink-0 text-slate-400" />
@@ -430,10 +430,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-transfers"
             onClick={handleLinkClick}
             title={t('nav.transfers', 'Transfers')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/transfers')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <MapPin className="w-4 h-4 shrink-0 text-slate-400" />
@@ -446,10 +446,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-stock-counts"
             onClick={handleLinkClick}
             title={t('nav.stockCounts', 'Stock Counts')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/stock-counts')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ClipboardCheck className="w-4 h-4 shrink-0 text-slate-400" />
@@ -462,10 +462,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-batches"
             onClick={handleLinkClick}
             title={t('nav.batches', 'Batches & Expiry')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/batches')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0 text-slate-400" />
@@ -478,10 +478,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-valuation"
             onClick={handleLinkClick}
             title={t('nav.valuation', 'Valuation Report')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/valuation')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <DollarSign className="w-4 h-4 shrink-0 text-slate-400" />
@@ -494,10 +494,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-reconciliation"
             onClick={handleLinkClick}
             title={t('nav.reconciliation', 'Reconciliation')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/inventory/reconciliation')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
@@ -507,7 +507,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           </Link>
 
           {/* Procurement / Purchases */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.procurement', 'Procurement')}
@@ -517,10 +517,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-procurement-dashboard"
             onClick={handleLinkClick}
             title={t('nav.procurementDashboard', 'Procurement Intelligence')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/dashboard')
-                ? 'bg-slate-800 text-indigo-400 font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <TrendingUp className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -533,10 +533,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-procurement-requisitions"
             onClick={handleLinkClick}
             title={t('nav.purchaseRequisitions', 'Purchase Requisitions')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/requisitions')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -549,10 +549,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-procurement-rfqs"
             onClick={handleLinkClick}
             title={t('nav.rfqManagement', 'RFQs & Tenders')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/rfqs')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0 text-sky-400" />
@@ -565,10 +565,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-suppliers"
             onClick={handleLinkClick}
             title={t('nav.suppliers', 'Suppliers')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/purchases/suppliers')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Users className="w-4 h-4 shrink-0 text-purple-400" />
@@ -581,10 +581,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-supplier-performance"
             onClick={handleLinkClick}
             title={t('nav.supplierPerformance', 'Supplier Performance')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/supplier-performance')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Award className="w-4 h-4 shrink-0 text-amber-400" />
@@ -597,10 +597,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-supplier-contracts"
             onClick={handleLinkClick}
             title={t('nav.supplierContracts', 'Contracts & Price Agreements')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/contracts')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -613,10 +613,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-purchase-orders"
             onClick={handleLinkClick}
             title={t('nav.purchaseOrders', 'Purchase Orders')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/purchases/orders')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -629,10 +629,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-goods-receipts"
             onClick={handleLinkClick}
             title={t('nav.goodsReceipts', 'Goods Receipts')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/purchases/goods-receipts')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Package className="w-4 h-4 shrink-0 text-teal-400" />
@@ -645,10 +645,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-purchases"
             onClick={handleLinkClick}
             title={t('nav.purchaseInvoices', 'Purchase Invoices')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/purchases', true)
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ShoppingCart className="w-4 h-4 shrink-0 text-blue-400" />
@@ -661,10 +661,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-matching-exceptions"
             onClick={handleLinkClick}
             title={t('nav.matchingExceptions', '3-Way Match & PPV')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/matching')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Scale className="w-4 h-4 shrink-0 text-amber-400" />
@@ -677,10 +677,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-procurement-planning"
             onClick={handleLinkClick}
             title={t('nav.procurementPlanning', 'Replenishment Planning')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/procurement/planning')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Boxes className="w-4 h-4 shrink-0 text-rose-400" />
@@ -693,10 +693,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-payables"
             onClick={handleLinkClick}
             title={t('nav.supplierPayables', 'Supplier Payables')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/purchases/payables')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <CreditCard className="w-4 h-4 shrink-0 text-rose-400" />
@@ -706,7 +706,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           </Link>
 
           {/* CRM & Sales */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.crmSales', 'Sales & Customers')}
@@ -716,10 +716,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-sales-returns"
             onClick={handleLinkClick}
             title={t('nav.salesReturns', 'Sales Returns & Exchanges')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/sales-returns')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <RotateCcw className="w-4 h-4 shrink-0 text-amber-400" />
@@ -732,10 +732,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-customers"
             onClick={handleLinkClick}
             title={t('nav.customers', 'Customers')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/customers', true)
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Users className="w-4 h-4 shrink-0 text-rose-400" />
@@ -748,10 +748,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-customer-groups"
             onClick={handleLinkClick}
             title={t('nav.customerGroups', 'Customer Groups')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/customers/groups')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0 text-slate-400" />
@@ -764,10 +764,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-customer-360"
             onClick={handleLinkClick}
             title={t('nav.customer360', 'Customer 360')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/customer-360')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <UserCheck className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -780,10 +780,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-customer-credit"
             onClick={handleLinkClick}
             title={t('nav.customerCredit', 'Credit & Limits')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/credit')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <CreditCard className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -796,10 +796,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-ar-aging"
             onClick={handleLinkClick}
             title={t('nav.arAging', 'AR Aging & Collections')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/ar-aging')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Clock className="w-4 h-4 shrink-0 text-amber-400" />
@@ -812,10 +812,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-crm-activities"
             onClick={handleLinkClick}
             title={t('nav.crmActivityCenter', 'CRM & Activities')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/activities')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Activity className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -828,10 +828,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-customer-intelligence"
             onClick={handleLinkClick}
             title={t('nav.customerIntelligence', 'Customer Intelligence')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/intelligence')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Award className="w-4 h-4 shrink-0 text-purple-400" />
@@ -844,10 +844,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-sales-intelligence"
             onClick={handleLinkClick}
             title={t('nav.salesIntelligence', 'Sales & Demand Intelligence')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/crm/sales-intelligence')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <TrendingUp className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -859,7 +859,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           {/* E-Commerce & Omnichannel */}
           {canViewEcommerce && (
             <>
-              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+              <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
                 isExpanded ? 'block' : 'lg:hidden'
               }`}>
                 {t('nav.ecommerce', 'E-Commerce')}
@@ -869,10 +869,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-dashboard"
                 onClick={handleLinkClick}
                 title={t('nav.ecomDashboard', 'E-Commerce Dashboard')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/dashboard')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Globe className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -885,10 +885,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-orders"
                 onClick={handleLinkClick}
                 title={t('nav.ecomOrders', 'Online Orders')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/orders')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShoppingBag className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -901,10 +901,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-fulfillment"
                 onClick={handleLinkClick}
                 title={t('nav.ecomFulfillment', 'Fulfillment & Dispatch')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/fulfillment')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Truck className="w-4 h-4 shrink-0 text-sky-400" />
@@ -917,10 +917,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-catalog"
                 onClick={handleLinkClick}
                 title={t('nav.ecomCatalog', 'Online Catalog')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/catalog')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Package className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -933,10 +933,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-categories"
                 onClick={handleLinkClick}
                 title={t('nav.ecomCategories', 'E-Com Categories')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/categories')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <FolderTree className="w-4 h-4 shrink-0 text-violet-400" />
@@ -949,10 +949,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-coupons"
                 onClick={handleLinkClick}
                 title={t('nav.ecomCoupons', 'Coupons & Promos')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/coupons')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Percent className="w-4 h-4 shrink-0 text-amber-400" />
@@ -965,10 +965,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-shipping"
                 onClick={handleLinkClick}
                 title={t('nav.ecomShipping', 'Shipping & Delivery')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/shipping')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <MapPin className="w-4 h-4 shrink-0 text-rose-400" />
@@ -981,10 +981,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-reviews"
                 onClick={handleLinkClick}
                 title={t('nav.ecomReviews', 'Review Moderation')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/reviews')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Star className="w-4 h-4 shrink-0 text-amber-300" />
@@ -997,10 +997,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-returns"
                 onClick={handleLinkClick}
                 title={t('nav.ecomReturns', 'Online Returns')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/returns')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <RotateCcw className="w-4 h-4 shrink-0 text-orange-400" />
@@ -1013,10 +1013,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-reports"
                 onClick={handleLinkClick}
                 title={t('nav.ecomReports', 'E-Commerce Reports')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/reports')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <FileText className="w-4 h-4 shrink-0 text-blue-400" />
@@ -1029,10 +1029,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-ecommerce-settings"
                 onClick={handleLinkClick}
                 title={t('nav.ecomSettings', 'Store Settings')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/ecommerce/settings')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Settings className="w-4 h-4 shrink-0 text-slate-400" />
@@ -1046,7 +1046,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-live-storefront"
                 onClick={handleLinkClick}
                 title={t('nav.storefront', 'Customer Storefront')}
-                className="flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-800/40 my-1"
+                className="flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 border border-emerald-800/40 my-1"
               >
                 <div className="flex items-center gap-3">
                   <Store className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1060,7 +1060,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
 
           {/* HRM & Workforce */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.hrm', 'HRM & Workforce')}
@@ -1070,10 +1070,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-dashboard"
             onClick={handleLinkClick}
             title={t('nav.hrDashboard', 'HR Command Center')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/dashboard')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <UserCheck className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1086,10 +1086,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-employees"
             onClick={handleLinkClick}
             title={t('nav.employees', 'Workforce Directory')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/employees')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Users className="w-4 h-4 shrink-0 text-sky-400" />
@@ -1102,10 +1102,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-departments"
             onClick={handleLinkClick}
             title={t('nav.departments', 'Departments & Roles')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/departments')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Building2 className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -1118,10 +1118,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-attendance"
             onClick={handleLinkClick}
             title={t('nav.attendance', 'Attendance & Shifts')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/attendance')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1134,10 +1134,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-leaves"
             onClick={handleLinkClick}
             title={t('nav.leaves', 'Leave Management')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/leaves')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ClipboardCheck className="w-4 h-4 shrink-0 text-amber-400" />
@@ -1150,10 +1150,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-payroll"
             onClick={handleLinkClick}
             title={t('nav.payroll', 'Payroll Engine')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/payroll')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <DollarSign className="w-4 h-4 shrink-0 text-purple-400" />
@@ -1166,10 +1166,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-hr-advances-loans"
             onClick={handleLinkClick}
             title={t('nav.advancesLoans', 'Advances & Loans')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/hr/advances-loans')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <CreditCard className="w-4 h-4 shrink-0 text-rose-400" />
@@ -1179,7 +1179,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           </Link>
 
           {/* Finance & Expenses */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.finance', 'Finance')}
@@ -1189,10 +1189,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-accounting"
             onClick={handleLinkClick}
             title={t('nav.accounting', 'Accounting')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/accounting')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0 text-blue-400" />
@@ -1205,10 +1205,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-expenses"
             onClick={handleLinkClick}
             title={t('nav.expenses', 'Expenses')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/expenses')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Receipt className="w-4 h-4 shrink-0 text-rose-400" />
@@ -1225,10 +1225,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-dashboard"
                 onClick={handleLinkClick}
                 title={t('nav.financeDashboard', 'Financial Dashboard')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/dashboard')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <TrendingUp className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1241,10 +1241,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-budgets"
                 onClick={handleLinkClick}
                 title={t('nav.budgets', 'Budgets & Controls')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/budgets')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Percent className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1257,10 +1257,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-treasury"
                 onClick={handleLinkClick}
                 title={t('nav.treasury', 'Cash & Treasury')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/treasury')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Wallet className="w-4 h-4 shrink-0 text-teal-400" />
@@ -1273,10 +1273,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-banks"
                 onClick={handleLinkClick}
                 title={t('nav.bankAccounts', 'Bank Accounts')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/banks')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Landmark className="w-4 h-4 shrink-0 text-blue-400" />
@@ -1289,10 +1289,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-bank-recon"
                 onClick={handleLinkClick}
                 title={t('nav.bankReconciliation', 'Bank Reconciliation')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/bank-reconciliation')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <FileCheck2 className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -1305,10 +1305,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-periods"
                 onClick={handleLinkClick}
                 title={t('nav.periodClosing', 'Period & Year-End Close')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/periods')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <CalendarCheck className="w-4 h-4 shrink-0 text-amber-400" />
@@ -1321,10 +1321,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-centres"
                 onClick={handleLinkClick}
                 title={t('nav.costProfitCentres', 'Cost & Profit Centres')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/centres')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Building2 className="w-4 h-4 shrink-0 text-purple-400" />
@@ -1337,10 +1337,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-ar"
                 onClick={handleLinkClick}
                 title={t('nav.financeArAging', 'AR Aging & Priorities')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/ar')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1353,10 +1353,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-ap"
                 onClick={handleLinkClick}
                 title={t('nav.apAging', 'AP Aging & Scheduling')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/ap')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Receipt className="w-4 h-4 shrink-0 text-rose-400" />
@@ -1369,10 +1369,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-fixed-assets"
                 onClick={handleLinkClick}
                 title={t('nav.fixedAssets', 'Fixed Assets')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/fixed-assets')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 shrink-0 text-orange-400" />
@@ -1385,10 +1385,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-finance-analytics"
                 onClick={handleLinkClick}
                 title={t('nav.financialAnalytics', 'Financial Analytics & Ratios')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/finance/analytics')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Scale className="w-4 h-4 shrink-0 text-pink-400" />
@@ -1400,7 +1400,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
 
           {/* Tax & VAT Compliance */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.taxCompliance', 'Tax & VAT Compliance')}
@@ -1410,10 +1410,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-dashboard"
             onClick={handleLinkClick}
             title={t('nav.taxDashboard', 'Tax Dashboard')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/dashboard')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Scale className="w-4 h-4 shrink-0 text-amber-400" />
@@ -1426,10 +1426,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-profiles"
             onClick={handleLinkClick}
             title={t('nav.taxProfiles', 'Tax Profiles & Registrations')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/profiles')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Building2 className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1442,10 +1442,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-rules"
             onClick={handleLinkClick}
             title={t('nav.taxRules', 'Tax Rates & Rules')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/rules')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Tag className="w-4 h-4 shrink-0 text-sky-400" />
@@ -1458,10 +1458,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-periods"
             onClick={handleLinkClick}
             title={t('nav.taxPeriods', 'Tax Filing Periods')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/periods')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1474,10 +1474,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-transactions"
             onClick={handleLinkClick}
             title={t('nav.taxTransactions', 'Tax Subledger Register')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/transactions')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -1490,10 +1490,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-reconciliation"
             onClick={handleLinkClick}
             title={t('nav.taxReconciliation', 'Subledger vs GL Audit')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/reconciliation')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0 text-purple-400" />
@@ -1506,10 +1506,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-adjustments"
             onClick={handleLinkClick}
             title={t('nav.taxAdjustments', 'Tax Adjustments & Notes')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/adjustments')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4 shrink-0 text-rose-400" />
@@ -1522,10 +1522,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-tax-reports"
             onClick={handleLinkClick}
             title={t('nav.taxReports', 'Mushak 9.1 & VAT Reports')}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/tax/reports')
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0 text-blue-400" />
@@ -1537,7 +1537,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           {/* Advanced BI & Management Reporting */}
           {canViewBi && (
             <>
-              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+              <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
                 isExpanded ? 'block' : 'lg:hidden'
               }`}>
                 {t('bi.title', 'Management BI & Intelligence')}
@@ -1547,10 +1547,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-executive"
                 onClick={handleLinkClick}
                 title={t('bi.executiveDashboard', 'Executive Dashboard')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/executive')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <TrendingUp className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1563,10 +1563,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-sales"
                 onClick={handleLinkClick}
                 title={t('bi.salesBi', 'Sales Intelligence')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/sales')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShoppingCart className="w-4 h-4 shrink-0 text-blue-400" />
@@ -1579,10 +1579,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-profitability"
                 onClick={handleLinkClick}
                 title={t('bi.profitabilityBi', 'Profitability & Margins')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/profitability')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1595,10 +1595,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-inventory"
                 onClick={handleLinkClick}
                 title={t('bi.inventoryBi', 'Inventory & Aging Analytics')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/inventory')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Package className="w-4 h-4 shrink-0 text-amber-400" />
@@ -1611,10 +1611,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-customer"
                 onClick={handleLinkClick}
                 title={t('bi.customerBi', 'Customer Portfolio & RFM')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/customer')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Users className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1627,10 +1627,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-supplier"
                 onClick={handleLinkClick}
                 title={t('bi.supplierBi', 'Supplier Scorecard & AP')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/supplier')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Truck className="w-4 h-4 shrink-0 text-teal-400" />
@@ -1643,10 +1643,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-finance"
                 onClick={handleLinkClick}
                 title={t('bi.financeBi', 'Financial Ratios & DuPont')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/finance')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Scale className="w-4 h-4 shrink-0 text-purple-400" />
@@ -1659,10 +1659,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-alerts"
                 onClick={handleLinkClick}
                 title={t('bi.alerts', 'Management Alerts')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/alerts')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 shrink-0 text-rose-400" />
@@ -1675,10 +1675,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-builder"
                 onClick={handleLinkClick}
                 title={t('bi.reportBuilder', 'Custom Report Builder')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/report-builder')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <FileText className="w-4 h-4 shrink-0 text-cyan-400" />
@@ -1691,10 +1691,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-bi-saved"
                 onClick={handleLinkClick}
                 title={t('bi.savedReports', 'Saved Reports')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/bi/saved-reports')
-                    ? 'bg-slate-800 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Layers className="w-4 h-4 shrink-0 text-sky-400" />
@@ -1706,7 +1706,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
 
           {/* Organization */}
-          <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+          <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
             isExpanded ? 'block' : 'lg:hidden'
           }`}>
             {t('nav.organization', 'Organization')}
@@ -1716,10 +1716,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-company"
             onClick={handleLinkClick}
             title={t('nav.company', 'Company')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/company')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Building2 className="w-4 h-4 shrink-0 text-amber-400" />
@@ -1732,10 +1732,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-business-units"
             onClick={handleLinkClick}
             title={t('nav.businessUnits', 'Business Units')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/business-units')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Network className="w-4 h-4 shrink-0 text-sky-400" />
@@ -1748,10 +1748,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-branches"
             onClick={handleLinkClick}
             title={t('nav.branches', 'Branches')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/branches')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <MapPin className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1764,10 +1764,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-warehouses"
             onClick={handleLinkClick}
             title={t('nav.warehouses', 'Warehouses')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/warehouses')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Package className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1780,10 +1780,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="nav-link-storageLocations"
             onClick={handleLinkClick}
             title={t('nav.storageLocations', 'Storage Locations')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
               isActive('/storage-locations')
-                ? 'bg-slate-800 text-white font-medium'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
             }`}
           >
             <Boxes className="w-4 h-4 shrink-0 text-teal-400" />
@@ -1795,7 +1795,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           {/* Administration */}
           {canViewAdmin && (
             <>
-              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+              <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
                 isExpanded ? 'block' : 'lg:hidden'
               }`}>
                 {t('nav.administration', 'Administration')}
@@ -1805,10 +1805,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-users"
                 onClick={handleLinkClick}
                 title={t('nav.users', 'Users')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/users')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Users className="w-4 h-4 shrink-0 text-indigo-400" />
@@ -1821,10 +1821,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-roles"
                 onClick={handleLinkClick}
                 title={t('nav.roles', 'Roles & Permissions')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/roles') || isActive('/permissions')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <ShieldCheck className={`w-4 h-4 shrink-0 ${isActive('/roles') || isActive('/permissions') ? 'text-indigo-400' : 'text-slate-400'}`} />
@@ -1837,10 +1837,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-audit-logs"
                 onClick={handleLinkClick}
                 title={t('nav.auditLogs', 'Audit Logs')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
                   isActive('/audit-logs')
-                    ? 'bg-slate-800 text-white font-medium'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <History className={`w-4 h-4 shrink-0 ${isActive('/audit-logs') ? 'text-indigo-400' : 'text-slate-400'}`} />
@@ -1854,7 +1854,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           {/* System Settings */}
           {canViewSettings && (
             <>
-              <div className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-3 mt-4 ${
+              <div className={`text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mb-1.5 px-2.5 py-1.5 mt-4 rounded-lg bg-[#EEF2FF] ${
                 isExpanded ? 'block' : 'lg:hidden'
               }`}>
                 {t('nav.system', 'System')}
@@ -1864,10 +1864,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                 id="nav-link-settings"
                 onClick={handleLinkClick}
                 title={t('nav.settings', 'Settings')}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-xs mb-3 ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors cursor-pointer text-[13px] mb-3 ${
                   isActive('/settings')
                     ? 'bg-indigo-600 text-white font-medium shadow-md shadow-indigo-600/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
                 }`}
               >
                 <Settings className={`w-4 h-4 shrink-0 ${isActive('/settings') ? 'text-white' : 'text-slate-400'}`} />
@@ -1880,16 +1880,16 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         </nav>
 
         {/* User Profile / Logout Footer */}
-        <div className="p-3 border-t border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-white">{getInitials(user?.name)}</span>
+        <div className="p-3.5 border-t border-[#E2E8F0] bg-white/80 backdrop-blur-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 border border-indigo-300 flex items-center justify-center shrink-0 text-indigo-700 font-extrabold text-xs shadow-xs">
+              <span>{getInitials(user?.name)}</span>
             </div>
             <div className={`flex flex-col min-w-0 transition-opacity duration-200 ${
               isExpanded ? 'flex' : 'lg:hidden'
             }`}>
-              <span className="text-xs text-white font-medium truncate">{user?.name || 'Super Admin'}</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">{primaryRole}</span>
+              <span className="text-[13px] font-extrabold text-slate-900 truncate">{user?.name || 'Super Admin'}</span>
+              <span className="text-[11px] text-[#475569] font-bold uppercase tracking-wider truncate">{primaryRole}</span>
             </div>
           </div>
           <button
@@ -1897,7 +1897,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             id="sidebar-logout-btn"
             onClick={handleLogout}
             title={t('common.logout', 'Sign Out')}
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
             aria-label="Sign Out"
           >
             <LogOut className="w-4 h-4" />

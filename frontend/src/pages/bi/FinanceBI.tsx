@@ -64,15 +64,15 @@ export const FinanceBI: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <Scale className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <Scale className="w-8 h-8 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.financeBi')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('bi.subtitle')}
           </p>
         </div>
@@ -89,7 +89,7 @@ export const FinanceBI: React.FC = () => {
           </button>
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200:bg-gray-600 text-gray-700 text-sm font-medium rounded-lg transition"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             {t('bi.exportCsv')}
@@ -105,48 +105,48 @@ export const FinanceBI: React.FC = () => {
         <>
           {/* Executive Telemetry Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.cashBalance')} & Bank
               </span>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="text-2xl font-bold text-emerald-600 mt-1">
                 {formatCurrency(telem?.cash_and_bank || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Runway: <span className="font-semibold text-gray-900 dark:text-white">{telem?.cash_runway_days || 0} days</span>
+                Runway: <span className="font-semibold text-gray-900">{telem?.cash_runway_days || 0} days</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.workingCapital')}
               </span>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-2xl font-bold text-blue-600 mt-1">
                 {formatCurrency(telem?.net_working_capital || 0)}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.currentRatio')}
               </span>
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-2xl font-bold text-indigo-600 mt-1">
                 {telem?.current_ratio || 0}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Quick Ratio: <span className="font-semibold text-gray-900 dark:text-white">{telem?.quick_ratio || 0}</span>
+                Quick Ratio: <span className="font-semibold text-gray-900">{telem?.quick_ratio || 0}</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.netProfit')}
               </span>
-              <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mt-1">
+              <div className="text-2xl font-bold text-teal-600 mt-1">
                 {formatCurrency(telem?.net_profit || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Net Margin: <span className="font-semibold text-gray-900 dark:text-white">{telem?.net_margin_pct || 0}%</span>
+                Net Margin: <span className="font-semibold text-gray-900">{telem?.net_margin_pct || 0}%</span>
               </div>
             </div>
           </div>
@@ -154,8 +154,8 @@ export const FinanceBI: React.FC = () => {
           {/* DuPont Analysis & Cash Flow Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* DuPont 3-Stage Model */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-indigo-500" />
                 DuPont ROE Decomposition (3-Stage)
               </h2>
@@ -163,7 +163,7 @@ export const FinanceBI: React.FC = () => {
                 Return on Equity (ROE) = Net Profit Margin × Asset Turnover × Financial Leverage
               </p>
 
-              <div className="grid grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-750 p-4 rounded-xl text-center border border-gray-100 dark:border-gray-700">
+              <div className="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
                 <div>
                   <div className="text-xs text-gray-500 font-medium">Net Profit Margin</div>
                   <div className="text-lg font-bold text-indigo-600 mt-1">
@@ -184,19 +184,19 @@ export const FinanceBI: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="mt-4 p-4 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">
                   Comprehensive Return on Equity (ROE)
                 </span>
-                <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="text-2xl font-bold text-indigo-600">
                   {dupont?.roe_pct || 0}%
                 </span>
               </div>
             </div>
 
             {/* Cash Flow Summary */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-emerald-500" />
                 Cash Flow Statement Summary
               </h2>
@@ -205,27 +205,27 @@ export const FinanceBI: React.FC = () => {
               </p>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Operating Activities</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                  <span className="text-sm text-gray-600">Operating Activities</span>
                   <span className={`text-sm font-bold ${cf?.operating_cash_flow && cf.operating_cash_flow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(cf?.operating_cash_flow || 0)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Investing Activities</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                  <span className="text-sm text-gray-600">Investing Activities</span>
                   <span className={`text-sm font-bold ${cf?.investing_cash_flow && cf.investing_cash_flow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(cf?.investing_cash_flow || 0)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Financing Activities</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                  <span className="text-sm text-gray-600">Financing Activities</span>
                   <span className={`text-sm font-bold ${cf?.financing_cash_flow && cf.financing_cash_flow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(cf?.financing_cash_flow || 0)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Net Cash Flow</span>
-                  <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center justify-between p-3.5 rounded-lg bg-emerald-50 border border-emerald-100">
+                  <span className="text-sm font-semibold text-gray-800">Net Cash Flow</span>
+                  <span className="text-base font-bold text-emerald-600">
                     {formatCurrency(cf?.net_cash_flow || 0)}
                   </span>
                 </div>
@@ -236,22 +236,22 @@ export const FinanceBI: React.FC = () => {
           {/* Budget vs Actual & Forecast */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Budget vs Actual */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-blue-500" />
                 Budget vs Actual Performance
               </h2>
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Total Budgeted Expense:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(bva?.total_budgeted || 0)}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(bva?.total_budgeted || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Actual Realized Expense:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(bva?.total_actual || 0)}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(bva?.total_actual || 0)}</span>
                 </div>
-                <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100 dark:border-gray-700">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Variance:</span>
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                  <span className="font-semibold text-gray-700">Variance:</span>
                   <span className={`font-bold ${bva?.favorable ? 'text-emerald-600' : 'text-red-600'}`}>
                     {formatCurrency(bva?.variance || 0)} ({bva?.variance_pct || 0}%)
                     <span className="ml-1 text-xs">[{bva?.favorable ? 'Favorable' : 'Unfavorable'}]</span>
@@ -261,25 +261,25 @@ export const FinanceBI: React.FC = () => {
             </div>
 
             {/* 6-Month Rolling Forecast */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-teal-500" />
                 6-Month Rolling Revenue Forecast
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-gray-600">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">{t('common.month')}</th>
                       <th className="py-2.5 px-3 font-semibold text-right">Actual Sales</th>
                       <th className="py-2.5 px-3 font-semibold text-right">Forecast Sales</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data?.forecast && data.forecast.length > 0 ? (
                       data.forecast.map((f, i) => (
                         <tr key={i}>
-                          <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">{f.month}</td>
+                          <td className="py-2.5 px-3 font-medium text-gray-900">{f.month}</td>
                           <td className="py-2.5 px-3 text-right">{f.actual_sales ? formatCurrency(f.actual_sales) : '-'}</td>
                           <td className="py-2.5 px-3 text-right font-semibold text-indigo-600">{formatCurrency(f.forecast_sales)}</td>
                         </tr>

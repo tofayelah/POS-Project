@@ -112,7 +112,7 @@ export function InventoryReconciliation() {
               type="button"
               onClick={fetchReport}
               disabled={isLoading}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               {t('common.refresh', 'Refresh')}
@@ -122,12 +122,12 @@ export function InventoryReconciliation() {
       />
 
       {/* Warehouse Selector */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
         <WarehouseIcon className="w-4 h-4 text-slate-400" />
         <select
           value={selectedWarehouseId}
           onChange={(e) => setSelectedWarehouseId(e.target.value)}
-          className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100 min-w-[240px]"
+          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 min-w-[240px]"
         >
           <option value="">{t('inventory.allWarehouses', 'All Warehouses (Global Audit)')}</option>
           {warehouses.map((w) => (
@@ -152,14 +152,14 @@ export function InventoryReconciliation() {
           <div
             className={`p-5 rounded-2xl border flex items-start gap-4 ${
               isHealthy
-                ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-100'
-                : 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-100'
+                ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
+                : 'bg-rose-50/60 border-rose-200 text-rose-900'
             }`}
           >
             {isHealthy ? (
-              <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
             ) : (
-              <ShieldAlert className="w-6 h-6 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <ShieldAlert className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
             )}
             <div>
               <h3 className="font-bold text-base">
@@ -212,13 +212,13 @@ export function InventoryReconciliation() {
           {/* Discrepancies Table */}
           {data.discrepancies && data.discrepancies.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-rose-600 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 {t('inventory.discrepancies', 'Ledger vs On-Hand Discrepancies')} ({data.discrepancies.length})
               </h4>
               <TableContainer>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase text-xs font-semibold">
+                  <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
                     <tr>
                       <th className="px-4 py-3">{t('inventory.product', 'Product')}</th>
                       <th className="px-4 py-3">{t('inventory.sku', 'SKU')}</th>
@@ -228,10 +228,10 @@ export function InventoryReconciliation() {
                       <th className="px-4 py-3 text-right">{t('inventory.variance', 'Variance')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
                     {data.discrepancies.map((d) => (
-                      <tr key={d.inventory_id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{d.product_name}</td>
+                      <tr key={d.inventory_id} className="hover:bg-slate-50/50:bg-slate-800/40">
+                        <td className="px-4 py-3 font-semibold text-slate-900">{d.product_name}</td>
                         <td className="px-4 py-3 text-xs font-mono">{d.sku}</td>
                         <td className="px-4 py-3 text-xs">{d.warehouse}</td>
                         <td className="px-4 py-3 text-right font-mono font-medium">
@@ -240,7 +240,7 @@ export function InventoryReconciliation() {
                         <td className="px-4 py-3 text-right font-mono font-medium">
                           {formatNumber(d.calculated_ledger_balance)}
                         </td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
+                        <td className="px-4 py-3 text-right font-mono font-bold text-rose-600">
                           {d.variance > 0 ? `+${formatNumber(d.variance)}` : formatNumber(d.variance)}
                         </td>
                       </tr>
@@ -254,13 +254,13 @@ export function InventoryReconciliation() {
           {/* Negative Stock Table */}
           {data.negative_inventories && data.negative_inventories.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-rose-600 flex items-center gap-2">
                 <XCircle className="w-4 h-4" />
                 {t('inventory.negativeStock', 'Negative Stock Records')} ({data.negative_inventories.length})
               </h4>
               <TableContainer>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase text-xs font-semibold">
+                  <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
                     <tr>
                       <th className="px-4 py-3">{t('inventory.product', 'Product')}</th>
                       <th className="px-4 py-3">{t('inventory.sku', 'SKU')}</th>
@@ -268,10 +268,10 @@ export function InventoryReconciliation() {
                       <th className="px-4 py-3 text-right">{t('inventory.quantity', 'Quantity')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
                     {data.negative_inventories.map((n) => (
                       <tr key={n.inventory_id}>
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{n.product_name}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">{n.product_name}</td>
                         <td className="px-4 py-3 text-xs font-mono">{n.sku}</td>
                         <td className="px-4 py-3 text-xs">{n.warehouse}</td>
                         <td className="px-4 py-3 text-right font-mono font-bold text-rose-600">
@@ -288,20 +288,20 @@ export function InventoryReconciliation() {
           {/* Orphan Batches Table */}
           {data.orphan_batches && data.orphan_batches.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+              <h4 className="text-sm font-bold text-amber-600 flex items-center gap-2">
                 <Layers className="w-4 h-4" />
                 {t('inventory.orphanBatches', 'Orphan Batches')} ({data.orphan_batches.length})
               </h4>
               <TableContainer>
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase text-xs font-semibold">
+                  <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
                     <tr>
                       <th className="px-4 py-3">{t('inventory.batchNo', 'Batch No')}</th>
                       <th className="px-4 py-3">{t('inventory.warehouse', 'Warehouse')}</th>
                       <th className="px-4 py-3 text-right">{t('inventory.quantity', 'Quantity')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
                     {data.orphan_batches.map((o) => (
                       <tr key={o.batch_id}>
                         <td className="px-4 py-3 font-mono font-medium">{o.batch_no}</td>

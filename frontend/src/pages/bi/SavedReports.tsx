@@ -66,15 +66,15 @@ export const SavedReports: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <FileText className="w-8 h-8 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.savedReports')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Access pre-configured management reports, saved analytics templates, and recurring query snapshots.
           </p>
         </div>
@@ -94,9 +94,9 @@ export const SavedReports: React.FC = () => {
           <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
         </div>
       ) : reports.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 p-12 rounded-xl border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
           <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No Saved Reports Found</h3>
+          <h3 className="text-lg font-semibold text-gray-900">No Saved Reports Found</h3>
           <p className="text-sm text-gray-500 mt-1">
             Design a custom query in the Report Builder and click "Save Report" to preserve it here.
           </p>
@@ -106,35 +106,35 @@ export const SavedReports: React.FC = () => {
           {reports.map((report) => (
             <div
               key={report.id}
-              className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between"
+              className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 uppercase">
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700 uppercase">
                     {report.dataset}
                   </span>
                   <span className="text-xs text-gray-400">{formatDate(report.created_at)}</span>
                 </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                <h3 className="text-base font-bold text-gray-900">
                   {report.name}
                 </h3>
                 {report.description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                  <p className="text-xs text-gray-500 line-clamp-2">
                     {report.description}
                   </p>
                 )}
 
                 <div className="text-xs text-gray-500 pt-1 space-y-0.5">
                   <div>
-                    Dimensions: <span className="font-medium text-gray-700 dark:text-gray-300">{report.config?.dimensions?.join(', ') || 'None'}</span>
+                    Dimensions: <span className="font-medium text-gray-700">{report.config?.dimensions?.join(', ') || 'None'}</span>
                   </div>
                   <div>
-                    Metrics: <span className="font-medium text-gray-700 dark:text-gray-300">{report.config?.metrics?.join(', ') || 'None'}</span>
+                    Metrics: <span className="font-medium text-gray-700">{report.config?.metrics?.join(', ') || 'None'}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
                 <button
                   onClick={() => handleRun(report)}
                   disabled={executingId === report.id}
@@ -158,9 +158,9 @@ export const SavedReports: React.FC = () => {
 
       {/* Execution Results View */}
       {activeResults && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Table className="w-5 h-5 text-indigo-500" />
               {activeResults.report.name} — Execution Results ({activeResults.data?.count || 0} Rows)
             </h2>
@@ -174,7 +174,7 @@ export const SavedReports: React.FC = () => {
 
           <div className="overflow-x-auto max-h-96">
             <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 sticky top-0">
+              <thead className="bg-gray-50 text-gray-600 sticky top-0">
                 <tr>
                   {activeResults.data?.columns &&
                     activeResults.data.columns.map((col: string) => (
@@ -184,12 +184,12 @@ export const SavedReports: React.FC = () => {
                     ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-100">
                 {activeResults.data?.rows && activeResults.data.rows.length > 0 ? (
                   activeResults.data.rows.map((row: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr key={idx} className="hover:bg-gray-50:bg-gray-750">
                       {activeResults.data.columns.map((col: string) => (
-                        <td key={col} className="py-2 px-3 text-gray-800 dark:text-gray-200">
+                        <td key={col} className="py-2 px-3 text-gray-800">
                           {typeof row[col] === 'number' ? formatNumber(row[col]) : row[col] ?? '-'}
                         </td>
                       ))}

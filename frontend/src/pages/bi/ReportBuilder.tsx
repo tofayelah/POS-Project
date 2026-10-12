@@ -154,31 +154,31 @@ export const ReportBuilder: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <Database className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <Database className="w-8 h-8 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.reportBuilder')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Build, pivot, and execute custom ad-hoc management reports across all authoritative ERP domains.
           </p>
         </div>
 
         {saveSuccess && (
-          <div className="text-sm text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-200">
+          <div className="text-sm text-emerald-600 font-semibold bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
             {saveSuccess}
           </div>
         )}
       </div>
 
       {/* Dataset & Query Config Panel */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-6">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
         {/* Step 1: Dataset Selection */}
         <div>
-          <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">
+          <label className="text-sm font-bold text-gray-700 block mb-2">
             1. Select Data Domain
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -189,8 +189,8 @@ export const ReportBuilder: React.FC = () => {
                 onClick={() => handleDatasetChange(key)}
                 className={`p-3 rounded-lg border text-left transition ${
                   selectedDataset === key
-                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 font-semibold shadow-sm'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-900 font-semibold shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
                 }`}
               >
                 <div className="text-sm">{item.name}</div>
@@ -202,10 +202,10 @@ export const ReportBuilder: React.FC = () => {
 
         {/* Step 2: Dimensions & Metrics */}
         {activeDatasetObj && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
             {/* Dimensions */}
             <div>
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">
+              <label className="text-sm font-bold text-gray-700 block mb-2">
                 2. Group Dimensions (Rows)
               </label>
               <div className="space-y-2">
@@ -216,7 +216,7 @@ export const ReportBuilder: React.FC = () => {
                       key={dKey}
                       type="button"
                       onClick={() => toggleDimension(dKey)}
-                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 w-full text-left"
+                      className="flex items-center gap-2 text-sm text-gray-700 hover:text-indigo-600 w-full text-left"
                     >
                       {isChecked ? (
                         <CheckSquare className="w-4 h-4 text-indigo-600" />
@@ -232,7 +232,7 @@ export const ReportBuilder: React.FC = () => {
 
             {/* Metrics */}
             <div>
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-2">
+              <label className="text-sm font-bold text-gray-700 block mb-2">
                 3. Aggregate Metrics (Values)
               </label>
               <div className="space-y-2">
@@ -243,7 +243,7 @@ export const ReportBuilder: React.FC = () => {
                       key={mKey}
                       type="button"
                       onClick={() => toggleMetric(mKey)}
-                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 w-full text-left"
+                      className="flex items-center gap-2 text-sm text-gray-700 hover:text-indigo-600 w-full text-left"
                     >
                       {isChecked ? (
                         <CheckSquare className="w-4 h-4 text-emerald-600" />
@@ -260,21 +260,21 @@ export const ReportBuilder: React.FC = () => {
         )}
 
         {/* Step 3: Date Filtering & Action Buttons */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 font-medium">Date Bounds:</span>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+              className="px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-900"
             />
             <span className="text-gray-400 text-xs">to</span>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+              className="px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-900"
             />
           </div>
 
@@ -289,7 +289,7 @@ export const ReportBuilder: React.FC = () => {
             </button>
             <button
               onClick={() => setShowSaveModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200:bg-gray-600 text-gray-700 text-sm font-medium rounded-lg transition"
             >
               <Save className="w-4 h-4" />
               Save Report
@@ -318,9 +318,9 @@ export const ReportBuilder: React.FC = () => {
 
       {/* Results Table Section */}
       {results && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Table className="w-5 h-5 text-indigo-500" />
               Report Results ({results.count} Rows)
             </h2>
@@ -328,7 +328,7 @@ export const ReportBuilder: React.FC = () => {
 
           <div className="overflow-x-auto max-h-96">
             <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 sticky top-0">
+              <thead className="bg-gray-50 text-gray-600 sticky top-0">
                 <tr>
                   {results.columns &&
                     results.columns.map((col: string) => (
@@ -338,12 +338,12 @@ export const ReportBuilder: React.FC = () => {
                     ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-100">
                 {results.rows && results.rows.length > 0 ? (
                   results.rows.map((row: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr key={idx} className="hover:bg-gray-50:bg-gray-750">
                       {results.columns.map((col: string) => (
-                        <td key={col} className="py-2 px-3 text-gray-800 dark:text-gray-200">
+                        <td key={col} className="py-2 px-3 text-gray-800">
                           {typeof row[col] === 'number' ? formatNumber(row[col]) : row[col] ?? '-'}
                         </td>
                       ))}
@@ -365,10 +365,10 @@ export const ReportBuilder: React.FC = () => {
       {/* Save Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 w-full max-w-md shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Save Custom Report</h3>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 w-full max-w-md shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">Save Custom Report</h3>
             <div>
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+              <label className="text-xs font-semibold text-gray-700 block mb-1">
                 Report Title
               </label>
               <input
@@ -376,11 +376,11 @@ export const ReportBuilder: React.FC = () => {
                 value={reportName}
                 onChange={(e) => setReportName(e.target.value)}
                 placeholder="e.g. Monthly Branch Profitability Analysis"
-                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-900"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+              <label className="text-xs font-semibold text-gray-700 block mb-1">
                 Description (Optional)
               </label>
               <textarea
@@ -388,13 +388,13 @@ export const ReportBuilder: React.FC = () => {
                 onChange={(e) => setReportDesc(e.target.value)}
                 placeholder="Brief summary of what this report reveals..."
                 rows={2}
-                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-900"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
               >
                 Cancel
               </button>

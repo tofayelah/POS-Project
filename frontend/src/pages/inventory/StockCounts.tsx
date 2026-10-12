@@ -329,7 +329,7 @@ export function StockCounts() {
       />
 
       {/* Filters Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <WarehouseIcon className="w-4 h-4 text-slate-400" />
           <select
@@ -338,7 +338,7 @@ export function StockCounts() {
               setSelectedWarehouseId(e.target.value);
               setPagination((p) => ({ ...p, current_page: 1 }));
             }}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800"
           >
             <option value="">{t('inventory.allWarehouses', 'All Warehouses')}</option>
             {warehouses.map((w) => (
@@ -357,7 +357,7 @@ export function StockCounts() {
               setSelectedStatus(e.target.value);
               setPagination((p) => ({ ...p, current_page: 1 }));
             }}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800"
           >
             <option value="">{t('inventory.allStatuses', 'All Statuses')}</option>
             <option value="DRAFT">Draft</option>
@@ -383,7 +383,7 @@ export function StockCounts() {
       ) : (
         <TableContainer>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase text-xs font-semibold">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{t('inventory.countNumber', 'Count No')}</th>
                 <th className="px-4 py-3">{t('inventory.warehouse', 'Warehouse')}</th>
@@ -393,16 +393,16 @@ export function StockCounts() {
                 <th className="px-4 py-3 text-right">{t('common.actions', 'Actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {counts.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                  <td className="px-4 py-3.5 font-medium text-slate-900 dark:text-white">
+                <tr key={c.id} className="hover:bg-slate-50/50:bg-slate-800/40">
+                  <td className="px-4 py-3.5 font-medium text-slate-900">
                     {c.count_number}
                     {c.description && <span className="block text-xs text-slate-400 font-normal">{c.description}</span>}
                   </td>
                   <td className="px-4 py-3.5">{c.warehouse?.name || '—'}</td>
                   <td className="px-4 py-3.5">
-                    <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md font-mono">
+                    <span className="text-xs bg-slate-100 px-2.5 py-1 rounded-md font-mono">
                       {c.count_type}
                     </span>
                   </td>
@@ -414,7 +414,7 @@ export function StockCounts() {
                     <button
                       type="button"
                       onClick={() => handleOpenDetail(c.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100:bg-indigo-900/60 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       {t('common.view', 'View / Count')}
@@ -430,12 +430,12 @@ export function StockCounts() {
       {/* Detail / Counting Modal */}
       {isDetailModalOpen && activeCount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800">
+          <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200">
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {activeCount.count_number}
                   </h3>
                   <StatusBadge status={activeCount.status} />
@@ -447,7 +447,7 @@ export function StockCounts() {
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl"
+                className="p-2 text-slate-400 hover:text-slate-600:text-slate-200 rounded-xl"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -456,7 +456,7 @@ export function StockCounts() {
             {/* Modal Body: Items table */}
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                <h4 className="text-sm font-semibold text-slate-900">
                   {t('inventory.countItems', 'Count Items')} ({activeCount.items?.length || 0})
                 </h4>
                 {activeCount.status === 'COUNTING' && (
@@ -479,9 +479,9 @@ export function StockCounts() {
                   description={t('inventory.noItemsInCountDesc', 'Items can be added or auto-populated when creating the count.')}
                 />
               ) : (
-                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                <div className="border border-slate-200 rounded-2xl overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase font-semibold">
+                    <thead className="bg-slate-50 text-slate-500 uppercase font-semibold">
                       <tr>
                         <th className="px-3 py-2.5">{t('inventory.product', 'Product')}</th>
                         <th className="px-3 py-2.5">{t('inventory.location', 'Location')}</th>
@@ -492,7 +492,7 @@ export function StockCounts() {
                         <th className="px-3 py-2.5">{t('inventory.reason', 'Variance Reason')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
                       {activeCount.items.map((item) => {
                         const row = itemCounts[item.id] || { counted_quantity: '', variance_reason: '', notes: '' };
                         const sysQty = Number(item.system_quantity);
@@ -500,9 +500,9 @@ export function StockCounts() {
                         const liveVariance = countedVal !== null ? countedVal - sysQty : Number(item.variance_quantity || 0);
 
                         return (
-                          <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                          <tr key={item.id} className="hover:bg-slate-50/50:bg-slate-800/40">
                             <td className="px-3 py-2.5">
-                              <span className="font-semibold text-slate-900 dark:text-white block">
+                              <span className="font-semibold text-slate-900 block">
                                 {item.product?.name || item.product_variant?.variant_name}
                               </span>
                               <span className="text-[11px] text-slate-400 font-mono">
@@ -526,7 +526,7 @@ export function StockCounts() {
                                       [item.id]: { ...prev[item.id], counted_quantity: val },
                                     }));
                                   }}
-                                  className="w-24 px-2 py-1 text-right bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md font-mono text-xs focus:ring-1 focus:ring-indigo-500"
+                                  className="w-24 px-2 py-1 text-right bg-slate-50 border border-slate-200 rounded-md font-mono text-xs focus:ring-1 focus:ring-indigo-500"
                                 />
                               ) : (
                                 <span className="font-mono font-medium">
@@ -538,9 +538,9 @@ export function StockCounts() {
                               {liveVariance === 0 ? (
                                 <span className="text-slate-400">0</span>
                               ) : liveVariance > 0 ? (
-                                <span className="text-emerald-600 dark:text-emerald-400">+{formatNumber(liveVariance)}</span>
+                                <span className="text-emerald-600">+{formatNumber(liveVariance)}</span>
                               ) : (
-                                <span className="text-rose-600 dark:text-rose-400">{formatNumber(liveVariance)}</span>
+                                <span className="text-rose-600">{formatNumber(liveVariance)}</span>
                               )}
                             </td>
                             <td className="px-3 py-2.5">
@@ -555,7 +555,7 @@ export function StockCounts() {
                                       [item.id]: { ...prev[item.id], variance_reason: e.target.value },
                                     }));
                                   }}
-                                  className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-xs"
+                                  className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs"
                                 />
                               ) : (
                                 <span className="text-xs text-slate-500">{item.variance_reason || '—'}</span>
@@ -571,7 +571,7 @@ export function StockCounts() {
             </div>
 
             {/* Modal Footer Lifecycle Actions */}
-            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="text-xs text-slate-500">
                 {activeCount.posted_at && <span>Posted at: {activeCount.posted_at}</span>}
               </div>
@@ -648,7 +648,7 @@ export function StockCounts() {
                     type="button"
                     onClick={handleCancelCount}
                     disabled={isSubmitting}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-50"
                   >
                     <X className="w-3.5 h-3.5" />
                     {t('common.cancel', 'Cancel Session')}
@@ -658,7 +658,7 @@ export function StockCounts() {
                 <button
                   type="button"
                   onClick={() => setIsDetailModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
                 >
                   {t('common.close', 'Close')}
                 </button>
@@ -671,9 +671,9 @@ export function StockCounts() {
       {/* New Stock Count Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900">
                 {t('inventory.newStockCount', 'New Physical Stock Count')}
               </h3>
               <button
@@ -687,14 +687,14 @@ export function StockCounts() {
 
             <form onSubmit={handleCreateCount} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {t('inventory.warehouse', 'Warehouse')} *
                 </label>
                 <select
                   value={createForm.warehouse_id}
                   onChange={(e) => setCreateForm({ ...createForm, warehouse_id: Number(e.target.value) })}
                   required
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                 >
                   <option value={0} disabled>Select Warehouse</option>
                   {warehouses.map((w) => (
@@ -704,13 +704,13 @@ export function StockCounts() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {t('inventory.countType', 'Count Type')} *
                 </label>
                 <select
                   value={createForm.count_type}
                   onChange={(e) => setCreateForm({ ...createForm, count_type: e.target.value as StockCountType })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                 >
                   <option value="FULL">Full Warehouse Count</option>
                   <option value="PARTIAL">Partial Count</option>
@@ -719,19 +719,19 @@ export function StockCounts() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {t('inventory.countDate', 'Scheduled Date')}
                 </label>
                 <input
                   type="date"
                   value={createForm.count_date}
                   onChange={(e) => setCreateForm({ ...createForm, count_date: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {t('inventory.description', 'Description')}
                 </label>
                 <input
@@ -739,7 +739,7 @@ export function StockCounts() {
                   placeholder="e.g. Q4 End Inventory Count"
                   value={createForm.description}
                   onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
                 />
               </div>
 
@@ -751,7 +751,7 @@ export function StockCounts() {
                   onChange={(e) => setCreateForm({ ...createForm, auto_populate: e.target.checked })}
                   className="w-4 h-4 text-indigo-600 rounded"
                 />
-                <label htmlFor="auto_populate" className="text-xs text-slate-600 dark:text-slate-400">
+                <label htmlFor="auto_populate" className="text-xs text-slate-600">
                   {t('inventory.autoPopulateDesc', 'Auto-populate all currently stocked products into this count session')}
                 </label>
               </div>
@@ -760,7 +760,7 @@ export function StockCounts() {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold"
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
                 >
                   {t('common.cancel', 'Cancel')}
                 </button>

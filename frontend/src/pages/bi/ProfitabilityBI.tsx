@@ -72,15 +72,15 @@ export const ProfitabilityBI: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <TrendingUp className="w-8 h-8 text-emerald-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.profitabilityBi')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('bi.subtitle')}
           </p>
         </div>
@@ -91,14 +91,14 @@ export const ProfitabilityBI: React.FC = () => {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500"
           />
           <span className="text-gray-500 text-sm">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500"
           />
           <button
             onClick={loadProfitability}
@@ -110,7 +110,7 @@ export const ProfitabilityBI: React.FC = () => {
           </button>
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200:bg-gray-600 text-gray-700 text-sm font-medium rounded-lg transition"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             {t('bi.exportCsv')}
@@ -126,48 +126,48 @@ export const ProfitabilityBI: React.FC = () => {
         <>
           {/* Profitability Executive Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.grossProfit')}
               </span>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="text-2xl font-bold text-emerald-600 mt-1">
                 {formatCurrency(summary?.gross_profit || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {t('bi.grossMargin')}: <span className="font-semibold text-gray-900 dark:text-white">{summary?.gross_margin_pct || 0}%</span>
+                {t('bi.grossMargin')}: <span className="font-semibold text-gray-900">{summary?.gross_margin_pct || 0}%</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.cogs')}
               </span>
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+              <div className="text-2xl font-bold text-amber-600 mt-1">
                 {formatCurrency(summary?.cogs || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Cost to Revenue: <span className="font-semibold text-gray-900 dark:text-white">{summary?.cost_to_revenue_ratio || 0}%</span>
+                Cost to Revenue: <span className="font-semibold text-gray-900">{summary?.cost_to_revenue_ratio || 0}%</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.operatingExpenses')}
               </span>
-              <div className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">
+              <div className="text-2xl font-bold text-rose-600 mt-1">
                 {formatCurrency(summary?.operating_expenses || 0)}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {t('bi.netProfit')}
               </span>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-2xl font-bold text-blue-600 mt-1">
                 {formatCurrency(summary?.net_profit || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {t('bi.netMargin')}: <span className="font-semibold text-gray-900 dark:text-white">{summary?.net_margin_pct || 0}%</span>
+                {t('bi.netMargin')}: <span className="font-semibold text-gray-900">{summary?.net_margin_pct || 0}%</span>
               </div>
             </div>
           </div>
@@ -175,14 +175,14 @@ export const ProfitabilityBI: React.FC = () => {
           {/* Top vs Low Margin Products Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Profitable Products */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <ArrowUpRight className="w-5 h-5 text-emerald-500" />
                 {t('bi.topProducts')} ({t('bi.grossProfit')})
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-gray-600">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">{t('bi.product')}</th>
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.unitsSold')}</th>
@@ -190,11 +190,11 @@ export const ProfitabilityBI: React.FC = () => {
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.grossMargin')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data?.top_profitable_products && data.top_profitable_products.length > 0 ? (
                       data.top_profitable_products.map((p) => (
                         <tr key={p.id}>
-                          <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">
+                          <td className="py-2.5 px-3 font-medium text-gray-900">
                             <div>{p.name}</div>
                             {p.sku && <div className="text-xs text-gray-400 font-mono">{p.sku}</div>}
                           </td>
@@ -216,14 +216,14 @@ export const ProfitabilityBI: React.FC = () => {
             </div>
 
             {/* Low Margin Products */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 {t('bi.lowMarginProducts')}
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-gray-600">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">{t('bi.product')}</th>
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.revenue')}</th>
@@ -231,11 +231,11 @@ export const ProfitabilityBI: React.FC = () => {
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.grossMargin')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data?.low_margin_products && data.low_margin_products.length > 0 ? (
                       data.low_margin_products.map((p) => (
                         <tr key={p.id}>
-                          <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">
+                          <td className="py-2.5 px-3 font-medium text-gray-900">
                             <div>{p.name}</div>
                             {p.sku && <div className="text-xs text-gray-400 font-mono">{p.sku}</div>}
                           </td>
@@ -260,14 +260,14 @@ export const ProfitabilityBI: React.FC = () => {
           {/* Category & Branch Profitability Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* By Category */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Layers className="w-5 h-5 text-purple-500" />
                 {t('bi.byCategory')}
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-gray-600">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">{t('bi.category')}</th>
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.revenue')}</th>
@@ -275,11 +275,11 @@ export const ProfitabilityBI: React.FC = () => {
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.grossMargin')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data?.by_category && data.by_category.length > 0 ? (
                       data.by_category.map((cat, i) => (
                         <tr key={i}>
-                          <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">{cat.category_name}</td>
+                          <td className="py-2.5 px-3 font-medium text-gray-900">{cat.category_name}</td>
                           <td className="py-2.5 px-3 text-right">{formatCurrency(cat.revenue)}</td>
                           <td className="py-2.5 px-3 text-right font-semibold text-emerald-600">{formatCurrency(cat.gross_profit)}</td>
                           <td className="py-2.5 px-3 text-right text-emerald-600">{cat.gross_margin_pct}%</td>
@@ -298,14 +298,14 @@ export const ProfitabilityBI: React.FC = () => {
             </div>
 
             {/* By Branch */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-blue-500" />
                 {t('bi.byBranch')}
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-gray-600">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">{t('common.branch')}</th>
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.revenue')}</th>
@@ -313,11 +313,11 @@ export const ProfitabilityBI: React.FC = () => {
                       <th className="py-2.5 px-3 font-semibold text-right">{t('bi.grossMargin')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data?.by_branch && data.by_branch.length > 0 ? (
                       data.by_branch.map((b) => (
                         <tr key={b.branch_id}>
-                          <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">{b.branch_name}</td>
+                          <td className="py-2.5 px-3 font-medium text-gray-900">{b.branch_name}</td>
                           <td className="py-2.5 px-3 text-right">{formatCurrency(b.revenue)}</td>
                           <td className="py-2.5 px-3 text-right font-semibold text-blue-600">{formatCurrency(b.gross_profit)}</td>
                           <td className="py-2.5 px-3 text-right text-blue-600">{b.gross_margin_pct}%</td>

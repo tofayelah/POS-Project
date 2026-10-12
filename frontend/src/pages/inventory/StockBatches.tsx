@@ -196,7 +196,7 @@ export function StockBatches() {
               fetchData();
             }}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {t('common.refresh', 'Refresh')}
@@ -233,7 +233,7 @@ export function StockBatches() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400" />
           <input
@@ -241,7 +241,7 @@ export function StockBatches() {
             placeholder={t('inventory.searchBatches', 'Search by batch no, product name, or SKU...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800"
           />
         </div>
 
@@ -250,7 +250,7 @@ export function StockBatches() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800"
           >
             <option value="">{t('common.all', 'All Statuses')}</option>
             <option value="ACTIVE">ACTIVE</option>
@@ -263,7 +263,7 @@ export function StockBatches() {
           <select
             value={expiryThreshold}
             onChange={(e) => setExpiryThreshold(Number(e.target.value))}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800"
           >
             <option value={7}>Alert ≤ 7 Days</option>
             <option value={15}>Alert ≤ 15 Days</option>
@@ -286,7 +286,7 @@ export function StockBatches() {
       ) : (
         <TableContainer>
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 uppercase text-xs font-semibold">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
               <tr>
                 <th className="px-4 py-3">{t('inventory.batchNo', 'Batch No')}</th>
                 <th className="px-4 py-3">{t('inventory.product', 'Product & SKU')}</th>
@@ -298,18 +298,18 @@ export function StockBatches() {
                 <th className="px-4 py-3 text-right">{t('common.actions', 'Actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {filteredBatches.map((b) => {
                 const expInfo = getBatchExpiryInfo(b);
                 const isBlocked = b.status === 'BLOCKED';
 
                 return (
-                  <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                    <td className="px-4 py-3.5 font-mono font-semibold text-slate-900 dark:text-white">
+                  <tr key={b.id} className="hover:bg-slate-50/50:bg-slate-800/40">
+                    <td className="px-4 py-3.5 font-mono font-semibold text-slate-900">
                       {b.batch_no}
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="font-semibold text-slate-900 dark:text-white block">
+                      <span className="font-semibold text-slate-900 block">
                         {b.product?.name || '—'}
                       </span>
                       <span className="text-xs text-slate-400 font-mono">
@@ -322,11 +322,11 @@ export function StockBatches() {
                       <span
                         className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                           expInfo.color === 'rose'
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200'
                             : expInfo.color === 'amber'
-                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                            ? 'bg-amber-50 text-amber-600 border border-amber-200'
                             : expInfo.color === 'emerald'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                             : 'bg-slate-100 text-slate-500'
                         }`}
                       >
@@ -345,7 +345,7 @@ export function StockBatches() {
                       <button
                         type="button"
                         onClick={() => handleOpenDetail(b.id)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600:text-indigo-400 rounded-lg cursor-pointer"
                         title={t('common.view', 'View Details')}
                       >
                         <Eye className="w-4 h-4" />
@@ -359,8 +359,8 @@ export function StockBatches() {
                         }}
                         className={`p-1.5 rounded-lg cursor-pointer ${
                           isBlocked
-                            ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                            : 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                            ? 'text-emerald-600 hover:bg-emerald-50:bg-emerald-950/40'
+                            : 'text-amber-600 hover:bg-amber-50:bg-amber-950/40'
                         }`}
                         title={isBlocked ? 'Unblock Batch' : 'Block Batch (Quarantine)'}
                       >
@@ -378,10 +378,10 @@ export function StockBatches() {
       {/* Batch Detail Modal */}
       {isDetailModalOpen && selectedBatch && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-slate-900">
                   Batch: {selectedBatch.batch_no}
                 </h3>
                 <p className="text-xs text-slate-400">
@@ -394,27 +394,27 @@ export function StockBatches() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+              <div className="bg-slate-50 p-3 rounded-xl">
                 <span className="text-slate-400 block">{t('inventory.mfgDate', 'Mfg Date')}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                <span className="font-semibold text-slate-800">
                   {selectedBatch.mfg_date || '—'}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+              <div className="bg-slate-50 p-3 rounded-xl">
                 <span className="text-slate-400 block">{t('inventory.expDate', 'Exp Date')}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                <span className="font-semibold text-slate-800">
                   {selectedBatch.exp_date || '—'}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+              <div className="bg-slate-50 p-3 rounded-xl">
                 <span className="text-slate-400 block">{t('inventory.unitCost', 'Unit Cost')}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                <span className="font-semibold text-slate-800">
                   {formatCurrency(Number(selectedBatch.unit_cost))}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+              <div className="bg-slate-50 p-3 rounded-xl">
                 <span className="text-slate-400 block">{t('inventory.supplier', 'Supplier')}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                <span className="font-semibold text-slate-800">
                   {selectedBatch.supplier?.name || '—'}
                 </span>
               </div>
@@ -428,21 +428,21 @@ export function StockBatches() {
               {(!selectedBatch.inventory_batches || selectedBatch.inventory_batches.length === 0) ? (
                 <p className="text-xs text-slate-400 italic">No current warehouse stock held in this batch.</p>
               ) : (
-                <div className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
+                <div className="border border-slate-100 rounded-xl overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500">
+                    <thead className="bg-slate-50 text-slate-500">
                       <tr>
                         <th className="px-3 py-2">Warehouse</th>
                         <th className="px-3 py-2">Location</th>
                         <th className="px-3 py-2 text-right">Quantity</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-slate-100">
                       {selectedBatch.inventory_batches.map((ib: any) => (
                         <tr key={ib.id}>
                           <td className="px-3 py-2 font-medium">{ib.warehouse?.name}</td>
                           <td className="px-3 py-2 text-slate-400">{ib.storage_location?.name || '—'}</td>
-                          <td className="px-3 py-2 text-right font-mono font-bold text-slate-900 dark:text-white">
+                          <td className="px-3 py-2 text-right font-mono font-bold text-slate-900">
                             {formatNumber(Number(ib.quantity))}
                           </td>
                         </tr>
@@ -457,7 +457,7 @@ export function StockBatches() {
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
               >
                 {t('common.close', 'Close')}
               </button>
@@ -469,33 +469,33 @@ export function StockBatches() {
       {/* Toggle Status Confirmation Modal */}
       {toggleBatchTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
                   toggleBatchTarget.status === 'ACTIVE'
-                    ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-600'
-                    : 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600'
+                    ? 'bg-amber-100 text-amber-600'
+                    : 'bg-emerald-100 text-emerald-600'
                 }`}
               >
                 {toggleBatchTarget.status === 'ACTIVE' ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-slate-900">
                   {toggleBatchTarget.status === 'ACTIVE' ? 'Block Batch (Quarantine)' : 'Unblock Batch'}
                 </h3>
                 <p className="text-xs text-slate-400">Batch: {toggleBatchTarget.batch_no}</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600">
               {toggleBatchTarget.status === 'ACTIVE'
                 ? 'Blocking this batch will prevent it from being sold, dispatched, or moved in POS and stock-out operations.'
                 : 'Unblocking this batch will make its inventory available again for operational consumption.'}
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 {t('inventory.reason', 'Audit Reason')} *
               </label>
               <input
@@ -503,7 +503,7 @@ export function StockBatches() {
                 placeholder="e.g. Quality inspection quarantine"
                 value={toggleReason}
                 onChange={(e) => setToggleReason(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm"
               />
             </div>
 
@@ -511,7 +511,7 @@ export function StockBatches() {
               <button
                 type="button"
                 onClick={() => setToggleBatchTarget(null)}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
               >
                 {t('common.cancel', 'Cancel')}
               </button>

@@ -15,6 +15,7 @@ import { Link } from 'react-router';
 import { Company } from '../../types/organization';
 import { useCompany } from '../../contexts/CompanyContext';
 import { useLanguage } from '../../i18n';
+import { useV2System } from '../../context/V2SystemContext';
 
 interface HeaderProps {
   onToggleMobileSidebar?: () => void;
@@ -23,6 +24,7 @@ interface HeaderProps {
 export function Header({ onToggleMobileSidebar }: HeaderProps) {
   const { company: activeCompany, companies, switchCompany } = useCompany();
   const { language, setLanguage, t } = useLanguage();
+  const { health, connectionState, error: v2Error } = useV2System();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSwitchTenant = async (comp: Company) => {
@@ -205,11 +207,40 @@ export function Header({ onToggleMobileSidebar }: HeaderProps) {
 
         {/* System Badges */}
         <div className="hidden md:flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200/60">
-            <Activity className="w-3 h-3" /> API OK
-          </span>
-          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200/60">
-            v2.0 Multi-Tenant
+          {connectionState === 'loading' ? (
+            <span
+              className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200"
+              title="Checking V2 API status..."
+            >
+              <Activity className="w-3 h-3 animate-pulse text-slate-400" /> API Checking...
+            </span>
+          ) : connectionState === 'online' ? (
+            <span
+              className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200/60"
+              title={`API: ${health?.status || 'healthy'} (${health?.database || 'connected'})`}
+            >
+              <Activity className="w-3 h-3" /> API OK
+            </span>
+          ) : connectionState === 'degraded' ? (
+            <span
+              className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200"
+              title={`API Degraded: ${v2Error || 'Database disconnected'}`}
+            >
+              <Activity className="w-3 h-3 text-amber-600" /> API Degraded
+            </span>
+          ) : (
+            <span
+              className="flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded border border-rose-200"
+              title={`API Offline: ${v2Error || 'Backend unreachable'}`}
+            >
+              <Activity className="w-3 h-3 text-rose-600" /> API Offline
+            </span>
+          )}
+          <span
+            className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-200/60"
+            title={`RetailCore ${health?.version || '2.0.0-step1'} - Foundation Active`}
+          >
+            v2.0 Step 1
           </span>
         </div>
 

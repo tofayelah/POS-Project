@@ -54,10 +54,10 @@ export const CashTreasuryManagement: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.treasuryTitle', 'Cash & Treasury Management')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.treasurySubtitle', 'Authoritative Cash Positions, Liquidity Burn Rate & Deterministic Projections')}
           </p>
         </div>
@@ -65,7 +65,7 @@ export const CashTreasuryManagement: React.FC = () => {
           <select
             value={forecastHorizon}
             onChange={(e) => setForecastHorizon(Number(e.target.value))}
-            className="px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+            className="px-3 py-2 text-sm border rounded-lg bg-white font-medium"
           >
             <option value={7}>7-Day Forecast</option>
             <option value={30}>30-Day Forecast</option>
@@ -75,7 +75,7 @@ export const CashTreasuryManagement: React.FC = () => {
           <button
             onClick={() => fetchTreasuryAndForecast(forecastHorizon)}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -83,64 +83,64 @@ export const CashTreasuryManagement: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {/* Top Treasury KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {t('finance.liquidCash', 'Total Liquid Cash')}
             </span>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/40 rounded-lg text-emerald-600">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-gray-900 mt-2">
             {formatBDT(treasury?.total_liquid_cash)}
           </div>
           <p className="text-xs text-gray-500 mt-1">Instant liquid availability</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {t('finance.monthlyBurnRate', 'Monthly Burn Rate')}
             </span>
-            <div className="p-2 bg-rose-50 dark:bg-rose-900/40 rounded-lg text-rose-600">
+            <div className="p-2 bg-rose-50 rounded-lg text-rose-600">
               <TrendingDown className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-gray-900 mt-2">
             {formatBDT(treasury?.key_metrics?.monthly_burn_rate)}
           </div>
           <p className="text-xs text-gray-500 mt-1">Operating expense outflow / mo</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {t('finance.cashRunway', 'Cash Runway')}
             </span>
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/40 rounded-lg text-blue-600">
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
               <Clock className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-gray-900 mt-2">
             {treasury?.key_metrics?.cash_runway_days ?? 0} {t('finance.days', 'Days')}
           </div>
           <p className="text-xs text-gray-500 mt-1">Based on current liquid reserves</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {forecastHorizon}-Day Net Flow
             </span>
-            <div className="p-2 bg-purple-50 dark:bg-purple-900/40 rounded-lg text-purple-600">
+            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
               <Coins className="w-5 h-5" />
             </div>
           </div>
@@ -158,10 +158,10 @@ export const CashTreasuryManagement: React.FC = () => {
       {/* Account Balance Breakdown: Cash Vaults vs Bank Accounts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Physical Cash Vaults */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Coins className="w-5 h-5 text-amber-500" />
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-gray-900">
               {t('finance.cashVaults', 'Cash on Hand & Register Vaults')}
             </h3>
           </div>
@@ -170,9 +170,9 @@ export const CashTreasuryManagement: React.FC = () => {
               <p className="text-xs text-gray-400">No petty cash / cash accounts registered in GL.</p>
             ) : (
               treasury.breakdown.cash_accounts.map((c) => (
-                <div key={c.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div key={c.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{c.name}</div>
+                    <div className="text-sm font-semibold text-gray-900">{c.name}</div>
                     <div className="text-xs text-gray-400 font-mono">{c.code}</div>
                   </div>
                   <div className="text-sm font-bold text-emerald-600">
@@ -185,10 +185,10 @@ export const CashTreasuryManagement: React.FC = () => {
         </div>
 
         {/* Commercial Bank Accounts */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Landmark className="w-5 h-5 text-blue-500" />
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-gray-900">
               {t('finance.bankBalances', 'Commercial Bank Accounts')}
             </h3>
           </div>
@@ -197,9 +197,9 @@ export const CashTreasuryManagement: React.FC = () => {
               <p className="text-xs text-gray-400">No bank accounts configured.</p>
             ) : (
               treasury.breakdown.bank_accounts.map((b) => (
-                <div key={b.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+                <div key={b.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{b.bank_name}</div>
+                    <div className="text-sm font-semibold text-gray-900">{b.bank_name}</div>
                     <div className="text-xs text-gray-500">{b.account_name} ({b.account_number})</div>
                   </div>
                   <div className="text-sm font-bold text-blue-600">
@@ -213,23 +213,23 @@ export const CashTreasuryManagement: React.FC = () => {
       </div>
 
       {/* Cash Flow Forecast Schedule */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">
+            <h2 className="text-base font-bold text-gray-900">
               {forecastHorizon}-Day Cash Flow Forecast Schedule
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Deterministic daily inflows (AR due) and outflows (AP due & payroll)
             </p>
           </div>
-          <div className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
+          <div className="text-xs font-mono bg-gray-100 px-3 py-1 rounded-lg">
             Opening Balance: {formatBDT(forecast?.opening_liquid_cash)}
           </div>
         </div>
         <div className="overflow-x-auto max-h-96">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400 sticky top-0">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500 sticky top-0">
               <tr>
                 <th className="px-6 py-3">Date</th>
                 <th className="px-6 py-3 text-right text-emerald-600">Projected Inflow (AR)</th>
@@ -238,7 +238,7 @@ export const CashTreasuryManagement: React.FC = () => {
                 <th className="px-6 py-3 text-right">Cumulative Liquid Cash</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {!forecast?.daily_schedule || forecast.daily_schedule.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
@@ -247,7 +247,7 @@ export const CashTreasuryManagement: React.FC = () => {
                 </tr>
               ) : (
                 forecast.daily_schedule.map((day, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr key={idx} className="hover:bg-gray-50:bg-gray-700/50">
                     <td className="px-6 py-3 font-mono text-xs">{day.date}</td>
                     <td className="px-6 py-3 text-right font-medium text-emerald-600">
                       {day.inflow > 0 ? formatBDT(day.inflow) : '—'}
@@ -260,7 +260,7 @@ export const CashTreasuryManagement: React.FC = () => {
                     }`}>
                       {formatBDT(day.net)}
                     </td>
-                    <td className="px-6 py-3 text-right font-mono font-bold text-gray-900 dark:text-white">
+                    <td className="px-6 py-3 text-right font-mono font-bold text-gray-900">
                       {formatBDT(day.cumulative_balance)}
                     </td>
                   </tr>

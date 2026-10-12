@@ -68,6 +68,56 @@ const MOCK_BI_EXECUTIVE = {
   ],
 };
 
+const INITIAL_MOCK_SUPPLIERS = [
+  {
+    id: 1,
+    supplier_code: 'SUP-0001',
+    name: 'TM International',
+    short_name: 'TMI',
+    mobile: '01711000001',
+    address: '12 Motijheel C/A, Dhaka-1000',
+    contact_person: 'Tariq Mahmood',
+    contact_designation: 'Managing Director',
+    contact_phone: '01711000001',
+    status: 'ACTIVE',
+    current_balance: 12500,
+    created_at: '2026-10-01T10:00:00Z',
+    updated_at: '2026-10-01T10:00:00Z',
+  },
+  {
+    id: 2,
+    supplier_code: 'SUP-0002',
+    name: 'Square Pharmaceuticals Ltd',
+    short_name: 'SQU',
+    mobile: '01811000002',
+    address: 'Square Centre, 48 Mohakhali C/A, Dhaka-1212',
+    contact_person: 'Kamrul Hasan',
+    contact_designation: 'Key Account Manager',
+    contact_phone: '01811000002',
+    status: 'ACTIVE',
+    current_balance: 45000,
+    created_at: '2026-10-02T11:30:00Z',
+    updated_at: '2026-10-02T11:30:00Z',
+  },
+  {
+    id: 3,
+    supplier_code: 'SUP-0003',
+    name: 'Apex Footwear & Leather',
+    short_name: 'AFL',
+    mobile: '01911000003',
+    address: 'House 6, Road 137, Gulshan-1, Dhaka',
+    contact_person: 'Rafiqul Islam',
+    contact_designation: 'Supply Chain Head',
+    contact_phone: '01911000003',
+    status: 'ACTIVE',
+    current_balance: 0,
+    created_at: '2026-10-03T14:15:00Z',
+    updated_at: '2026-10-03T14:15:00Z',
+  },
+];
+
+let devSuppliersStore: any[] = [...INITIAL_MOCK_SUPPLIERS];
+
 export default defineConfig({
   root: './frontend',
   plugins: [
@@ -77,7 +127,103 @@ export default defineConfig({
       name: 'api-mock-middleware',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          if (req.url && req.url.startsWith('/api/v1')) {
+          if (req.url && (req.url.startsWith('/api/v1') || req.url.startsWith('/api/v2'))) {
+            // Handle /api/v2/health or /api/v1/v2/health
+            if (req.url.includes('/v2/health')) {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  system: 'RetailCore POS_ERP',
+                  version: '2.0.0-step1',
+                  api_version: 'v2',
+                  status: 'healthy',
+                  database: 'connected',
+                  architecture: {
+                    framework: 'Laravel 12 / React 19',
+                    tenant_isolation: 'enabled',
+                    rbac_engine: 'active',
+                    accounting_engine: 'double_entry_ledger',
+                    inventory_engine: 'immutable_stock_movement',
+                  },
+                  timestamp: new Date().toISOString(),
+                },
+              }));
+              return;
+            }
+
+            // Handle /api/v2/system/status or /api/v1/v2/system/status
+            if (req.url.includes('/v2/system/status')) {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  environment: 'production',
+                  v2_foundation: {
+                    step: 1,
+                    name: 'RetailCore V2 Step 1 Foundation',
+                    status: 'ACTIVE',
+                    installed_at: '2026-09-16T00:00:00Z',
+                  },
+                  github: {
+                    repository: 'tofayelah/POS-Project',
+                    branch: 'main',
+                    commit: 'v2-step',
+                    commit_full: 'v2-step1-foundation',
+                    status: 'connected',
+                  },
+                  live: {
+                    environment: 'PRODUCTION',
+                    commit: 'v2-step',
+                    backend: {
+                      status: 'healthy',
+                      version: '2.0.0-step1',
+                      api_version: 'v2',
+                    },
+                    frontend: {
+                      status: 'healthy',
+                      version: '2.0.0-step1',
+                    },
+                    database: {
+                      status: 'healthy',
+                    },
+                  },
+                  comparison: {
+                    github_vs_live: 'UP_TO_DATE',
+                    backend_vs_frontend: 'SYNCHRONIZED',
+                  },
+                  checked_at: new Date().toISOString(),
+                },
+              }));
+              return;
+            }
+
+            // Handle /api/v2/system/capabilities or /api/v1/v2/system/capabilities
+            if (req.url.includes('/v2/system/capabilities')) {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  v2_spec: 'Step 1 Foundation',
+                  capabilities: {
+                    product_master_v2: true,
+                    pos_workflow_v2: true,
+                    multi_tenant_rbac: true,
+                    immutable_inventory_ledger: true,
+                    double_entry_accounting: true,
+                    procurement_matching_3way: true,
+                    bi_analytics_dashboard: true,
+                    unified_light_theme: true,
+                  },
+                  modules: [
+                    'POS', 'Inventory', 'Procurement', 'Finance', 'CRM',
+                    'E-Commerce', 'HR', 'BI & Analytics', 'Tax & Compliance',
+                  ],
+                },
+              }));
+              return;
+            }
+
             // Handle /api/v1/login
             if (req.url.includes('/login') && req.method === 'POST') {
               let body = '';
@@ -146,6 +292,169 @@ export default defineConfig({
               res.end(JSON.stringify({
                 status: 'success',
                 data: MOCK_BI_EXECUTIVE,
+              }));
+              return;
+            }
+
+            // Handle /api/v1/suppliers/next-code
+            if (req.url.includes('/suppliers/next-code') && req.method === 'GET') {
+              let maxNum = 0;
+              for (const s of devSuppliersStore) {
+                if (s.supplier_code) {
+                  const m = s.supplier_code.match(/^SUP-(\d+)$/i);
+                  if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxNum) maxNum = n;
+                  }
+                }
+              }
+              const nextCode = `SUP-${String(maxNum + 1).padStart(4, '0')}`;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: { supplier_code: nextCode },
+              }));
+              return;
+            }
+
+            // Handle /api/v1/suppliers/:id/balance
+            const balanceMatch = req.url.match(/\/api\/v1\/suppliers\/(\d+)\/balance/);
+            if (balanceMatch && req.method === 'GET') {
+              const supId = parseInt(balanceMatch[1], 10);
+              const found = devSuppliersStore.find((s) => s.id === supId);
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  supplier_id: supId,
+                  supplier_code: found ? found.supplier_code : `SUP-${String(supId).padStart(4, '0')}`,
+                  name: found ? found.name : 'Supplier',
+                  opening_balance: 0,
+                  total_purchases: 0,
+                  total_paid: 0,
+                  balance: found?.current_balance || 0,
+                },
+              }));
+              return;
+            }
+
+            // Handle /api/v1/suppliers/:id (GET, PUT, DELETE)
+            const singleSupplierMatch = req.url.match(/\/api\/v1\/suppliers\/(\d+)(\?.*)?$/);
+            if (singleSupplierMatch) {
+              const supId = parseInt(singleSupplierMatch[1], 10);
+              if (req.method === 'GET') {
+                const found = devSuppliersStore.find((s) => s.id === supId);
+                res.setHeader('Content-Type', 'application/json');
+                if (found) {
+                  res.end(JSON.stringify({ success: true, data: found }));
+                } else {
+                  res.statusCode = 404;
+                  res.end(JSON.stringify({ success: false, message: 'Supplier not found' }));
+                }
+                return;
+              }
+              if (req.method === 'PUT') {
+                let body = '';
+                req.on('data', (chunk) => { body += chunk; });
+                req.on('end', () => {
+                  let parsed: any = {};
+                  try { parsed = JSON.parse(body); } catch {}
+                  const idx = devSuppliersStore.findIndex((s) => s.id === supId);
+                  if (idx !== -1) {
+                    devSuppliersStore[idx] = {
+                      ...devSuppliersStore[idx],
+                      ...parsed,
+                      updated_at: new Date().toISOString(),
+                    };
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({
+                      success: true,
+                      message: 'Supplier updated successfully',
+                      data: devSuppliersStore[idx],
+                    }));
+                  } else {
+                    res.statusCode = 404;
+                    res.end(JSON.stringify({ success: false, message: 'Supplier not found' }));
+                  }
+                });
+                return;
+              }
+              if (req.method === 'DELETE') {
+                devSuppliersStore = devSuppliersStore.filter((s) => s.id !== supId);
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, message: 'Supplier deleted successfully' }));
+                return;
+              }
+            }
+
+            // Handle /api/v1/suppliers (POST)
+            if (req.url.match(/\/api\/v1\/suppliers(\?.*)?$/) && req.method === 'POST') {
+              let body = '';
+              req.on('data', (chunk) => { body += chunk; });
+              req.on('end', () => {
+                let parsed: any = {};
+                try { parsed = JSON.parse(body); } catch {}
+                let maxNum = 0;
+                let maxId = 0;
+                for (const s of devSuppliersStore) {
+                  if (s.id > maxId) maxId = s.id;
+                  if (s.supplier_code) {
+                    const m = s.supplier_code.match(/^SUP-(\d+)$/i);
+                    if (m) {
+                      const n = parseInt(m[1], 10);
+                      if (n > maxNum) maxNum = n;
+                    }
+                  }
+                }
+                const newCode = `SUP-${String(maxNum + 1).padStart(4, '0')}`;
+                const newSupplier = {
+                  id: maxId + 1,
+                  supplier_code: newCode,
+                  name: parsed.name?.trim() || 'New Supplier',
+                  short_name: parsed.short_name?.trim() || '',
+                  mobile: parsed.mobile?.trim() || '',
+                  address: parsed.address?.trim() || '',
+                  contact_person: parsed.contact_person?.trim() || '',
+                  contact_designation: parsed.contact_designation?.trim() || '',
+                  contact_phone: parsed.contact_phone?.trim() || '',
+                  status: parsed.status || 'ACTIVE',
+                  current_balance: 0,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                };
+                devSuppliersStore = [newSupplier, ...devSuppliersStore];
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: true,
+                  message: 'Supplier created successfully',
+                  data: newSupplier,
+                }));
+              });
+              return;
+            }
+
+            // Handle /api/v1/suppliers (GET)
+            if (req.url.startsWith('/api/v1/suppliers') && req.method === 'GET') {
+              const urlObj = new URL(req.url, 'http://localhost');
+              const search = urlObj.searchParams.get('search')?.toLowerCase();
+              const status = urlObj.searchParams.get('status')?.toUpperCase();
+              let result = [...devSuppliersStore];
+              if (status && status !== 'ALL') {
+                result = result.filter((s) => s.status === status);
+              }
+              if (search) {
+                result = result.filter((s) =>
+                  s.name.toLowerCase().includes(search) ||
+                  s.supplier_code.toLowerCase().includes(search) ||
+                  (s.short_name && s.short_name.toLowerCase().includes(search)) ||
+                  (s.mobile && s.mobile.toLowerCase().includes(search)) ||
+                  (s.contact_person && s.contact_person.toLowerCase().includes(search))
+                );
+              }
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                data: result,
               }));
               return;
             }

@@ -123,17 +123,17 @@ export const BudgetManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.budgetsTitle', 'Budget Management & Controls')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.budgetsSubtitle', 'Operational Budgets, Versioning, Approval Lifecycle & Control Rules')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowControlModal(true)}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50:bg-gray-700"
           >
             <Sliders className="w-4 h-4 mr-2" />
             {t('finance.controlRules', 'Control Rules')}
@@ -148,7 +148,7 @@ export const BudgetManagement: React.FC = () => {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -156,32 +156,32 @@ export const BudgetManagement: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500 rounded text-emerald-700 dark:text-emerald-300 text-sm flex justify-between">
+        <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded text-emerald-700 text-sm flex justify-between">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm flex justify-between">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm flex justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
       )}
 
       {/* Budgets List Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.budgetsList', 'Active & Historical Budgets')}
           </h2>
-          <span className="text-xs bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full font-medium">
+          <span className="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-medium">
             {budgets.length} {t('finance.records', 'Budgets')}
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">{t('finance.budgetName', 'Budget Name')}</th>
                 <th className="px-6 py-3">{t('finance.costCentre', 'Cost Centre')}</th>
@@ -192,7 +192,7 @@ export const BudgetManagement: React.FC = () => {
                 <th className="px-6 py-3 text-center">{t('common.actions', 'Actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {budgets.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
@@ -201,36 +201,36 @@ export const BudgetManagement: React.FC = () => {
                 </tr>
               ) : (
                 budgets.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                  <tr key={b.id} className="hover:bg-gray-50:bg-gray-700/50 transition">
+                    <td className="px-6 py-4 font-semibold text-gray-900">
                       {b.name}
                     </td>
                     <td className="px-6 py-4">
                       {b.cost_centre?.name || 'All Company'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                      <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 rounded">
                         {b.period_type}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono font-medium">
                       v{b.version}
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                    <td className="px-6 py-4 text-right font-bold text-gray-900">
                       {formatBDT(b.total_budgeted_amount)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                           b.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400'
+                            ? 'bg-emerald-100 text-emerald-800'
                             : b.status === 'APPROVED'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400'
+                            ? 'bg-blue-100 text-blue-800'
                             : b.status === 'SUBMITTED'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400'
+                            ? 'bg-amber-100 text-amber-800'
                             : b.status === 'REVISED'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
                         }`}
                       >
                         {b.status}
@@ -287,11 +287,11 @@ export const BudgetManagement: React.FC = () => {
       </div>
 
       {/* Active Budget Controls Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-500" />
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-gray-900">
               {t('finance.activeControlRules', 'Active Spending Control Policies')}
             </h3>
           </div>
@@ -301,16 +301,16 @@ export const BudgetManagement: React.FC = () => {
             <p className="text-sm text-gray-500 col-span-3">No active hard controls registered. Standard policies apply.</p>
           ) : (
             controls.map((c) => (
-              <div key={c.id} className="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div key={c.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-mono font-bold text-gray-700">
                     Control: {c.control_level}
                   </span>
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
                     {c.is_active ? 'ENABLED' : 'DISABLED'}
                   </span>
                 </div>
-                <div className="mt-2 text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                <div className="mt-2 text-xs space-y-1 text-gray-600">
                   <div>Warning Threshold: <span className="font-bold text-amber-600">{c.warning_threshold_pct}%</span></div>
                   <div>Hard Stop Threshold: <span className="font-bold text-rose-600">{c.hard_stop_threshold_pct}%</span></div>
                   <div>Cost Centre: {c.cost_centre?.name || 'Company Wide'}</div>
@@ -324,13 +324,13 @@ export const BudgetManagement: React.FC = () => {
       {/* Create Budget Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               {t('finance.createBudgetTitle', 'Create Financial Budget')}
             </h3>
             <form onSubmit={handleCreateBudget} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Budget Name *
                 </label>
                 <input
@@ -339,18 +339,18 @@ export const BudgetManagement: React.FC = () => {
                   value={newBudgetName}
                   onChange={(e) => setNewBudgetName(e.target.value)}
                   placeholder="e.g. FY 2026-2027 Operations Budget"
-                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Period Frequency
                   </label>
                   <select
                     value={newPeriodType}
                     onChange={(e: any) => setNewPeriodType(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                   >
                     <option value="ANNUAL">Annual</option>
                     <option value="QUARTERLY">Quarterly</option>
@@ -358,13 +358,13 @@ export const BudgetManagement: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Cost Centre
                   </label>
                   <select
                     value={newCostCentreId}
                     onChange={(e) => setNewCostCentreId(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                   >
                     <option value="">Company Wide</option>
                     {costCentres.map((cc) => (
@@ -374,7 +374,7 @@ export const BudgetManagement: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Allocated Amount (BDT) *
                 </label>
                 <input
@@ -382,7 +382,7 @@ export const BudgetManagement: React.FC = () => {
                   required
                   value={newLines[0].allocated_amount}
                   onChange={(e) => setNewLines([{ account_id: 1, allocated_amount: Number(e.target.value) }])}
-                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-3">
@@ -408,19 +408,19 @@ export const BudgetManagement: React.FC = () => {
       {/* Control Policy Modal */}
       {showControlModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Configure Spending Control Policy
             </h3>
             <form onSubmit={handleCreateControl} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Enforcement Level
                 </label>
                 <select
                   value={controlLevel}
                   onChange={(e: any) => setControlLevel(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                 >
                   <option value="ALLOW">ALLOW (Log Only)</option>
                   <option value="WARNING">WARNING (Alert user)</option>
@@ -430,25 +430,25 @@ export const BudgetManagement: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Warning Threshold (%)
                   </label>
                   <input
                     type="number"
                     value={warningThreshold}
                     onChange={(e) => setWarningThreshold(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Hard Stop Threshold (%)
                   </label>
                   <input
                     type="number"
                     value={hardStopThreshold}
                     onChange={(e) => setHardStopThreshold(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-gray-50"
                   />
                 </div>
               </div>

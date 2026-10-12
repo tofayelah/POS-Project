@@ -1002,20 +1002,20 @@ export function CompanyPage() {
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
             {/* Modal Top */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 text-slate-900 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-base font-bold">Onboard New Customer Tenant</h3>
+                  <Building2 className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-bold text-slate-900">Onboard New Customer Tenant</h3>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Set up subdomain, business vertical template, owner credentials, and data isolation.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRegisterModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1457,17 +1457,17 @@ export function CompanyPage() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto"
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 text-slate-900 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold">Configure Company: {editingTargetCompany.name}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <h3 className="text-base font-bold text-slate-900">Configure Company: {editingTargetCompany.name}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Update subdomain routing, vertical features, and corporate settings.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

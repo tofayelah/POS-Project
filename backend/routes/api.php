@@ -881,4 +881,22 @@ Route::middleware('auth:sanctum')->prefix('v1/bi')->group(function () {
     Route::delete('reports/saved/{id}', [\App\Http\Controllers\Api\V1\Bi\BiReportBuilderController::class, 'destroySavedReport'])->middleware('permission:bi.view,bi.saved_reports');
 });
 
+/*
+|--------------------------------------------------------------------------
+| RetailCore V2 Step 1 Foundation Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('v2/health', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'health']);
+    Route::get('v2/system/status', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'status']);
+    Route::get('v2/system/capabilities', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'capabilities']);
+    Route::get('v1/v2/health', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'health']);
+    Route::get('v1/v2/system/status', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'status']);
+    Route::get('v1/v2/system/capabilities', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'capabilities']);
+});
+
+Route::middleware('auth:sanctum')->prefix('v2')->group(function () {
+    Route::get('status', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'status']);
+    Route::get('capabilities', [\App\Http\Controllers\Api\V2\SystemV2Controller::class, 'capabilities']);
+});
 

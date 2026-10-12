@@ -127,17 +127,17 @@ export const BankManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.bankManagementTitle', 'Bank Accounts & Electronic Statements')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.bankManagementSubtitle', 'Commercial Bank Masters, Electronic Statement Lines & Feed Ingestion')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowImportModal(true)}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50:bg-gray-700"
           >
             <Upload className="w-4 h-4 mr-2" />
             {t('finance.importStatement', 'Import Statement')}
@@ -152,7 +152,7 @@ export const BankManagement: React.FC = () => {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -160,32 +160,32 @@ export const BankManagement: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500 rounded text-emerald-700 dark:text-emerald-300 text-sm flex justify-between">
+        <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded text-emerald-700 text-sm flex justify-between">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm flex justify-between">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm flex justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
       )}
 
       {/* Accounts List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.bankAccountsList', 'Registered Bank Accounts')}
           </h2>
-          <span className="text-xs bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
+          <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
             {accounts.length} Accounts
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">Bank & Branch</th>
                 <th className="px-6 py-3">Account Title & Number</th>
@@ -196,7 +196,7 @@ export const BankManagement: React.FC = () => {
                 <th className="px-6 py-3 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {accounts.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
@@ -205,18 +205,18 @@ export const BankManagement: React.FC = () => {
                 </tr>
               ) : (
                 accounts.map((acc) => (
-                  <tr key={acc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr key={acc.id} className="hover:bg-gray-50:bg-gray-700/50">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900 dark:text-white">{acc.bank_name}</div>
+                      <div className="font-semibold text-gray-900">{acc.bank_name}</div>
                       <div className="text-xs text-gray-500">{acc.branch_name || 'Main Branch'}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900 dark:text-white">{acc.account_name}</div>
+                      <div className="font-medium text-gray-900">{acc.account_name}</div>
                       <div className="text-xs font-mono text-gray-400">{acc.account_number}</div>
                     </td>
                     <td className="px-6 py-4 font-mono text-xs">{acc.account_type}</td>
                     <td className="px-6 py-4 font-mono text-xs">{acc.routing_number || '—'}</td>
-                    <td className="px-6 py-4 text-right font-bold text-blue-600 dark:text-blue-400">
+                    <td className="px-6 py-4 text-right font-bold text-blue-600">
                       {formatBDT(acc.current_balance)}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -243,15 +243,15 @@ export const BankManagement: React.FC = () => {
       </div>
 
       {/* Statement History */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.importedStatements', 'Imported Statement History')}
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">Statement Date</th>
                 <th className="px-6 py-3">Bank Account</th>
@@ -260,7 +260,7 @@ export const BankManagement: React.FC = () => {
                 <th className="px-6 py-3">Imported At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {statements.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-6 text-center text-gray-400">
@@ -269,8 +269,8 @@ export const BankManagement: React.FC = () => {
                 </tr>
               ) : (
                 statements.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-3 font-semibold text-gray-900 dark:text-white">{s.statement_date}</td>
+                  <tr key={s.id} className="hover:bg-gray-50:bg-gray-700/50">
+                    <td className="px-6 py-3 font-semibold text-gray-900">{s.statement_date}</td>
                     <td className="px-6 py-3">{s.bank_account?.bank_name} - {s.bank_account?.account_name}</td>
                     <td className="px-6 py-3 text-right font-mono">{formatBDT(s.opening_balance)}</td>
                     <td className="px-6 py-3 text-right font-mono font-bold text-blue-600">{formatBDT(s.closing_balance)}</td>
@@ -286,8 +286,8 @@ export const BankManagement: React.FC = () => {
       {/* Create Account Modal */}
       {showAccountModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Add Commercial Bank Account
             </h3>
             <form onSubmit={handleCreateAccount} className="space-y-4">
@@ -300,7 +300,7 @@ export const BankManagement: React.FC = () => {
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="e.g. BRAC Bank PLC"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -310,7 +310,7 @@ export const BankManagement: React.FC = () => {
                     value={branchName}
                     onChange={(e) => setBranchName(e.target.value)}
                     placeholder="e.g. Gulshan-1 Branch"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export const BankManagement: React.FC = () => {
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
                     placeholder="RetailCore Operations"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -334,7 +334,7 @@ export const BankManagement: React.FC = () => {
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     placeholder="1501204567890001"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -346,7 +346,7 @@ export const BankManagement: React.FC = () => {
                     value={routingNumber}
                     onChange={(e) => setRoutingNumber(e.target.value)}
                     placeholder="060261234"
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -355,7 +355,7 @@ export const BankManagement: React.FC = () => {
                     type="number"
                     value={openingBalance}
                     onChange={(e) => setOpeningBalance(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -382,8 +382,8 @@ export const BankManagement: React.FC = () => {
       {/* Statement Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Import Electronic Bank Statement
             </h3>
             <form onSubmit={handleImportStatement} className="space-y-4">
@@ -392,7 +392,7 @@ export const BankManagement: React.FC = () => {
                 <select
                   value={importBankAccountId}
                   onChange={(e) => setImportBankAccountId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
                 >
                   {accounts.map((a) => (
                     <option key={a.id} value={a.id}>{a.bank_name} - {a.account_name} ({a.account_number})</option>
@@ -406,7 +406,7 @@ export const BankManagement: React.FC = () => {
                     type="date"
                     value={statementDate}
                     onChange={(e) => setStatementDate(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -415,7 +415,7 @@ export const BankManagement: React.FC = () => {
                     type="number"
                     value={stmtOpeningBal}
                     onChange={(e) => setStmtOpeningBal(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
                 <div>
@@ -424,12 +424,12 @@ export const BankManagement: React.FC = () => {
                     type="number"
                     value={stmtClosingBal}
                     onChange={(e) => setStmtClosingBal(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
                   />
                 </div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg space-y-3">
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Statement Line Data</span>
+              <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+                <span className="text-xs font-bold text-gray-700">Statement Line Data</span>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] mb-1">Description</label>
@@ -437,7 +437,7 @@ export const BankManagement: React.FC = () => {
                       type="text"
                       value={sampleLineDesc}
                       onChange={(e) => setSampleLineDesc(e.target.value)}
-                      className="w-full px-2 py-1.5 border rounded text-xs dark:bg-gray-700 dark:border-gray-600"
+                      className="w-full px-2 py-1.5 border rounded text-xs"
                     />
                   </div>
                   <div>
@@ -446,7 +446,7 @@ export const BankManagement: React.FC = () => {
                       type="text"
                       value={sampleLineRef}
                       onChange={(e) => setSampleLineRef(e.target.value)}
-                      className="w-full px-2 py-1.5 border rounded text-xs dark:bg-gray-700 dark:border-gray-600"
+                      className="w-full px-2 py-1.5 border rounded text-xs"
                     />
                   </div>
                 </div>
@@ -456,7 +456,7 @@ export const BankManagement: React.FC = () => {
                     <select
                       value={sampleLineType}
                       onChange={(e: any) => setSampleLineType(e.target.value)}
-                      className="w-full px-2 py-1.5 border rounded text-xs dark:bg-gray-700 dark:border-gray-600"
+                      className="w-full px-2 py-1.5 border rounded text-xs"
                     >
                       <option value="deposit">Deposit (Inflow)</option>
                       <option value="withdrawal">Withdrawal (Outflow)</option>
@@ -468,7 +468,7 @@ export const BankManagement: React.FC = () => {
                       type="number"
                       value={sampleLineAmount}
                       onChange={(e) => setSampleLineAmount(Number(e.target.value))}
-                      className="w-full px-2 py-1.5 border rounded text-xs dark:bg-gray-700 dark:border-gray-600"
+                      className="w-full px-2 py-1.5 border rounded text-xs"
                     />
                   </div>
                 </div>

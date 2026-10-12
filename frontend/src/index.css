@@ -31,7 +31,7 @@
 
   /* Universal High-Contrast Form Control & Typography Rules */
   h1, h2, h3, h4, h5, h6 {
-    color: #0f172a !important;
+    color: #0f172a;
   }
 
   p, span, label, div {

@@ -155,10 +155,10 @@ export const FinancialPeriodManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('finance.periodClosingTitle', 'Financial Period Governance & Year-End Closing')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('finance.periodClosingSubtitle', 'Accounting Period Soft-Locks, Pre-Close Checklists & Retained Earnings Clearing')}
           </p>
         </div>
@@ -173,7 +173,7 @@ export const FinancialPeriodManagement: React.FC = () => {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg border border-gray-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -181,29 +181,29 @@ export const FinancialPeriodManagement: React.FC = () => {
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500 rounded text-emerald-700 dark:text-emerald-300 text-sm flex justify-between">
+        <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded text-emerald-700 text-sm flex justify-between">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded text-red-700 dark:text-red-300 text-sm flex justify-between">
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-sm flex justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
       )}
 
       {/* Accounting Periods Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.accountingPeriods', 'Accounting Periods & Lock Status')}
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">Period Name</th>
                 <th className="px-6 py-3">Fiscal Year</th>
@@ -213,7 +213,7 @@ export const FinancialPeriodManagement: React.FC = () => {
                 <th className="px-6 py-3 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {periods.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
@@ -222,8 +222,8 @@ export const FinancialPeriodManagement: React.FC = () => {
                 </tr>
               ) : (
                 periods.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                  <tr key={p.id} className="hover:bg-gray-50:bg-gray-700/50">
+                    <td className="px-6 py-4 font-semibold text-gray-900">
                       {p.name}
                     </td>
                     <td className="px-6 py-4 font-mono text-xs">
@@ -234,10 +234,10 @@ export const FinancialPeriodManagement: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
                         p.status === 'OPEN'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400'
+                          ? 'bg-emerald-100 text-emerald-800'
                           : p.status === 'SOFT_LOCK'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400'
-                          : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-rose-100 text-rose-800'
                       }`}>
                         {p.status}
                       </span>
@@ -274,15 +274,15 @@ export const FinancialPeriodManagement: React.FC = () => {
       </div>
 
       {/* Year-End Closings History */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base font-bold text-gray-900">
             {t('finance.yearEndHistory', 'Historical Year-End Closings')}
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-xs uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="px-6 py-3">Closing Date</th>
                 <th className="px-6 py-3 text-right">Total Revenue</th>
@@ -292,7 +292,7 @@ export const FinancialPeriodManagement: React.FC = () => {
                 <th className="px-6 py-3 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {yearEndClosings.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-6 text-center text-gray-400">
@@ -301,8 +301,8 @@ export const FinancialPeriodManagement: React.FC = () => {
                 </tr>
               ) : (
                 yearEndClosings.map((y) => (
-                  <tr key={y.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-3 font-semibold text-gray-900 dark:text-white">{y.closing_date}</td>
+                  <tr key={y.id} className="hover:bg-gray-50:bg-gray-700/50">
+                    <td className="px-6 py-3 font-semibold text-gray-900">{y.closing_date}</td>
                     <td className="px-6 py-3 text-right text-emerald-600 font-mono">{formatBDT(y.total_revenue)}</td>
                     <td className="px-6 py-3 text-right text-rose-600 font-mono">{formatBDT(y.total_expense)}</td>
                     <td className={`px-6 py-3 text-right font-bold ${
@@ -338,13 +338,13 @@ export const FinancialPeriodManagement: React.FC = () => {
       {/* Pre-Close Checklist Modal */}
       {showCheckModal && selectedPeriod && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <CalendarCheck className="w-5 h-5 text-indigo-600" />
               Pre-Close Validation: {selectedPeriod.name}
             </h3>
             <div className="space-y-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg space-y-2 text-xs">
+              <div className="p-3 bg-gray-50 rounded-lg space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span>Unposted Draft Journals:</span>
                   <span className={`font-bold ${closingCheck?.unposted_journals_count === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -360,7 +360,7 @@ export const FinancialPeriodManagement: React.FC = () => {
               </div>
 
               {closingCheck?.warnings && closingCheck.warnings.length > 0 && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-800 dark:text-amber-300 text-xs space-y-1">
+                <div className="p-3 bg-amber-50 rounded-lg text-amber-800 text-xs space-y-1">
                   {closingCheck.warnings.map((w, idx) => (
                     <div key={idx}>⚠️ {w}</div>
                   ))}
@@ -400,8 +400,8 @@ export const FinancialPeriodManagement: React.FC = () => {
       {/* Privileged Reopen Modal */}
       {showReopenModal && selectedPeriod && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-rose-500" />
               Privileged Reopen: {selectedPeriod.name}
             </h3>
@@ -417,7 +417,7 @@ export const FinancialPeriodManagement: React.FC = () => {
                   value={reopenReason}
                   onChange={(e) => setReopenReason(e.target.value)}
                   placeholder="e.g. Audit adjustment required for external statutory reporting."
-                  className="w-full px-3 py-2 border rounded-lg text-xs dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-3 py-2 border rounded-lg text-xs"
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -443,11 +443,11 @@ export const FinancialPeriodManagement: React.FC = () => {
       {/* Year-End Closing Modal */}
       {showYearEndModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
               Year-End Closing Execution
             </h3>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg space-y-2 text-xs">
+            <div className="p-3 bg-gray-50 rounded-lg space-y-2 text-xs">
               <div className="flex justify-between">
                 <span>Total Revenue to Clear:</span>
                 <span className="font-bold text-emerald-600">{formatBDT(closingPreview?.total_revenue)}</span>
@@ -469,7 +469,7 @@ export const FinancialPeriodManagement: React.FC = () => {
                 type="number"
                 value={retainedEarningsAccId}
                 onChange={(e) => setRetainedEarningsAccId(Number(e.target.value))}
-                className="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600"
+                className="w-full px-3 py-2 border rounded-lg text-sm"
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">

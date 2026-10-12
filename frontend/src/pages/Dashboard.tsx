@@ -174,7 +174,7 @@ export function Dashboard() {
       {/* ======================================================== */}
       {/* UNIFIED DASHBOARD HEADER & PHASE 13 VIEW SWITCHER        */}
       {/* ======================================================== */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
@@ -182,17 +182,17 @@ export function Dashboard() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                   {activeTab === 'executive'
                     ? t('bi.title', 'Executive BI & Management Intelligence')
                     : t('nav.dashboard', 'Store Operations & POS Dashboard')}
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                   <Sparkles className="w-3 h-3 text-indigo-500" />
                   Phase 13
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                 {activeTab === 'executive'
                   ? t('bi.subtitle', 'Unified Real-Time Enterprise Analytics, Cross-Module KPIs & Performance Telemetry')
                   : t('dashboard.operationsSubtitle', 'Live point of sale telemetry, register sessions, catalog & cashier operations')}
@@ -202,14 +202,14 @@ export function Dashboard() {
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shrink-0">
+        <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0">
           <button
             id="tab-btn-executive-bi"
             onClick={() => handleTabChange('executive')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'executive'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900:text-white'
             }`}
           >
             <TrendingUp className="w-4 h-4 text-indigo-500" />
@@ -220,8 +220,8 @@ export function Dashboard() {
             onClick={() => handleTabChange('operations')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'operations'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900:text-white'
             }`}
           >
             <Layers className="w-4 h-4 text-slate-500" />
@@ -233,70 +233,70 @@ export function Dashboard() {
       {/* ======================================================== */}
       {/* PHASE 13 BI QUICK-LAUNCH SUITE BAR                       */}
       {/* ======================================================== */}
-      <div className="bg-slate-50/80 dark:bg-slate-900/40 rounded-xl border border-slate-200/80 dark:border-slate-800 p-3 flex items-center gap-2 overflow-x-auto scrollbar-none">
-        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+      <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-3 flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
           <BarChart3 className="w-3.5 h-3.5 text-indigo-500" />
           {t('bi.suite', 'BI Suite')}:
         </span>
         <Link
           to="/bi/sales"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
           {t('bi.salesBi', 'Sales Intelligence')}
         </Link>
         <Link
           to="/bi/profitability"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
           {t('bi.profitabilityBi', 'Profitability')}
         </Link>
         <Link
           to="/bi/inventory"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <Package className="w-3.5 h-3.5 text-amber-500" />
           {t('bi.inventoryBi', 'Inventory & Aging')}
         </Link>
         <Link
           to="/bi/customer"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <Users className="w-3.5 h-3.5 text-teal-500" />
           {t('bi.customerBi', 'Customer RFM')}
         </Link>
         <Link
           to="/bi/supplier"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <Building2 className="w-3.5 h-3.5 text-slate-500" />
           {t('bi.supplierBi', 'Supplier Scorecard')}
         </Link>
         <Link
           to="/bi/finance"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <PieChart className="w-3.5 h-3.5 text-purple-500" />
           {t('bi.financeBi', 'DuPont & Ratios')}
         </Link>
         <Link
           to="/bi/alerts"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
           {t('bi.alerts', 'Management Alerts')}
         </Link>
         <Link
           to="/bi/report-builder"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-500" />
           {t('bi.reportBuilder', 'Report Builder')}
         </Link>
         <Link
           to="/bi/saved-reports"
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shrink-0 transition"
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100:bg-slate-700 border border-slate-200 text-slate-700 flex items-center gap-1.5 shrink-0 transition"
         >
           <LineChart className="w-3.5 h-3.5 text-cyan-500" />
           {t('bi.savedReports', 'Saved Reports')}
@@ -316,16 +316,16 @@ export function Dashboard() {
         /* ======================================================== */
         <div className="space-y-6">
           {/* Phase 13 Promotion Callout on Operations Tab */}
-          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-pink-950/20 border border-indigo-200/80 dark:border-indigo-800/60 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border border-indigo-200/80 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                <p className="text-sm font-bold text-slate-900">
                   {t('dashboard.biCalloutTitle', 'Phase 13: Executive BI & Management Reporting Suite Active')}
                 </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
+                <p className="text-xs text-slate-600">
                   {t('dashboard.biCalloutSubtitle', 'Access cross-channel revenue telemetry, DuPont financial decomposition, RFM customer portfolio, and automated threshold alerts.')}
                 </p>
               </div>

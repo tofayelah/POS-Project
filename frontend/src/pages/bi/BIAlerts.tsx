@@ -82,15 +82,15 @@ export const BIAlerts: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-8 h-8 text-rose-600 dark:text-rose-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <ShieldAlert className="w-8 h-8 text-rose-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.alerts')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Real-time threshold monitoring, anomaly detection, and management exceptions.
           </p>
         </div>
@@ -100,7 +100,7 @@ export const BIAlerts: React.FC = () => {
           <select
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+            className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg text-gray-900"
           >
             <option value="">All Severities</option>
             <option value="CRITICAL">Critical Only</option>
@@ -120,26 +120,26 @@ export const BIAlerts: React.FC = () => {
 
       {/* Status Counters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-red-50 dark:bg-red-950/20 p-5 rounded-xl border border-red-200 dark:border-red-900/30 flex items-center justify-between">
+        <div className="bg-red-50 p-5 rounded-xl border border-red-200 flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Critical Alerts</span>
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400 mt-1">{criticalCount}</div>
+            <div className="text-2xl font-bold text-red-700 mt-1">{criticalCount}</div>
           </div>
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
 
-        <div className="bg-amber-50 dark:bg-amber-950/20 p-5 rounded-xl border border-amber-200 dark:border-amber-900/30 flex items-center justify-between">
+        <div className="bg-amber-50 p-5 rounded-xl border border-amber-200 flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Warning Alerts</span>
-            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">{warningCount}</div>
+            <div className="text-2xl font-bold text-amber-700 mt-1">{warningCount}</div>
           </div>
           <AlertCircle className="w-8 h-8 text-amber-500" />
         </div>
 
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-200 dark:border-emerald-900/30 flex items-center justify-between">
+        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200 flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">System Health</span>
-            <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-1">
+            <div className="text-lg font-bold text-emerald-700 mt-1">
               {criticalCount === 0 ? 'Optimal Performance' : 'Attention Required'}
             </div>
           </div>
@@ -153,9 +153,9 @@ export const BIAlerts: React.FC = () => {
           <RefreshCw className="w-8 h-8 animate-spin text-rose-600" />
         </div>
       ) : filteredAlerts.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 p-12 rounded-xl border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
           <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">All Clear!</h3>
+          <h3 className="text-lg font-semibold text-gray-900">All Clear!</h3>
           <p className="text-sm text-gray-500 mt-1">
             No management alerts or threshold breaches have been detected.
           </p>
@@ -165,12 +165,12 @@ export const BIAlerts: React.FC = () => {
           {filteredAlerts.map((alert) => (
             <div
               key={alert.id}
-              className={`p-6 rounded-xl border transition shadow-sm bg-white dark:bg-gray-800 ${
+              className={`p-6 rounded-xl border transition shadow-sm bg-white ${
                 alert.severity === 'CRITICAL'
-                  ? 'border-red-300 dark:border-red-900/50'
+                  ? 'border-red-300'
                   : alert.severity === 'WARNING'
-                  ? 'border-amber-300 dark:border-amber-900/50'
-                  : 'border-blue-300 dark:border-blue-900/50'
+                  ? 'border-amber-300'
+                  : 'border-blue-300'
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -179,10 +179,10 @@ export const BIAlerts: React.FC = () => {
                     <span
                       className={`px-2.5 py-0.5 text-xs font-bold rounded ${
                         alert.severity === 'CRITICAL'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+                          ? 'bg-red-100 text-red-800'
                           : alert.severity === 'WARNING'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-blue-100 text-blue-800'
                       }`}
                     >
                       {alert.severity}
@@ -191,22 +191,22 @@ export const BIAlerts: React.FC = () => {
                     <span className="text-xs text-gray-400">• {formatDate(alert.created_at)}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white pt-1">
+                  <h3 className="text-base font-bold text-gray-900 pt-1">
                     {alert.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-600">
                     {alert.message}
                   </p>
 
                   <div className="flex items-center gap-4 text-xs text-gray-500 pt-2">
                     <span>
-                      Metric: <strong className="text-gray-700 dark:text-gray-200">{alert.metric}</strong>
+                      Metric: <strong className="text-gray-700">{alert.metric}</strong>
                     </span>
                     <span>
                       Current: <strong className="text-rose-600">{alert.current_value}</strong>
                     </span>
                     <span>
-                      Threshold ({alert.threshold_type}): <strong className="text-gray-700 dark:text-gray-200">{alert.threshold_value}</strong>
+                      Threshold ({alert.threshold_type}): <strong className="text-gray-700">{alert.threshold_value}</strong>
                     </span>
                   </div>
                 </div>
@@ -220,12 +220,12 @@ export const BIAlerts: React.FC = () => {
                     onChange={(e) =>
                       setActionNotes({ ...actionNotes, [alert.id]: e.target.value })
                     }
-                    className="px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-750 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white w-full sm:w-48"
+                    className="px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-900 w-full sm:w-48"
                   />
                   {alert.status === 'ACTIVE' && (
                     <button
                       onClick={() => handleAcknowledge(Number(alert.id))}
-                      className="px-3 py-1.5 text-xs font-medium bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 rounded-lg transition whitespace-nowrap"
+                      className="px-3 py-1.5 text-xs font-medium bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg transition whitespace-nowrap"
                     >
                       Acknowledge
                     </button>

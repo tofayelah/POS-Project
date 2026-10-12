@@ -126,6 +126,22 @@ class PurchaseOrderController extends Controller
             'items.*.tax' => 'nullable|numeric|min:0',
         ]);
 
+        $supplier = Supplier::where('id', $validated['supplier_id'])
+            ->where('company_id', $companyId)
+            ->first();
+        if (!$supplier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected supplier does not belong to your company.',
+            ], 422);
+        }
+        if ($supplier->status === 'INACTIVE') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected supplier is currently inactive and cannot be used for new purchase orders.',
+            ], 422);
+        }
+
         if (empty($validated['po_number'])) {
             $validated['po_number'] = self::generateUniquePoNumber($companyId);
         } else {

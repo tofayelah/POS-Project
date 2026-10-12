@@ -109,41 +109,41 @@ export const ItemInformation: React.FC = () => {
       {/* Overview Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column: Product Identity Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
-          <div className="w-full h-36 bg-slate-100 dark:bg-slate-900 rounded-lg flex items-center justify-center text-indigo-500 font-bold text-4xl">
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-2xs space-y-4">
+          <div className="w-full h-36 bg-slate-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-4xl">
             {product.name.charAt(0).toUpperCase()}
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{product.name}</h2>
+            <h2 className="text-xl font-bold text-slate-900">{product.name}</h2>
             <p className="text-xs text-slate-500 font-mono mt-1">Code: {product.product_code || 'N/A'}</p>
           </div>
 
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2 text-sm">
+          <div className="pt-3 border-t border-slate-200 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-500">Category:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.category?.name || 'General'}</span>
+              <span className="font-semibold text-slate-900">{product.category?.name || 'General'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Brand:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.brand?.name || 'Generic'}</span>
+              <span className="font-semibold text-slate-900">{product.brand?.name || 'Generic'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Unit of Measure:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.unit?.name || 'Piece'} ({product.unit?.short_code || 'pcs'})</span>
+              <span className="font-semibold text-slate-900">{product.unit?.name || 'Piece'} ({product.unit?.short_code || 'pcs'})</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Structure:</span>
-              <span className="font-semibold uppercase text-indigo-600 text-xs">{product.product_type} ({variants.length} SKUs)</span>
+              <span className="font-semibold uppercase text-indigo-700 text-xs">{product.product_type} ({variants.length} SKUs)</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Default VAT / Tax Rate:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{product.tax_rate}% ({product.tax_type})</span>
+              <span className="font-semibold text-slate-900">{product.tax_rate}% ({product.tax_type})</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Status:</span>
               <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                product.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                product.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
               }`}>
                 {product.status}
               </span>
@@ -154,45 +154,45 @@ export const ItemInformation: React.FC = () => {
         {/* Right Columns: Stock Summary & Details */}
         <div className="md:col-span-2 space-y-6">
           {/* Stock Metrics Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
               Inventory & Reorder Status
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900">
-                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase">Total Current Stock</span>
-                <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100 mt-1">
+              <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+                <span className="text-xs text-indigo-700 font-bold uppercase tracking-wider">Total Current Stock</span>
+                <p className="text-3xl font-bold text-slate-900 mt-1">
                   {inventoryStock} <span className="text-sm font-normal text-indigo-700">{product.unit?.short_code || 'pcs'}</span>
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900">
-                <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase">Reorder Threshold</span>
-                <p className="text-3xl font-bold text-amber-900 dark:text-amber-100 mt-1">
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                <span className="text-xs text-amber-800 font-bold uppercase tracking-wider">Reorder Threshold</span>
+                <p className="text-3xl font-bold text-slate-900 mt-1">
                   {product.reorder_level || 0} <span className="text-sm font-normal text-amber-700">{product.unit?.short_code || 'pcs'}</span>
                 </p>
               </div>
             </div>
 
             {product.description && (
-              <div className="pt-2 text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Description: </span>
+              <div className="pt-2 text-xs text-slate-600">
+                <span className="font-bold text-slate-700">Description: </span>
                 {product.description}
               </div>
             )}
           </div>
 
           {/* Variant Master Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
               Sellable Variants Matrix ({variants.length} SKUs)
             </h3>
 
             <div className="overflow-x-auto border border-slate-200 rounded-xl">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-100/75 border-b border-slate-200 text-slate-600">
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
                     <th className="py-2.5 px-3 font-semibold">SKU Code</th>
                     <th className="py-2.5 px-3 font-semibold">Variant Name</th>
                     <th className="py-2.5 px-2 font-semibold text-right">Cost (৳)</th>

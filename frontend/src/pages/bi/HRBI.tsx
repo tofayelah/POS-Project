@@ -39,15 +39,15 @@ export const HRBI: React.FC = () => {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <Users className="w-8 h-8 text-rose-600 dark:text-rose-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <Users className="w-8 h-8 text-rose-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('bi.hrBi')}
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {t('bi.subtitle')}
           </p>
         </div>
@@ -70,11 +70,11 @@ export const HRBI: React.FC = () => {
         <>
           {/* Summary KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Total Headcount
               </span>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <div className="text-2xl font-bold text-gray-900 mt-1">
                 {formatNumber(summary?.total_employees || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
@@ -82,43 +82,43 @@ export const HRBI: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Total Payroll Spend
               </span>
-              <div className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">
+              <div className="text-2xl font-bold text-rose-600 mt-1">
                 {formatCurrency(summary?.total_payroll_spend || 0)}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Average Salary
               </span>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-2xl font-bold text-blue-600 mt-1">
                 {formatCurrency(summary?.average_salary || 0)}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Departments
               </span>
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-2xl font-bold text-indigo-600 mt-1">
                 {depts?.length || 0}
               </div>
             </div>
           </div>
 
           {/* Department Breakdown */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-rose-500" />
               Department Workforce & Salary Distribution
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                <thead className="bg-gray-50 text-gray-600">
                   <tr>
                     <th className="py-2.5 px-3 font-semibold">Department</th>
                     <th className="py-2.5 px-3 font-semibold text-right">Headcount</th>
@@ -126,11 +126,11 @@ export const HRBI: React.FC = () => {
                     <th className="py-2.5 px-3 font-semibold text-right">Avg Salary</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100">
                   {depts && depts.length > 0 ? (
                     depts.map((d) => (
                       <tr key={d.department_id}>
-                        <td className="py-2.5 px-3 font-medium text-gray-900 dark:text-white">{d.department_name}</td>
+                        <td className="py-2.5 px-3 font-medium text-gray-900">{d.department_name}</td>
                         <td className="py-2.5 px-3 text-right">{formatNumber(d.employee_count)}</td>
                         <td className="py-2.5 px-3 text-right font-semibold text-rose-600">{formatCurrency(d.total_salary)}</td>
                         <td className="py-2.5 px-3 text-right text-gray-500">
