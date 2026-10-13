@@ -4,16 +4,19 @@ export type QualificationStatus = 'qualified' | 'conditional' | 'disqualified' |
 
 export interface RequisitionItem {
   id?: number | string;
+  purchase_requisition_id?: number | string;
   product_id?: number | string;
   product_name?: string;
-  product?: { id?: number | string; name?: string };
+  product?: { id?: number | string; name?: string; sku?: string; code?: string };
   variant?: { id?: number | string; name?: string; sku?: string };
-  quantity: number;
+  quantity?: number;
   requested_quantity?: number;
   unit_price?: number;
   estimated_cost?: number;
   estimated_unit_cost?: number;
   estimated_total_cost?: number;
+  preferred_supplier_id?: number | string;
+  preferred_supplier?: { id?: number | string; name?: string };
 }
 
 export interface PurchaseRequisition {
@@ -23,10 +26,13 @@ export interface PurchaseRequisition {
   title?: string;
   status?: RequisitionStatus;
   priority?: RequisitionPriority;
-  requested_by?: string;
+  required_date?: string;
+  requested_by?: number | string;
+  requester?: { id?: number | string; name?: string };
   created_at?: string;
+  updated_at?: string;
   items?: RequisitionItem[];
-  warehouse?: { id?: number | string; name?: string };
+  warehouse?: { id?: number | string; name?: string; code?: string };
   warehouse_id?: number | string;
   estimated_total_cost?: number;
   notes?: string;
@@ -35,21 +41,31 @@ export interface PurchaseRequisition {
 
 export interface RfqItem {
   id?: number | string;
+  rfq_id?: number | string;
   product_id?: number | string;
   product_variant_id?: number | string;
   product_name?: string;
-  product?: { id?: number | string; name?: string; sku?: string };
-  quantity: number;
+  product?: { id?: number | string; name?: string; sku?: string; code?: string };
+  quantity?: number;
   requested_quantity?: number;
   target_unit_price?: number;
 }
 
 export interface RfqQuotation {
   id: number | string;
-  supplier_id: number | string;
+  rfq_id?: number | string;
+  supplier_id?: number | string;
   supplier_name?: string;
-  total_price: number;
+  supplier?: { id?: number | string; name?: string };
+  quotation_number?: string;
+  total_price?: number;
+  total_amount?: number;
+  status?: string;
+  submission_date?: string;
   submitted_at?: string;
+  lead_time_days?: number;
+  payment_terms?: string;
+  items?: any[];
 }
 
 export interface Rfq {
@@ -57,9 +73,15 @@ export interface Rfq {
   rfq_number?: string;
   title?: string;
   status?: string;
-  created_at?: string;
+  issue_date?: string;
   deadline_date?: string;
+  created_by?: number | string;
+  creator?: { id?: number | string; name?: string };
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
   items?: RfqItem[];
+  invited_suppliers?: any[];
   quotations?: RfqQuotation[];
 }
 

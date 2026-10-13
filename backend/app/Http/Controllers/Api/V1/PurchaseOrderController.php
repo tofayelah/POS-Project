@@ -230,6 +230,109 @@ class PurchaseOrderController extends Controller
             'data' => $po
         ]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $companyId = $request->attributes->get('company_id');
+        $po = PurchaseOrder::where('company_id', $companyId)->findOrFail($id);
+
+        if (!in_array(strtoupper($po->status), ['DRAFT', 'PENDING'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only DRAFT or PENDING purchase orders can be edited.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'business_unit_id' => 'nullable|integer',
+            'branch_id' => 'nullable|integer',
+            'order_date' => 'required|date',
+            'expected_date' => 'nullable|date',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'other_cost' => 'nullable|numeric|min:0',
+            'discount_total' => 'nullable|numeric|min:0',
+            'tax_total' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_variant_id' => 'required|exists:product_variants,id',
+            'items.*.quantity' => 'required|numeric|min:0.0001',
+            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.tax' => 'nullable|numeric|min:0',
+        ]);
+
+        $supplier = Supplier::where('id', $validated['supplier_id'])
+            ->where('company_id', $companyId)
+            ->first();
+        if (!$supplier) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected supplier does not belong to your company.',
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($po, $validated) {
+            $shippingCost = (float)($validated['shipping_cost'] ?? 0);
+            $otherCost = (float)($validated['other_cost'] ?? 0);
+            $headerDiscount = (float)($validated['discount_total'] ?? 0);
+            $headerTax = (float)($validated['tax_total'] ?? 0);
+
+            $po->update([
+                'business_unit_id' => $validated['business_unit_id'] ?? $po->business_unit_id,
+                'branch_id' => $validated['branch_id'] ?? $po->branch_id,
+                'supplier_id' => $validated['supplier_id'],
+                'warehouse_id' => $validated['warehouse_id'],
+                'order_date' => $validated['order_date'],
+                'expected_date' => $validated['expected_date'] ?? null,
+                'shipping_cost' => $shippingCost,
+                'other_cost' => $otherCost,
+                'discount_total' => $headerDiscount,
+                'tax_total' => $headerTax,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            // Re-create items
+            PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
+
+            $subtotal = 0;
+            foreach ($validated['items'] as $item) {
+                $qty = (float)$item['quantity'];
+                $cost = (float)$item['unit_cost'];
+                $itemDiscount = (float)($item['discount'] ?? 0);
+                $itemTax = (float)($item['tax'] ?? 0);
+                $lineTotal = round(($qty * $cost) - $itemDiscount + $itemTax, 4);
+                $subtotal += $lineTotal;
+
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'product_id' => $item['product_id'],
+                    'product_variant_id' => $item['product_variant_id'],
+                    'quantity' => $qty,
+                    'unit_cost' => $cost,
+                    'discount' => $itemDiscount,
+                    'tax' => $itemTax,
+                    'line_total' => $lineTotal,
+                    'pending_quantity' => $qty,
+                    'received_quantity' => 0,
+                ]);
+            }
+
+            $grandTotal = round($subtotal + $shippingCost + $otherCost - $headerDiscount + $headerTax, 4);
+            $po->update([
+                'subtotal' => $subtotal,
+                'grand_total' => $grandTotal
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase order updated successfully',
+                'data' => $po->load(['items.product', 'items.variant', 'supplier', 'warehouse'])
+            ]);
+        });
+    }
     
     public function approve(Request $request, $id)
     {

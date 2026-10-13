@@ -128,6 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // SPRINT 02 — Product Master Catalog Routes
         // Categories
         Route::get('categories', [\App\Http\Controllers\Api\V1\CategoryController::class, 'index'])->middleware('permission:categories.view');
+        Route::get('categories/next-code', [\App\Http\Controllers\Api\V1\CategoryController::class, 'nextCode'])->middleware('permission:categories.view');
         Route::get('categories/{category}', [\App\Http\Controllers\Api\V1\CategoryController::class, 'show'])->middleware('permission:categories.view');
         Route::post('categories', [\App\Http\Controllers\Api\V1\CategoryController::class, 'store'])->middleware(['permission:categories.create', 'scope:company']);
         Route::match(['put', 'patch'], 'categories/{category}', [\App\Http\Controllers\Api\V1\CategoryController::class, 'update'])->middleware(['permission:categories.update', 'scope:company']);
@@ -238,6 +239,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('purchase-orders', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'index'])->middleware('permission:purchase_orders.view');
         Route::post('purchase-orders', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'store'])->middleware('permission:purchase_orders.create');
         Route::get('purchase-orders/{id}', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'show'])->middleware('permission:purchase_orders.view');
+        Route::match(['put', 'patch'], 'purchase-orders/{id}', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'update'])->middleware('permission:purchase_orders.create');
         Route::post('purchase-orders/{id}/approve', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'approve'])->middleware('permission:purchase_orders.approve');
         Route::post('purchase-orders/{id}/cancel', [\App\Http\Controllers\Api\V1\PurchaseOrderController::class, 'cancel'])->middleware('permission:purchase_orders.create');
         

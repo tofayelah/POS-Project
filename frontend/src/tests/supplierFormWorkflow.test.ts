@@ -110,8 +110,8 @@ it('SupplierForm.tsx exists and implements full layout', () => {
   assert(content.includes('contact_designation_input'), 'Has Designation element');
   assert(content.includes('contact_phone_input'), 'Has Contact Person Phone element');
 
-  // Section 3: Account Summary & Status
-  assert(content.includes('3. Account Summary & Status'), 'Has Section 3 Account Summary header');
+  // Account Summary & Status
+  assert(content.includes('Account Summary & Status'), 'Has Account Summary header');
   assert(content.includes('display_current_balance'), 'Has read-only Current Balance element');
   assert(content.includes('supplier_status_group'), 'Has Supplier Status element');
   assert(content.includes('btn_submit_supplier'), 'Has submit supplier button');

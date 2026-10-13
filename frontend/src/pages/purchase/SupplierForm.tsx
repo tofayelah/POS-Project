@@ -12,6 +12,10 @@ import {
   RefreshCw,
   HelpCircle,
   CornerDownLeft,
+  Receipt,
+  CreditCard,
+  FileText,
+  Landmark,
 } from 'lucide-react';
 import {
   getSupplier,
@@ -38,6 +42,11 @@ export const SupplierForm: React.FC = () => {
     contact_person: '',
     contact_designation: '',
     contact_phone: '',
+    tax_number: '',
+    bank_name: '',
+    bank_account_no: '',
+    bank_branch: '',
+    notes: '',
     status: 'ACTIVE',
   });
 
@@ -82,6 +91,11 @@ export const SupplierForm: React.FC = () => {
               contact_person: sup.contact_person || '',
               contact_designation: sup.contact_designation || '',
               contact_phone: sup.contact_phone || sup.alternate_mobile || '',
+              tax_number: sup.tax_number || '',
+              bank_name: sup.bank_name || '',
+              bank_account_no: sup.bank_account_no || '',
+              bank_branch: sup.bank_branch || '',
+              notes: sup.notes || '',
               status: (sup.status?.toUpperCase() as SupplierStatus) || 'ACTIVE',
             });
             // In Edit mode, treat existing short name as user-provided
@@ -223,6 +237,11 @@ export const SupplierForm: React.FC = () => {
       contact_person: formData.contact_person.trim() || undefined,
       contact_designation: formData.contact_designation.trim() || undefined,
       contact_phone: formData.contact_phone.trim() || undefined,
+      tax_number: formData.tax_number?.trim() || undefined,
+      bank_name: formData.bank_name?.trim() || undefined,
+      bank_account_no: formData.bank_account_no?.trim() || undefined,
+      bank_branch: formData.bank_branch?.trim() || undefined,
+      notes: formData.notes?.trim() || undefined,
       status: formData.status,
     };
 
@@ -276,6 +295,11 @@ export const SupplierForm: React.FC = () => {
             contact_person: '',
             contact_designation: '',
             contact_phone: '',
+            tax_number: '',
+            bank_name: '',
+            bank_account_no: '',
+            bank_branch: '',
+            notes: '',
             status: 'ACTIVE',
           });
 
@@ -588,7 +612,7 @@ export const SupplierForm: React.FC = () => {
                   type="text"
                   value={formData.contact_phone}
                   onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                  onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_status_active_btn')}
+                  onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_tax_number_input')}
                   id="contact_phone_input"
                   placeholder="e.g. 01811000000"
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
@@ -598,12 +622,159 @@ export const SupplierForm: React.FC = () => {
           </div>
         </div>
 
-        {/* SECTION 3: Account Summary & Status */}
+        {/* SECTION 3: Tax Number / BIN / VAT Reg */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">
+                3. Tax Number / BIN / VAT Reg
+              </h2>
+            </div>
+            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+              Tax & Regulatory Compliance
+            </span>
+          </div>
+
+          <div className="p-6">
+            <div className="max-w-xl">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>Tax Number / BIN / VAT Reg</span>
+                <span className="text-[10px] font-semibold text-slate-400">Enter ↵ next field</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.tax_number || ''}
+                  onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                  onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_bank_name_input')}
+                  id="supplier_tax_number_input"
+                  placeholder="e.g. BIN-001928374-0101 or 1234567890123"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-semibold text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                13-digit Business Identification Number (BIN), VAT registration number, or e-TIN used for official tax invoices (Mushak 6.3) and TDS records.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: Banking Information */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">
+                4. Banking & Settlement Information
+              </h2>
+            </div>
+            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+              Settlement Details
+            </span>
+          </div>
+
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Bank Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Bank Name</span>
+                  <span className="text-[10px] font-semibold text-slate-400">Enter ↵ next field</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.bank_name || ''}
+                    onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                    onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_bank_ac_input')}
+                    id="supplier_bank_name_input"
+                    placeholder="e.g. Eastern Bank PLC, DBBL"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Vendor's primary banking partner.</p>
+              </div>
+
+              {/* Bank Account Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Bank Account Number</span>
+                  <span className="text-[10px] font-semibold text-slate-400">Enter ↵ next field</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.bank_account_no || ''}
+                  onChange={(e) => setFormData({ ...formData, bank_account_no: e.target.value })}
+                  onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_bank_branch_input')}
+                  id="supplier_bank_ac_input"
+                  placeholder="e.g. 1041010098765"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono font-bold text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                />
+                <p className="text-xs text-slate-400 mt-1">Cheque or EFT settlement account number.</p>
+              </div>
+
+              {/* Bank Branch / Routing */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Bank Branch / Routing</span>
+                  <span className="text-[10px] font-semibold text-slate-400">Enter ↵ next field</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.bank_branch || ''}
+                  onChange={(e) => setFormData({ ...formData, bank_branch: e.target.value })}
+                  onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_notes_input')}
+                  id="supplier_bank_branch_input"
+                  placeholder="e.g. Principal Branch, Dhaka"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                />
+                <p className="text-xs text-slate-400 mt-1">Branch name or Bangladesh routing code.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 5: Additional Notes & Internal Remarks */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">
+                5. Additional Notes & Internal Remarks
+              </h2>
+            </div>
+            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+              Internal Records
+            </span>
+          </div>
+
+          <div className="p-6">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Internal Notes / Additional Notes & Banking Info</span>
+              <span className="text-[10px] font-semibold text-slate-400">Enter ↵ next field (Shift+Enter for newline)</span>
+            </label>
+            <textarea
+              rows={3}
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onKeyDown={(e) => handleFieldKeyDown(e, 'supplier_status_active_btn')}
+              id="supplier_notes_input"
+              placeholder="e.g. Primary pharmaceutical partner. Standard 30-day payment term. Cheque collection every Thursday..."
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-3 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+            />
+            <p className="text-xs text-slate-400 mt-1.5">
+              Internal notes and instructions visible to procurement and accounts teams across Purchase Orders and payments.
+            </p>
+          </div>
+        </div>
+
+        {/* SECTION 6: Account Summary & Status */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-2">
             <Wallet className="w-5 h-5 text-indigo-600" />
             <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">
-              3. Account Summary & Status
+              6. Account Summary & Status
             </h2>
           </div>
 

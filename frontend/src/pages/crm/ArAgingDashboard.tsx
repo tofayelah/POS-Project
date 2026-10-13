@@ -116,10 +116,10 @@ export const ArAgingDashboard: React.FC = () => {
                 {t('crm.arAging.totalReceivable', 'Total Receivables')}
               </span>
               <div className="text-xl font-bold text-white">
-                ৳{agingSummary.total_receivable.toLocaleString()}
+                ৳{(agingSummary.total_receivable ?? 0).toLocaleString()}
               </div>
               <span className="text-[11px] text-slate-500 mt-1 block">
-                Across {agingSummary.customer_count} debtors
+                Across {agingSummary.customer_count ?? 0} debtors
               </span>
             </div>
 
@@ -127,10 +127,10 @@ export const ArAgingDashboard: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                 <span>{t('crm.arAging.bucketCurrent', 'Current (0-30d)')}</span>
-                <span className="text-emerald-400 font-semibold">{agingSummary.bucket_percentages.current}%</span>
+                <span className="text-emerald-400 font-semibold">{agingSummary.bucket_percentages?.current ?? 0}%</span>
               </div>
               <div className="text-lg font-bold text-emerald-400">
-                ৳{agingSummary.buckets.current.toLocaleString()}
+                ৳{(agingSummary.buckets?.current ?? 0).toLocaleString()}
               </div>
               <span className="text-[10px] text-slate-500">Not yet overdue</span>
             </div>
@@ -139,10 +139,10 @@ export const ArAgingDashboard: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                 <span>{t('crm.arAging.bucket1To30', '1 - 30 Days')}</span>
-                <span className="text-amber-400 font-semibold">{agingSummary.bucket_percentages.days_1_30}%</span>
+                <span className="text-amber-400 font-semibold">{agingSummary.bucket_percentages?.days_1_30 ?? 0}%</span>
               </div>
               <div className="text-lg font-bold text-amber-400">
-                ৳{agingSummary.buckets.days_1_30.toLocaleString()}
+                ৳{(agingSummary.buckets?.days_1_30 ?? 0).toLocaleString()}
               </div>
               <span className="text-[10px] text-slate-500">Early follow-up</span>
             </div>
@@ -151,10 +151,10 @@ export const ArAgingDashboard: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                 <span>{t('crm.arAging.bucket31To60', '31 - 60 Days')}</span>
-                <span className="text-amber-500 font-semibold">{agingSummary.bucket_percentages.days_31_60}%</span>
+                <span className="text-amber-500 font-semibold">{agingSummary.bucket_percentages?.days_31_60 ?? 0}%</span>
               </div>
               <div className="text-lg font-bold text-amber-500">
-                ৳{agingSummary.buckets.days_31_60.toLocaleString()}
+                ৳{(agingSummary.buckets?.days_31_60 ?? 0).toLocaleString()}
               </div>
               <span className="text-[10px] text-slate-500">Action recommended</span>
             </div>
@@ -163,10 +163,10 @@ export const ArAgingDashboard: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                 <span>{t('crm.arAging.bucket61To90', '61 - 90 Days')}</span>
-                <span className="text-rose-400 font-semibold">{agingSummary.bucket_percentages.days_61_90}%</span>
+                <span className="text-rose-400 font-semibold">{agingSummary.bucket_percentages?.days_61_90 ?? 0}%</span>
               </div>
               <div className="text-lg font-bold text-rose-400">
-                ৳{agingSummary.buckets.days_61_90.toLocaleString()}
+                ৳{(agingSummary.buckets?.days_61_90 ?? 0).toLocaleString()}
               </div>
               <span className="text-[10px] text-slate-500">Escalated risk</span>
             </div>
@@ -175,10 +175,10 @@ export const ArAgingDashboard: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
                 <span>{t('crm.arAging.bucket90Plus', '90+ Days')}</span>
-                <span className="text-rose-500 font-semibold">{agingSummary.bucket_percentages.days_90_plus}%</span>
+                <span className="text-rose-500 font-semibold">{agingSummary.bucket_percentages?.days_90_plus ?? 0}%</span>
               </div>
               <div className="text-lg font-bold text-rose-500">
-                ৳{agingSummary.buckets.days_90_plus.toLocaleString()}
+                ৳{(agingSummary.buckets?.days_90_plus ?? 0).toLocaleString()}
               </div>
               <span className="text-[10px] text-slate-500">Critical default</span>
             </div>

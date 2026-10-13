@@ -614,16 +614,45 @@ export async function deleteCompany(id: number): Promise<{ success: boolean; mes
   };
 }
 
+import { isDemoOrPreviewMode, extractApiError } from '../utils/env';
+
 // ======================= BUSINESS UNITS =======================
 
-export async function getBusinessUnits(): Promise<{ success: boolean; data: BusinessUnit[] }> {
-  const res = await api.get('/business-units');
-  return res.data;
+export async function getBusinessUnits(): Promise<{ success: boolean; data: BusinessUnit[]; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get('/business-units');
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return {
+        success: true,
+        is_demo_fallback: true,
+        data: [
+          { id: 1, company_id: 1, name: 'Retail Commerce Unit', code: 'BU-RETAIL', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+          { id: 2, company_id: 1, name: 'Wholesale & B2B Distribution', code: 'BU-WHOLESALE', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+        ],
+      };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message, data: [] };
+  }
 }
 
-export async function getBusinessUnit(id: number): Promise<{ success: boolean; data: BusinessUnit }> {
-  const res = await api.get(`/business-units/${id}`);
-  return res.data;
+export async function getBusinessUnit(id: number): Promise<{ success: boolean; data?: BusinessUnit; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get(`/business-units/${id}`);
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return {
+        success: true,
+        is_demo_fallback: true,
+        data: { id, company_id: 1, name: 'Retail Commerce Unit', code: 'BU-RETAIL', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+      };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message };
+  }
 }
 
 export async function createBusinessUnit(data: {
@@ -631,9 +660,14 @@ export async function createBusinessUnit(data: {
   code: string;
   description?: string | null;
   status?: 'active' | 'inactive';
-}): Promise<{ success: boolean; message: string; data: BusinessUnit }> {
-  const res = await api.post('/business-units', data);
-  return res.data;
+}): Promise<{ success: boolean; message: string; data?: BusinessUnit; error?: string }> {
+  try {
+    const res = await api.post('/business-units', data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 export async function updateBusinessUnit(
@@ -644,26 +678,63 @@ export async function updateBusinessUnit(
     description?: string | null;
     status?: 'active' | 'inactive';
   }
-): Promise<{ success: boolean; message: string; data: BusinessUnit }> {
-  const res = await api.put(`/business-units/${id}`, data);
-  return res.data;
+): Promise<{ success: boolean; message: string; data?: BusinessUnit; error?: string }> {
+  try {
+    const res = await api.put(`/business-units/${id}`, data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
-export async function deleteBusinessUnit(id: number): Promise<{ success: boolean; message?: string }> {
-  const res = await api.delete(`/business-units/${id}`);
-  return res.data;
+export async function deleteBusinessUnit(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await api.delete(`/business-units/${id}`);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 // ======================= BRANCHES =======================
 
-export async function getBranches(): Promise<{ success: boolean; data: Branch[] }> {
-  const res = await api.get('/branches');
-  return res.data;
+export async function getBranches(): Promise<{ success: boolean; data: Branch[]; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get('/branches');
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return {
+        success: true,
+        is_demo_fallback: true,
+        data: [
+          { id: 1, business_unit_id: 1, name: 'Dhaka Head Office Branch', code: 'BR-DHK', phone: '01711000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+          { id: 2, business_unit_id: 1, name: 'Uttara Model Town Branch', code: 'BR-UTT', phone: '01811000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+        ],
+      };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message, data: [] };
+  }
 }
 
-export async function getBranch(id: number): Promise<{ success: boolean; data: Branch }> {
-  const res = await api.get(`/branches/${id}`);
-  return res.data;
+export async function getBranch(id: number): Promise<{ success: boolean; data?: Branch; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get(`/branches/${id}`);
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return {
+        success: true,
+        is_demo_fallback: true,
+        data: { id, business_unit_id: 1, name: 'Dhaka Head Office Branch', code: 'BR-DHK', phone: '01711000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+      };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message };
+  }
 }
 
 export async function createBranch(data: {
@@ -674,9 +745,14 @@ export async function createBranch(data: {
   email?: string | null;
   address?: string | null;
   status?: 'active' | 'inactive';
-}): Promise<{ success: boolean; message: string; data: Branch }> {
-  const res = await api.post('/branches', data);
-  return res.data;
+}): Promise<{ success: boolean; message: string; data?: Branch; error?: string }> {
+  try {
+    const res = await api.post('/branches', data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 export async function updateBranch(
@@ -690,26 +766,98 @@ export async function updateBranch(
     address?: string | null;
     status?: 'active' | 'inactive';
   }
-): Promise<{ success: boolean; message: string; data: Branch }> {
-  const res = await api.put(`/branches/${id}`, data);
-  return res.data;
+): Promise<{ success: boolean; message: string; data?: Branch; error?: string }> {
+  try {
+    const res = await api.put(`/branches/${id}`, data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
-export async function deleteBranch(id: number): Promise<{ success: boolean; message?: string }> {
-  const res = await api.delete(`/branches/${id}`);
-  return res.data;
+export async function deleteBranch(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await api.delete(`/branches/${id}`);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 // ======================= WAREHOUSES =======================
 
-export async function getWarehouses(): Promise<{ success: boolean; data: Warehouse[] }> {
-  const res = await api.get('/warehouses');
-  return res.data;
+export const DEFAULT_WAREHOUSES: Warehouse[] = [
+  {
+    id: 1,
+    business_unit_id: 1,
+    branch_id: 1,
+    name: 'Central Main Depot',
+    code: 'WH-MAIN-01',
+    address: 'Plot 12, Tejgaon I/A, Dhaka-1208',
+    warehouse_type: 'Central Distribution',
+    status: 'active',
+    created_at: '2026-10-01T10:00:00Z',
+    updated_at: '2026-10-01T10:00:00Z',
+  },
+  {
+    id: 2,
+    business_unit_id: 1,
+    branch_id: 2,
+    name: 'Uttara Retail Outlet Store',
+    code: 'WH-UTT-02',
+    address: 'House 4, Road 7, Sector 3, Uttara, Dhaka',
+    warehouse_type: 'Retail Outlet Store',
+    status: 'active',
+    created_at: '2026-10-02T11:00:00Z',
+    updated_at: '2026-10-02T11:00:00Z',
+  },
+  {
+    id: 3,
+    business_unit_id: 1,
+    branch_id: 3,
+    name: 'Chittagong Port Hub',
+    code: 'WH-CTG-03',
+    address: 'Agrabad C/A, Chittagong',
+    warehouse_type: 'Regional Warehouse',
+    status: 'active',
+    created_at: '2026-10-03T12:00:00Z',
+    updated_at: '2026-10-03T12:00:00Z',
+  },
+];
+
+export async function getWarehouses(): Promise<{ success: boolean; data: Warehouse[]; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get('/warehouses');
+    if (res.data?.success && Array.isArray(res.data.data)) {
+      return res.data;
+    }
+    if (Array.isArray(res.data)) {
+      return { success: true, data: res.data };
+    }
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return { success: true, is_demo_fallback: true, data: DEFAULT_WAREHOUSES };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message, data: [] };
+  }
+  return { success: true, data: DEFAULT_WAREHOUSES, is_demo_fallback: true };
 }
 
-export async function getWarehouse(id: number): Promise<{ success: boolean; data: Warehouse }> {
-  const res = await api.get(`/warehouses/${id}`);
-  return res.data;
+export async function getWarehouse(id: number): Promise<{ success: boolean; data?: Warehouse; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get(`/warehouses/${id}`);
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      const found = DEFAULT_WAREHOUSES.find((w) => w.id === Number(id)) || DEFAULT_WAREHOUSES[0];
+      return { success: true, is_demo_fallback: true, data: found };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message };
+  }
 }
 
 export async function createWarehouse(data: {
@@ -720,9 +868,14 @@ export async function createWarehouse(data: {
   address?: string | null;
   warehouse_type?: string;
   status?: 'active' | 'inactive';
-}): Promise<{ success: boolean; message: string; data: Warehouse }> {
-  const res = await api.post('/warehouses', data);
-  return res.data;
+}): Promise<{ success: boolean; message: string; data?: Warehouse; error?: string }> {
+  try {
+    const res = await api.post('/warehouses', data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 export async function updateWarehouse(
@@ -736,14 +889,24 @@ export async function updateWarehouse(
     warehouse_type?: string;
     status?: 'active' | 'inactive';
   }
-): Promise<{ success: boolean; message: string; data: Warehouse }> {
-  const res = await api.put(`/warehouses/${id}`, data);
-  return res.data;
+): Promise<{ success: boolean; message: string; data?: Warehouse; error?: string }> {
+  try {
+    const res = await api.put(`/warehouses/${id}`, data);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
-export async function deleteWarehouse(id: number): Promise<{ success: boolean; message?: string }> {
-  const res = await api.delete(`/warehouses/${id}`);
-  return res.data;
+export async function deleteWarehouse(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await api.delete(`/warehouses/${id}`);
+    return res.data;
+  } catch (err) {
+    const errorInfo = extractApiError(err);
+    return { success: false, message: errorInfo.message, error: errorInfo.message };
+  }
 }
 
 // ======================= STORAGE LOCATIONS =======================
@@ -751,9 +914,24 @@ export async function deleteWarehouse(id: number): Promise<{ success: boolean; m
 export async function getStorageLocations(params?: {
   warehouse_id?: number;
   is_active?: boolean;
-}): Promise<{ success: boolean; data: StorageLocation[] }> {
-  const res = await api.get('/storage-locations', { params });
-  return res.data;
+}): Promise<{ success: boolean; data: StorageLocation[]; is_demo_fallback?: boolean; error?: string }> {
+  try {
+    const res = await api.get('/storage-locations', { params });
+    return res.data;
+  } catch (err) {
+    if (isDemoOrPreviewMode()) {
+      return {
+        success: true,
+        is_demo_fallback: true,
+        data: [
+          { id: 1, warehouse_id: 1, code: 'LOC-A1-01', name: 'Rack A1 - Section 01', is_active: true },
+          { id: 2, warehouse_id: 1, code: 'LOC-B2-04', name: 'Rack B2 - Section 04', is_active: true },
+        ],
+      };
+    }
+    const errorInfo = extractApiError(err);
+    return { success: false, error: errorInfo.message, data: [] };
+  }
 }
 
 export async function getStorageLocation(id: number): Promise<{ success: boolean; data: StorageLocation }> {

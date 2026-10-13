@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const defaultBaseUrl = (import.meta as any).env?.VITE_API_URL || '/api/v1';
+const defaultBaseUrl =
+  typeof window !== 'undefined'
+    ? ((import.meta as any).env?.VITE_API_URL || '/api/v1')
+    : (process.env?.NODE_ENV_API_URL || 'http://127.0.0.1:3000/api/v1');
 
 const api = axios.create({
   baseURL: defaultBaseUrl,
@@ -41,8 +44,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isLoginRequest = error.config?.url?.includes('/login');
       if (!isLoginRequest) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
         if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
           window.location.href = '/login';
         }

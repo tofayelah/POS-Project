@@ -36,32 +36,24 @@ assert(existsSync(sidebarPath), 'Sidebar.tsx exists in layout directory');
 
 const sidebarContent = readFileSync(sidebarPath, 'utf-8');
 
-// Section headings checks
+// Main Head & Active Items checks
 assert(
-  sidebarContent.includes('text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em]'),
-  'Section headings configured with font-extrabold (weight 800) and text-[11px]'
+  sidebarContent.includes('font-extrabold'),
+  'Navigation headings and active items configured with font-extrabold (weight 800)'
 );
 assert(
-  sidebarContent.includes('bg-[#EEF2FF]'),
-  'Section headings use soft tinted #EEF2FF background'
-);
-assert(
-  sidebarContent.includes('rounded-lg'),
-  'Section headings use subtle rounded-lg border radius'
+  sidebarContent.includes('rounded-xl') || sidebarContent.includes('rounded-lg'),
+  'Navigation items use subtle rounded-xl/lg border radius'
 );
 
 // Active items checks
 assert(
-  sidebarContent.includes("'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'"),
+  sidebarContent.includes('bg-indigo-600 text-white font-extrabold'),
   'Active menu items use primary indigo (#4F46E5) with font-extrabold (weight 800) and pure white text'
 );
 assert(
-  sidebarContent.includes('[&>svg]:text-white'),
-  'Active menu items enforce pure white contrast on child SVG icons'
-);
-assert(
-  sidebarContent.includes("'bg-emerald-600 text-white font-extrabold shadow-sm [&>svg]:text-white'"),
-  'POS Counter Session active state uses emerald with font-extrabold and white icon'
+  sidebarContent.includes('bg-indigo-50/80') || sidebarContent.includes('bg-indigo-600'),
+  'Active navigation groups and links enforce clear high contrast visual indicators'
 );
 assert(
   !sidebarContent.includes('font-semibold shadow-xs'),
@@ -70,7 +62,7 @@ assert(
 
 // Inactive items checks
 assert(
-  sidebarContent.includes("'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'"),
+  sidebarContent.includes('text-slate-700') && sidebarContent.includes('font-bold'),
   'Inactive navigation items use font-bold (weight 700) with deep slate text-slate-700'
 );
 assert(

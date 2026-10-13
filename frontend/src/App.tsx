@@ -283,6 +283,27 @@ export default function App() {
             <Route path="/purchase/suppliers/:id/edit" element={<Navigate to="/purchases/suppliers/:id/edit" replace />} />
             <Route path="/procurement/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
             <Route path="/procurement/suppliers/new" element={<Navigate to="/purchases/suppliers/new" replace />} />
+
+            {/* Purchase Alias Navigation Redirects */}
+            <Route path="/purchase" element={<Navigate to="/purchases" replace />} />
+            <Route path="/purchase/new" element={<Navigate to="/purchases/invoices/create" replace />} />
+            <Route path="/purchase/invoices" element={<Navigate to="/purchases/invoices" replace />} />
+            <Route path="/purchase/invoices/new" element={<Navigate to="/purchases/invoices/create" replace />} />
+            <Route path="/purchase/invoices/create" element={<Navigate to="/purchases/invoices/create" replace />} />
+            <Route path="/purchase/invoices/:id" element={<Navigate to="/purchases/invoices/:id" replace />} />
+            <Route path="/purchases/invoices/new" element={<Navigate to="/purchases/invoices/create" replace />} />
+            <Route path="/purchase/orders" element={<Navigate to="/purchases/orders" replace />} />
+            <Route path="/purchase/orders/new" element={<Navigate to="/purchases/orders/new" replace />} />
+            <Route path="/purchase/orders/create" element={<Navigate to="/purchases/orders/new" replace />} />
+            <Route path="/purchase/orders/:id/edit" element={<Navigate to="/purchases/orders/:id/edit" replace />} />
+            <Route path="/purchases/orders/create" element={<Navigate to="/purchases/orders/new" replace />} />
+            <Route path="/purchase/goods-receipts" element={<Navigate to="/purchases/goods-receipts" replace />} />
+            <Route path="/purchase/goods-receipts/new" element={<Navigate to="/purchases/goods-receipts/create" replace />} />
+            <Route path="/purchase/goods-receipts/create" element={<Navigate to="/purchases/goods-receipts/create" replace />} />
+            <Route path="/purchase/goods-receipts/:id" element={<Navigate to="/purchases/goods-receipts/:id" replace />} />
+            <Route path="/purchases/goods-receipts/new" element={<Navigate to="/purchases/goods-receipts/create" replace />} />
+            <Route path="/purchase/payables" element={<Navigate to="/purchases/payables" replace />} />
+
             <Route path="/purchases/suppliers" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -853,6 +874,10 @@ export default function App() {
 
             {/* Advanced Financial Management Routes */}
             <Route path="/finance" element={<Navigate to="/finance/dashboard" replace />} />
+            <Route path="/finance/refunds" element={<Navigate to="/sales-returns" replace />} />
+            <Route path="/finance/suppliers" element={<Navigate to="/purchases/suppliers" replace />} />
+            <Route path="/finance/supplier-payments" element={<Navigate to="/purchases/payables" replace />} />
+            <Route path="/finance/profit-loss" element={<Navigate to="/finance/analytics" replace />} />
             <Route path="/finance/dashboard" element={
               <ProtectedRoute>
                 <AdminLayout>

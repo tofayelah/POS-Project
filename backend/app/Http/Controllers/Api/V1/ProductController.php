@@ -28,7 +28,8 @@ class ProductController extends Controller
             'variants.barcodes',
         ])->withCount('variants');
 
-        $query->where('company_id', $request->attributes->get('company_id'));
+        $companyId = $request->attributes->get('company_id') ?? 1;
+        $query->where('company_id', $companyId);
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -68,6 +69,14 @@ class ProductController extends Controller
             $query->orderBy($sortBy, $sortOrder === 'asc' ? 'asc' : 'desc');
         } else {
             $query->latest();
+        }
+
+        if ($request->boolean('all') || $request->input('all') === 'true' || $request->input('all') === 1) {
+            $allProducts = $query->get();
+            return response()->json([
+                'success' => true,
+                'data' => ProductResource::collection($allProducts),
+            ]);
         }
 
         $perPage = min((int) $request->input('per_page', 15), 100);

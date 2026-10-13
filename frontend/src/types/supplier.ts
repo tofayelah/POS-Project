@@ -39,6 +39,11 @@ export interface SupplierFormData {
   contact_person: string;
   contact_designation: string;
   contact_phone: string;
+  tax_number?: string;
+  bank_name?: string;
+  bank_account_no?: string;
+  bank_branch?: string;
+  notes?: string;
   status: SupplierStatus;
 }
 
@@ -50,6 +55,10 @@ export interface SupplierPayload {
   contact_person?: string;
   contact_designation?: string;
   contact_phone?: string;
+  tax_number?: string;
+  bank_name?: string;
+  bank_account_no?: string;
+  bank_branch?: string;
   status?: SupplierStatus;
   email?: string;
   notes?: string;

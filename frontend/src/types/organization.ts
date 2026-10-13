@@ -88,11 +88,12 @@ export interface BusinessUnit {
   status?: 'active' | 'inactive' | string;
   is_active?: boolean;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface Branch {
   id: number | string;
-  company_id: number | string;
+  company_id?: number | string;
   business_unit_id?: number | string;
   business_unit?: { id?: number | string; name?: string };
   name: string;
@@ -102,6 +103,8 @@ export interface Branch {
   address?: string;
   status?: 'active' | 'inactive' | string;
   is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Role {

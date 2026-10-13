@@ -62,12 +62,59 @@ class CategoryController extends Controller
         ]);
     }
 
+    /**
+     * Generate guaranteed unique next category code for the company
+     */
+    public static function generateUniqueCategoryCode($companyId): string
+    {
+        $categories = Category::withTrashed()
+            ->where('company_id', $companyId)
+            ->get(['slug', 'name', 'id']);
+
+        $maxNum = 0;
+        foreach ($categories as $cat) {
+            if (preg_match('/^CAT-(\d+)$/i', $cat->slug, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        if ($maxNum === 0) {
+            $maxNum = $categories->count();
+        }
+
+        $nextNum = $maxNum + 1;
+        return 'CAT-' . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function nextCode(Request $request): JsonResponse
+    {
+        $companyId = $request->attributes->get('company_id') ?? $request->user()?->company_id ?? 1;
+        $nextCode = self::generateUniqueCategoryCode($companyId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'category_code' => $nextCode,
+                'next_code' => $nextCode,
+            ]
+        ]);
+    }
+
     public function store(CategoryRequest $request): JsonResponse
     {
         $data = $request->validated();
         $data['company_id'] = $request->attributes->get('company_id');
         $data['created_by'] = $request->user()?->id;
         $data['updated_by'] = $request->user()?->id;
+
+        if (empty($data['slug'])) {
+            $data['slug'] = $request->filled('code')
+                ? Str::slug($request->input('code'))
+                : self::generateUniqueCategoryCode($data['company_id']);
+        }
 
         $category = Category::create($data);
 

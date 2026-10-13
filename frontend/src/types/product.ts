@@ -35,6 +35,7 @@ export interface ProductVariant {
   wholesale_price?: number;
   cost_price?: number;
   mrp?: number;
+  available_quantity?: number;
   status?: string;
   attribute_values?: AttributeValue[] | any[];
   barcodes?: Barcode[] | any[];
@@ -59,6 +60,9 @@ export interface Brand {
   id: number | string;
   name: string;
   code?: string;
+  description?: string;
+  status?: string;
+  products_count?: number;
 }
 
 export interface Product {

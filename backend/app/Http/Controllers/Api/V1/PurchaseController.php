@@ -199,13 +199,22 @@ class PurchaseController extends Controller
         $duplicate = Purchase::where('company_id', $companyId)
             ->where('supplier_id', $supplier->id)
             ->where('supplier_invoice_number', $validated['supplier_invoice_number'])
-            ->exists();
+            ->first();
 
         if ($duplicate) {
             return response()->json([
                 'success' => false,
                 'message' => "A purchase invoice with number '{$validated['supplier_invoice_number']}' already exists for this supplier.",
-            ], 422);
+                'data' => $duplicate->load([
+                    'items.product',
+                    'items.productVariant',
+                    'supplier',
+                    'warehouse',
+                    'purchaseOrder',
+                    'goodsReceipt'
+                ]),
+                'is_duplicate' => true,
+            ], 409);
         }
 
         // Warehouse validation
@@ -294,71 +303,96 @@ class PurchaseController extends Controller
         $otherCost = round((float) ($validated['other_cost'] ?? 0), 4);
         $grandTotal = round($subtotal - $discountTotal + $taxTotal + $shippingCost + $otherCost, 4);
 
-        return DB::transaction(function () use (
-            $companyId,
-            $validated,
-            $supplier,
-            $subtotal,
-            $discountTotal,
-            $taxTotal,
-            $shippingCost,
-            $otherCost,
-            $grandTotal,
-            $calculatedItems,
-            $request
-        ) {
-            $purchase = Purchase::create([
-                'company_id' => $companyId,
-                'supplier_id' => $supplier->id,
-                'supplier_invoice_number' => $validated['supplier_invoice_number'],
-                'invoice_date' => $validated['invoice_date'],
-                'due_date' => $validated['due_date'] ?? null,
-                'warehouse_id' => $validated['warehouse_id'] ?? null,
-                'business_unit_id' => $validated['business_unit_id'] ?? null,
-                'branch_id' => $validated['branch_id'] ?? null,
-                'purchase_order_id' => $validated['purchase_order_id'] ?? null,
-                'goods_receipt_id' => $validated['goods_receipt_id'] ?? null,
-                'subtotal' => $subtotal,
-                'discount_total' => $discountTotal,
-                'tax_total' => $taxTotal,
-                'shipping_cost' => $shippingCost,
-                'other_cost' => $otherCost,
-                'grand_total' => $grandTotal,
-                'status' => 'DRAFT',
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => $request->user()?->id,
-            ]);
-
-            foreach ($calculatedItems as $itemData) {
-                PurchaseItem::create([
-                    'purchase_id' => $purchase->id,
-                    'product_id' => $itemData['product_id'],
-                    'product_variant_id' => $itemData['product_variant_id'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_cost' => $itemData['unit_cost'],
-                    'discount' => $itemData['discount'],
-                    'tax' => $itemData['tax'],
-                    'line_total' => $itemData['line_total'],
+        try {
+            return DB::transaction(function () use (
+                $companyId,
+                $validated,
+                $supplier,
+                $subtotal,
+                $discountTotal,
+                $taxTotal,
+                $shippingCost,
+                $otherCost,
+                $grandTotal,
+                $calculatedItems,
+                $request
+            ) {
+                $purchase = Purchase::create([
+                    'company_id' => $companyId,
+                    'supplier_id' => $supplier->id,
+                    'supplier_invoice_number' => $validated['supplier_invoice_number'],
+                    'invoice_date' => $validated['invoice_date'],
+                    'due_date' => $validated['due_date'] ?? null,
+                    'warehouse_id' => $validated['warehouse_id'] ?? null,
+                    'business_unit_id' => $validated['business_unit_id'] ?? null,
+                    'branch_id' => $validated['branch_id'] ?? null,
+                    'purchase_order_id' => $validated['purchase_order_id'] ?? null,
+                    'goods_receipt_id' => $validated['goods_receipt_id'] ?? null,
+                    'subtotal' => $subtotal,
+                    'discount_total' => $discountTotal,
+                    'tax_total' => $taxTotal,
+                    'shipping_cost' => $shippingCost,
+                    'other_cost' => $otherCost,
+                    'grand_total' => $grandTotal,
+                    'status' => 'DRAFT',
+                    'notes' => $validated['notes'] ?? null,
+                    'created_by' => $request->user()?->id,
                 ]);
+
+                foreach ($calculatedItems as $itemData) {
+                    PurchaseItem::create([
+                        'purchase_id' => $purchase->id,
+                        'product_id' => $itemData['product_id'],
+                        'product_variant_id' => $itemData['product_variant_id'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_cost' => $itemData['unit_cost'],
+                        'discount' => $itemData['discount'],
+                        'tax' => $itemData['tax'],
+                        'line_total' => $itemData['line_total'],
+                    ]);
+                }
+
+                if (!empty($validated['post_immediately'])) {
+                    $purchase = $this->purchaseService->postPurchaseInvoice($purchase->id, $request->user()?->id);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Purchase invoice created successfully.',
+                    'data' => $purchase->load([
+                        'items.product',
+                        'items.productVariant',
+                        'supplier',
+                        'warehouse',
+                        'purchaseOrder',
+                        'goodsReceipt'
+                    ]),
+                ], 201);
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            $existing = Purchase::where('company_id', $companyId)
+                ->where('supplier_id', $supplier->id)
+                ->where('supplier_invoice_number', $validated['supplier_invoice_number'])
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "A purchase invoice with number '{$validated['supplier_invoice_number']}' already exists for this supplier.",
+                    'data' => $existing->load([
+                        'items.product',
+                        'items.productVariant',
+                        'supplier',
+                        'warehouse',
+                        'purchaseOrder',
+                        'goodsReceipt'
+                    ]),
+                    'is_duplicate' => true,
+                ], 409);
             }
 
-            if (!empty($validated['post_immediately'])) {
-                $purchase = $this->purchaseService->postPurchaseInvoice($purchase->id, $request->user()?->id);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Purchase invoice created successfully.',
-                'data' => $purchase->load([
-                    'items.product',
-                    'items.productVariant',
-                    'supplier',
-                    'warehouse',
-                    'purchaseOrder',
-                    'goodsReceipt'
-                ]),
-            ], 201);
-        });
+            throw $e;
+        }
     }
 
     public function postPurchase(Request $request, $id)
