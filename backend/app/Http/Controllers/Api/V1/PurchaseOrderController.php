@@ -218,12 +218,32 @@ class PurchaseOrderController extends Controller
         });
     }
 
+    private function findPoByCompany($companyId, $id, array $with = [])
+    {
+        $query = PurchaseOrder::where('company_id', $companyId);
+        if (!empty($with)) {
+            $query->with($with);
+        }
+
+        if (is_numeric($id)) {
+            $po = $query->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('po_number', $id);
+            })->first();
+        } else {
+            $po = $query->where('po_number', $id)->first();
+        }
+
+        if (!$po) {
+            abort(404, "Purchase Order '{$id}' not found.");
+        }
+
+        return $po;
+    }
+
     public function show(Request $request, $id)
     {
         $companyId = $request->attributes->get('company_id');
-        $po = PurchaseOrder::with(['items.product', 'items.variant', 'supplier', 'warehouse'])
-            ->where('company_id', $companyId)
-            ->findOrFail($id);
+        $po = $this->findPoByCompany($companyId, $id, ['items.product', 'items.variant', 'supplier', 'warehouse']);
         
         return response()->json([
             'success' => true,
@@ -234,7 +254,7 @@ class PurchaseOrderController extends Controller
     public function update(Request $request, $id)
     {
         $companyId = $request->attributes->get('company_id');
-        $po = PurchaseOrder::where('company_id', $companyId)->findOrFail($id);
+        $po = $this->findPoByCompany($companyId, $id);
 
         if (!in_array(strtoupper($po->status), ['DRAFT', 'PENDING'])) {
             return response()->json([
@@ -337,7 +357,7 @@ class PurchaseOrderController extends Controller
     public function approve(Request $request, $id)
     {
         $companyId = $request->attributes->get('company_id');
-        $po = PurchaseOrder::where('company_id', $companyId)->findOrFail($id);
+        $po = $this->findPoByCompany($companyId, $id);
         
         if ($po->status !== 'DRAFT') {
             return response()->json(['success' => false, 'message' => 'PO must be DRAFT to approve'], 409);
@@ -359,7 +379,7 @@ class PurchaseOrderController extends Controller
     public function cancel(Request $request, $id)
     {
         $companyId = $request->attributes->get('company_id');
-        $po = PurchaseOrder::where('company_id', $companyId)->findOrFail($id);
+        $po = $this->findPoByCompany($companyId, $id);
         
         if (in_array($po->status, ['FULLY_RECEIVED', 'CANCELLED'])) {
             return response()->json([

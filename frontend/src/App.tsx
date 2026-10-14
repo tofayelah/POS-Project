@@ -295,8 +295,10 @@ export default function App() {
             <Route path="/purchase/orders" element={<Navigate to="/purchases/orders" replace />} />
             <Route path="/purchase/orders/new" element={<Navigate to="/purchases/orders/new" replace />} />
             <Route path="/purchase/orders/create" element={<Navigate to="/purchases/orders/new" replace />} />
+            <Route path="/purchase/orders/:id" element={<Navigate to="/purchases/orders/:id/edit" replace />} />
             <Route path="/purchase/orders/:id/edit" element={<Navigate to="/purchases/orders/:id/edit" replace />} />
             <Route path="/purchases/orders/create" element={<Navigate to="/purchases/orders/new" replace />} />
+            <Route path="/purchases/orders/:id" element={<Navigate to="/purchases/orders/:id/edit" replace />} />
             <Route path="/purchase/goods-receipts" element={<Navigate to="/purchases/goods-receipts" replace />} />
             <Route path="/purchase/goods-receipts/new" element={<Navigate to="/purchases/goods-receipts/create" replace />} />
             <Route path="/purchase/goods-receipts/create" element={<Navigate to="/purchases/goods-receipts/create" replace />} />

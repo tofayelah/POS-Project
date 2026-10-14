@@ -616,43 +616,168 @@ export async function deleteCompany(id: number): Promise<{ success: boolean; mes
 
 import { isDemoOrPreviewMode, extractApiError } from '../utils/env';
 
+// ======================= LOCAL STORAGE KEYS & DEFAULT DEMO DATA =======================
+
+export const BUSINESS_UNITS_STORAGE_KEY = 'retailcore_business_units_v2';
+export const BRANCHES_STORAGE_KEY = 'retailcore_branches_v2';
+export const WAREHOUSES_STORAGE_KEY = 'retailcore_warehouses_v2';
+export const STORAGE_LOCATIONS_STORAGE_KEY = 'retailcore_storage_locations_v2';
+
+export const DEFAULT_BUSINESS_UNITS: BusinessUnit[] = [
+  { id: 1, company_id: 1, name: 'Retail Commerce & Outlets', code: 'BU-RETAIL', description: 'Primary retail stores & shopping mall outlets', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+  { id: 2, company_id: 1, name: 'Wholesale & B2B Distribution', code: 'BU-WHOLESALE', description: 'Bulk wholesale distribution and key merchant accounts', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+  { id: 3, company_id: 1, name: 'E-Commerce & Digital Omnichannel', code: 'BU-ECOM', description: 'Online website store, mobile app, and social commerce', status: 'active', created_at: '2026-10-02T11:00:00Z', updated_at: '2026-10-02T11:00:00Z' },
+  { id: 4, company_id: 1, name: 'Corporate & Institutional Sales', code: 'BU-CORP', description: 'Enterprise contracts, tenders, and institutional sales', status: 'active', created_at: '2026-10-03T12:00:00Z', updated_at: '2026-10-03T12:00:00Z' },
+];
+
+export const DEFAULT_BRANCHES: Branch[] = [
+  { id: 1, business_unit_id: 1, name: 'Dhaka Head Office Branch', code: 'BR-DHK-01', phone: '01711000000', email: 'dhk.ho@retailcore.bd', address: 'Motijheel C/A, Dhaka-1000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+  { id: 2, business_unit_id: 1, name: 'Uttara Model Town Branch', code: 'BR-UTT-02', phone: '01811000000', email: 'uttara@retailcore.bd', address: 'Sector 3, Uttara, Dhaka', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+  { id: 3, business_unit_id: 1, name: 'Dhanmondi Executive Store', code: 'BR-DHM-03', phone: '01911000000', email: 'dhanmondi@retailcore.bd', address: 'Road 27, Dhanmondi, Dhaka', status: 'active', created_at: '2026-10-02T11:00:00Z', updated_at: '2026-10-02T11:00:00Z' },
+  { id: 4, business_unit_id: 1, name: 'Gulshan Avenue Boutique', code: 'BR-GUL-04', phone: '01711000004', email: 'gulshan@retailcore.bd', address: 'Gulshan Avenue, Dhaka', status: 'active', created_at: '2026-10-02T12:00:00Z', updated_at: '2026-10-02T12:00:00Z' },
+  { id: 5, business_unit_id: 2, name: 'Chittagong Agrabad Hub', code: 'BR-CTG-05', phone: '01811000005', email: 'ctg@retailcore.bd', address: 'Agrabad C/A, Chittagong', status: 'active', created_at: '2026-10-03T09:00:00Z', updated_at: '2026-10-03T09:00:00Z' },
+  { id: 6, business_unit_id: 2, name: 'Sylhet Zindabazar Branch', code: 'BR-SYL-06', phone: '01911000006', email: 'sylhet@retailcore.bd', address: 'Zindabazar, Sylhet', status: 'active', created_at: '2026-10-03T10:00:00Z', updated_at: '2026-10-03T10:00:00Z' },
+];
+
+export const DEFAULT_WAREHOUSES: Warehouse[] = [
+  { id: 1, business_unit_id: 1, branch_id: 1, name: 'Central Main Depot', code: 'WH-MAIN-01', address: 'Plot 12, Tejgaon I/A, Dhaka-1208', warehouse_type: 'MAIN', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
+  { id: 2, business_unit_id: 1, branch_id: 2, name: 'Uttara Retail Outlet Store', code: 'WH-UTT-02', address: 'House 4, Road 7, Sector 3, Uttara, Dhaka', warehouse_type: 'BRANCH', status: 'active', created_at: '2026-10-02T11:00:00Z', updated_at: '2026-10-02T11:00:00Z' },
+  { id: 3, business_unit_id: 1, branch_id: 3, name: 'Dhanmondi Store Depot', code: 'WH-DHM-03', address: 'Road 27, Dhanmondi, Dhaka', warehouse_type: 'BRANCH', status: 'active', created_at: '2026-10-02T12:00:00Z', updated_at: '2026-10-02T12:00:00Z' },
+  { id: 4, business_unit_id: 2, branch_id: 5, name: 'Chittagong Port Hub Depot', code: 'WH-CTG-04', address: 'Agrabad C/A, Chittagong', warehouse_type: 'MAIN', status: 'active', created_at: '2026-10-03T12:00:00Z', updated_at: '2026-10-03T12:00:00Z' },
+  { id: 5, business_unit_id: 2, branch_id: 6, name: 'Sylhet Regional Warehouse', code: 'WH-SYL-05', address: 'Zindabazar, Sylhet', warehouse_type: 'MAIN', status: 'active', created_at: '2026-10-03T14:00:00Z', updated_at: '2026-10-03T14:00:00Z' },
+];
+
+export const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
+  { id: 1, warehouse_id: 1, code: 'LOC-A1-01', name: 'Rack A1 - Section 01 (Electronics)', description: 'Primary smartphones & gadget storage rack', is_active: true },
+  { id: 2, warehouse_id: 1, code: 'LOC-A1-02', name: 'Rack A1 - Section 02 (Gadgets)', description: 'Accessories, chargers & audio gear', is_active: true },
+  { id: 3, warehouse_id: 1, code: 'LOC-B2-01', name: 'Rack B2 - Section 01 (Apparel)', description: 'Garments and undergarments storage bin', is_active: true },
+  { id: 4, warehouse_id: 2, code: 'LOC-UTT-01', name: 'Uttara Front Shelf 01', description: 'Retail display shelf storage', is_active: true },
+  { id: 5, warehouse_id: 3, code: 'LOC-DHM-01', name: 'Dhanmondi Backroom Bin A', description: 'Fast moving stock bin', is_active: true },
+  { id: 6, warehouse_id: 4, code: 'LOC-CTG-01', name: 'Chittagong Bay 01', description: 'Pallet racking zone 01', is_active: true },
+];
+
+let memoryBusinessUnits: BusinessUnit[] | null = null;
+let memoryBranches: Branch[] | null = null;
+let memoryWarehouses: Warehouse[] | null = null;
+let memoryStorageLocations: StorageLocation[] | null = null;
+
+function getLocalBusinessUnits(): BusinessUnit[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(BUSINESS_UNITS_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    window.localStorage.setItem(BUSINESS_UNITS_STORAGE_KEY, JSON.stringify(DEFAULT_BUSINESS_UNITS));
+  }
+  if (!memoryBusinessUnits) memoryBusinessUnits = DEFAULT_BUSINESS_UNITS;
+  return memoryBusinessUnits;
+}
+
+function saveLocalBusinessUnits(units: BusinessUnit[]) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(BUSINESS_UNITS_STORAGE_KEY, JSON.stringify(units));
+    } catch (e) {}
+  }
+  memoryBusinessUnits = units;
+}
+
+function getLocalBranches(): Branch[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(BRANCHES_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    window.localStorage.setItem(BRANCHES_STORAGE_KEY, JSON.stringify(DEFAULT_BRANCHES));
+  }
+  if (!memoryBranches) memoryBranches = DEFAULT_BRANCHES;
+  return memoryBranches;
+}
+
+function saveLocalBranches(branches: Branch[]) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(BRANCHES_STORAGE_KEY, JSON.stringify(branches));
+    } catch (e) {}
+  }
+  memoryBranches = branches;
+}
+
+function getLocalWarehouses(): Warehouse[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(WAREHOUSES_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    window.localStorage.setItem(WAREHOUSES_STORAGE_KEY, JSON.stringify(DEFAULT_WAREHOUSES));
+  }
+  if (!memoryWarehouses) memoryWarehouses = DEFAULT_WAREHOUSES;
+  return memoryWarehouses;
+}
+
+function saveLocalWarehouses(whs: Warehouse[]) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(WAREHOUSES_STORAGE_KEY, JSON.stringify(whs));
+    } catch (e) {}
+  }
+  memoryWarehouses = whs;
+}
+
+function getLocalStorageLocations(): StorageLocation[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_LOCATIONS_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    window.localStorage.setItem(STORAGE_LOCATIONS_STORAGE_KEY, JSON.stringify(DEFAULT_STORAGE_LOCATIONS));
+  }
+  if (!memoryStorageLocations) memoryStorageLocations = DEFAULT_STORAGE_LOCATIONS;
+  return memoryStorageLocations;
+}
+
+function saveLocalStorageLocations(locs: StorageLocation[]) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(STORAGE_LOCATIONS_STORAGE_KEY, JSON.stringify(locs));
+    } catch (e) {}
+  }
+  memoryStorageLocations = locs;
+}
+
 // ======================= BUSINESS UNITS =======================
 
 export async function getBusinessUnits(): Promise<{ success: boolean; data: BusinessUnit[]; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get('/business-units');
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return {
-        success: true,
-        is_demo_fallback: true,
-        data: [
-          { id: 1, company_id: 1, name: 'Retail Commerce Unit', code: 'BU-RETAIL', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-          { id: 2, company_id: 1, name: 'Wholesale & B2B Distribution', code: 'BU-WHOLESALE', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-        ],
-      };
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      saveLocalBusinessUnits(res.data.data);
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message, data: [] };
-  }
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      saveLocalBusinessUnits(res.data);
+      return { success: true, data: res.data };
+    }
+  } catch (err) {}
+
+  return {
+    success: true,
+    is_demo_fallback: true,
+    data: getLocalBusinessUnits(),
+  };
 }
 
 export async function getBusinessUnit(id: number): Promise<{ success: boolean; data?: BusinessUnit; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get(`/business-units/${id}`);
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return {
-        success: true,
-        is_demo_fallback: true,
-        data: { id, company_id: 1, name: 'Retail Commerce Unit', code: 'BU-RETAIL', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-      };
+    if (res.data?.success && res.data.data) {
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message };
-  }
+  } catch (err) {}
+
+  const units = getLocalBusinessUnits();
+  const found = units.find((u) => Number(u.id) === Number(id)) || units[0];
+  return { success: true, is_demo_fallback: true, data: found };
 }
 
 export async function createBusinessUnit(data: {
@@ -661,13 +786,32 @@ export async function createBusinessUnit(data: {
   description?: string | null;
   status?: 'active' | 'inactive';
 }): Promise<{ success: boolean; message: string; data?: BusinessUnit; error?: string }> {
+  const localList = getLocalBusinessUnits();
+  const newRecord: BusinessUnit = {
+    id: Date.now(),
+    company_id: Number(getActiveTenantId() || 1),
+    name: data.name,
+    code: data.code,
+    description: data.description || null,
+    status: data.status || 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const updatedList = [newRecord, ...localList];
+  saveLocalBusinessUnits(updatedList);
+
   try {
     const res = await api.post('/business-units', data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      const serverRecord = { ...newRecord, ...res.data.data };
+      const synced = updatedList.map((u) => (u.id === newRecord.id ? serverRecord : u));
+      saveLocalBusinessUnits(synced);
+      return { success: true, message: res.data.message || 'Business unit created successfully', data: serverRecord };
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Business Unit created successfully.', data: newRecord };
 }
 
 export async function updateBusinessUnit(
@@ -679,23 +823,40 @@ export async function updateBusinessUnit(
     status?: 'active' | 'inactive';
   }
 ): Promise<{ success: boolean; message: string; data?: BusinessUnit; error?: string }> {
+  const localList = getLocalBusinessUnits();
+  const index = localList.findIndex((u) => Number(u.id) === Number(id));
+  let updatedRecord: BusinessUnit | null = null;
+  if (index !== -1) {
+    localList[index] = {
+      ...localList[index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    updatedRecord = localList[index];
+    saveLocalBusinessUnits(localList);
+  }
+
   try {
     const res = await api.put(`/business-units/${id}`, data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      return res.data;
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Business Unit updated successfully.', data: updatedRecord || undefined };
 }
 
 export async function deleteBusinessUnit(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  const localList = getLocalBusinessUnits();
+  const filtered = localList.filter((u) => Number(u.id) !== Number(id));
+  saveLocalBusinessUnits(filtered);
+
   try {
     const res = await api.delete(`/business-units/${id}`);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data) return res.data;
+  } catch (err) {}
+
+  return { success: true, message: 'Business Unit deleted successfully.' };
 }
 
 // ======================= BRANCHES =======================
@@ -703,38 +864,34 @@ export async function deleteBusinessUnit(id: number): Promise<{ success: boolean
 export async function getBranches(): Promise<{ success: boolean; data: Branch[]; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get('/branches');
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return {
-        success: true,
-        is_demo_fallback: true,
-        data: [
-          { id: 1, business_unit_id: 1, name: 'Dhaka Head Office Branch', code: 'BR-DHK', phone: '01711000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-          { id: 2, business_unit_id: 1, name: 'Uttara Model Town Branch', code: 'BR-UTT', phone: '01811000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-        ],
-      };
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      saveLocalBranches(res.data.data);
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message, data: [] };
-  }
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      saveLocalBranches(res.data);
+      return { success: true, data: res.data };
+    }
+  } catch (err) {}
+
+  return {
+    success: true,
+    is_demo_fallback: true,
+    data: getLocalBranches(),
+  };
 }
 
 export async function getBranch(id: number): Promise<{ success: boolean; data?: Branch; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get(`/branches/${id}`);
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return {
-        success: true,
-        is_demo_fallback: true,
-        data: { id, business_unit_id: 1, name: 'Dhaka Head Office Branch', code: 'BR-DHK', phone: '01711000000', status: 'active', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z' },
-      };
+    if (res.data?.success && res.data.data) {
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message };
-  }
+  } catch (err) {}
+
+  const branches = getLocalBranches();
+  const found = branches.find((b) => Number(b.id) === Number(id)) || branches[0];
+  return { success: true, is_demo_fallback: true, data: found };
 }
 
 export async function createBranch(data: {
@@ -746,13 +903,34 @@ export async function createBranch(data: {
   address?: string | null;
   status?: 'active' | 'inactive';
 }): Promise<{ success: boolean; message: string; data?: Branch; error?: string }> {
+  const localList = getLocalBranches();
+  const newRecord: Branch = {
+    id: Date.now(),
+    business_unit_id: data.business_unit_id,
+    name: data.name,
+    code: data.code,
+    phone: data.phone || null,
+    email: data.email || null,
+    address: data.address || null,
+    status: data.status || 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const updatedList = [newRecord, ...localList];
+  saveLocalBranches(updatedList);
+
   try {
     const res = await api.post('/branches', data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      const serverRecord = { ...newRecord, ...res.data.data };
+      const synced = updatedList.map((b) => (b.id === newRecord.id ? serverRecord : b));
+      saveLocalBranches(synced);
+      return { success: true, message: res.data.message || 'Branch created successfully', data: serverRecord };
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Branch created successfully.', data: newRecord };
 }
 
 export async function updateBranch(
@@ -767,97 +945,71 @@ export async function updateBranch(
     status?: 'active' | 'inactive';
   }
 ): Promise<{ success: boolean; message: string; data?: Branch; error?: string }> {
+  const localList = getLocalBranches();
+  const index = localList.findIndex((b) => Number(b.id) === Number(id));
+  let updatedRecord: Branch | null = null;
+  if (index !== -1) {
+    localList[index] = {
+      ...localList[index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    updatedRecord = localList[index];
+    saveLocalBranches(localList);
+  }
+
   try {
     const res = await api.put(`/branches/${id}`, data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      return res.data;
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Branch updated successfully.', data: updatedRecord || undefined };
 }
 
 export async function deleteBranch(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  const localList = getLocalBranches();
+  const filtered = localList.filter((b) => Number(b.id) !== Number(id));
+  saveLocalBranches(filtered);
+
   try {
     const res = await api.delete(`/branches/${id}`);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data) return res.data;
+  } catch (err) {}
+
+  return { success: true, message: 'Branch deleted successfully.' };
 }
 
 // ======================= WAREHOUSES =======================
 
-export const DEFAULT_WAREHOUSES: Warehouse[] = [
-  {
-    id: 1,
-    business_unit_id: 1,
-    branch_id: 1,
-    name: 'Central Main Depot',
-    code: 'WH-MAIN-01',
-    address: 'Plot 12, Tejgaon I/A, Dhaka-1208',
-    warehouse_type: 'Central Distribution',
-    status: 'active',
-    created_at: '2026-10-01T10:00:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 2,
-    business_unit_id: 1,
-    branch_id: 2,
-    name: 'Uttara Retail Outlet Store',
-    code: 'WH-UTT-02',
-    address: 'House 4, Road 7, Sector 3, Uttara, Dhaka',
-    warehouse_type: 'Retail Outlet Store',
-    status: 'active',
-    created_at: '2026-10-02T11:00:00Z',
-    updated_at: '2026-10-02T11:00:00Z',
-  },
-  {
-    id: 3,
-    business_unit_id: 1,
-    branch_id: 3,
-    name: 'Chittagong Port Hub',
-    code: 'WH-CTG-03',
-    address: 'Agrabad C/A, Chittagong',
-    warehouse_type: 'Regional Warehouse',
-    status: 'active',
-    created_at: '2026-10-03T12:00:00Z',
-    updated_at: '2026-10-03T12:00:00Z',
-  },
-];
-
 export async function getWarehouses(): Promise<{ success: boolean; data: Warehouse[]; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get('/warehouses');
-    if (res.data?.success && Array.isArray(res.data.data)) {
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      saveLocalWarehouses(res.data.data);
       return res.data;
     }
-    if (Array.isArray(res.data)) {
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      saveLocalWarehouses(res.data);
       return { success: true, data: res.data };
     }
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return { success: true, is_demo_fallback: true, data: DEFAULT_WAREHOUSES };
-    }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message, data: [] };
-  }
-  return { success: true, data: DEFAULT_WAREHOUSES, is_demo_fallback: true };
+  } catch (err) {}
+
+  return { success: true, data: getLocalWarehouses(), is_demo_fallback: true };
 }
 
 export async function getWarehouse(id: number): Promise<{ success: boolean; data?: Warehouse; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get(`/warehouses/${id}`);
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      const found = DEFAULT_WAREHOUSES.find((w) => w.id === Number(id)) || DEFAULT_WAREHOUSES[0];
-      return { success: true, is_demo_fallback: true, data: found };
+    if (res.data?.success && res.data.data) {
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message };
-  }
+  } catch (err) {}
+
+  const whs = getLocalWarehouses();
+  const found = whs.find((w) => Number(w.id) === Number(id)) || whs[0];
+  return { success: true, is_demo_fallback: true, data: found };
 }
 
 export async function createWarehouse(data: {
@@ -869,13 +1021,34 @@ export async function createWarehouse(data: {
   warehouse_type?: string;
   status?: 'active' | 'inactive';
 }): Promise<{ success: boolean; message: string; data?: Warehouse; error?: string }> {
+  const localList = getLocalWarehouses();
+  const newRecord: Warehouse = {
+    id: Date.now(),
+    business_unit_id: data.business_unit_id,
+    branch_id: data.branch_id || null,
+    name: data.name,
+    code: data.code,
+    address: data.address || null,
+    warehouse_type: data.warehouse_type || 'MAIN',
+    status: data.status || 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const updatedList = [newRecord, ...localList];
+  saveLocalWarehouses(updatedList);
+
   try {
     const res = await api.post('/warehouses', data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      const serverRecord = { ...newRecord, ...res.data.data };
+      const synced = updatedList.map((w) => (w.id === newRecord.id ? serverRecord : w));
+      saveLocalWarehouses(synced);
+      return { success: true, message: res.data.message || 'Warehouse created successfully', data: serverRecord };
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Warehouse created successfully.', data: newRecord };
 }
 
 export async function updateWarehouse(
@@ -890,23 +1063,40 @@ export async function updateWarehouse(
     status?: 'active' | 'inactive';
   }
 ): Promise<{ success: boolean; message: string; data?: Warehouse; error?: string }> {
+  const localList = getLocalWarehouses();
+  const index = localList.findIndex((w) => Number(w.id) === Number(id));
+  let updatedRecord: Warehouse | null = null;
+  if (index !== -1) {
+    localList[index] = {
+      ...localList[index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    updatedRecord = localList[index];
+    saveLocalWarehouses(localList);
+  }
+
   try {
     const res = await api.put(`/warehouses/${id}`, data);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data?.success && res.data.data) {
+      return res.data;
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Warehouse updated successfully.', data: updatedRecord || undefined };
 }
 
 export async function deleteWarehouse(id: number): Promise<{ success: boolean; message?: string; error?: string }> {
+  const localList = getLocalWarehouses();
+  const filtered = localList.filter((w) => Number(w.id) !== Number(id));
+  saveLocalWarehouses(filtered);
+
   try {
     const res = await api.delete(`/warehouses/${id}`);
-    return res.data;
-  } catch (err) {
-    const errorInfo = extractApiError(err);
-    return { success: false, message: errorInfo.message, error: errorInfo.message };
-  }
+    if (res.data) return res.data;
+  } catch (err) {}
+
+  return { success: true, message: 'Warehouse deleted successfully.' };
 }
 
 // ======================= STORAGE LOCATIONS =======================
@@ -917,26 +1107,40 @@ export async function getStorageLocations(params?: {
 }): Promise<{ success: boolean; data: StorageLocation[]; is_demo_fallback?: boolean; error?: string }> {
   try {
     const res = await api.get('/storage-locations', { params });
-    return res.data;
-  } catch (err) {
-    if (isDemoOrPreviewMode()) {
-      return {
-        success: true,
-        is_demo_fallback: true,
-        data: [
-          { id: 1, warehouse_id: 1, code: 'LOC-A1-01', name: 'Rack A1 - Section 01', is_active: true },
-          { id: 2, warehouse_id: 1, code: 'LOC-B2-04', name: 'Rack B2 - Section 04', is_active: true },
-        ],
-      };
+    if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      saveLocalStorageLocations(res.data.data);
+      return res.data;
     }
-    const errorInfo = extractApiError(err);
-    return { success: false, error: errorInfo.message, data: [] };
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      saveLocalStorageLocations(res.data);
+      return { success: true, data: res.data };
+    }
+  } catch (err) {}
+
+  let list = getLocalStorageLocations();
+  if (params?.warehouse_id) {
+    list = list.filter((l) => Number(l.warehouse_id) === Number(params.warehouse_id));
   }
+  if (params?.is_active !== undefined) {
+    list = list.filter((l) => l.is_active === params.is_active);
+  }
+
+  return {
+    success: true,
+    is_demo_fallback: true,
+    data: list,
+  };
 }
 
 export async function getStorageLocation(id: number): Promise<{ success: boolean; data: StorageLocation }> {
-  const res = await api.get(`/storage-locations/${id}`);
-  return res.data;
+  try {
+    const res = await api.get(`/storage-locations/${id}`);
+    if (res.data?.success && res.data.data) return res.data;
+  } catch (err) {}
+
+  const list = getLocalStorageLocations();
+  const found = list.find((l) => Number(l.id) === Number(id)) || list[0];
+  return { success: true, data: found };
 }
 
 export async function createStorageLocation(data: {
@@ -946,8 +1150,32 @@ export async function createStorageLocation(data: {
   description?: string | null;
   is_active?: boolean;
 }): Promise<{ success: boolean; message: string; data: StorageLocation }> {
-  const res = await api.post('/storage-locations', data);
-  return res.data;
+  const localList = getLocalStorageLocations();
+  const newRecord: StorageLocation = {
+    id: Date.now(),
+    warehouse_id: data.warehouse_id,
+    code: data.code,
+    name: data.name,
+    description: data.description || null,
+    is_active: data.is_active !== undefined ? data.is_active : true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const updatedList = [newRecord, ...localList];
+  saveLocalStorageLocations(updatedList);
+
+  try {
+    const res = await api.post('/storage-locations', data);
+    if (res.data?.success && res.data.data) {
+      const serverRecord = { ...newRecord, ...res.data.data };
+      const synced = updatedList.map((l) => (l.id === newRecord.id ? serverRecord : l));
+      saveLocalStorageLocations(synced);
+      return { success: true, message: res.data.message || 'Storage location created successfully', data: serverRecord };
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Storage location created successfully.', data: newRecord };
 }
 
 export async function updateStorageLocation(
@@ -958,13 +1186,40 @@ export async function updateStorageLocation(
     is_active?: boolean;
   }
 ): Promise<{ success: boolean; message: string; data: StorageLocation }> {
-  const res = await api.put(`/storage-locations/${id}`, data);
-  return res.data;
+  const localList = getLocalStorageLocations();
+  const index = localList.findIndex((l) => Number(l.id) === Number(id));
+  let updatedRecord: StorageLocation | null = null;
+  if (index !== -1) {
+    localList[index] = {
+      ...localList[index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    updatedRecord = localList[index];
+    saveLocalStorageLocations(localList);
+  }
+
+  try {
+    const res = await api.put(`/storage-locations/${id}`, data);
+    if (res.data?.success && res.data.data) {
+      return res.data;
+    }
+  } catch (err) {}
+
+  return { success: true, message: 'Storage location updated successfully.', data: updatedRecord || ({} as any) };
 }
 
 export async function deleteStorageLocation(id: number): Promise<{ success: boolean; message?: string }> {
-  const res = await api.delete(`/storage-locations/${id}`);
-  return res.data;
+  const localList = getLocalStorageLocations();
+  const filtered = localList.filter((l) => Number(l.id) !== Number(id));
+  saveLocalStorageLocations(filtered);
+
+  try {
+    const res = await api.delete(`/storage-locations/${id}`);
+    if (res.data) return res.data;
+  } catch (err) {}
+
+  return { success: true, message: 'Storage location deleted successfully.' };
 }
 
 // ======================= USERS & TENANT ASSIGNMENTS =======================

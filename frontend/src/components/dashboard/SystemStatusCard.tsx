@@ -5,10 +5,13 @@ import {
   AlertTriangle, XCircle, Clock, ShieldCheck, Cpu
 } from 'lucide-react';
 import { fetchSystemStatus } from '../../api/system';
+import { useV2System } from '../../context/V2SystemContext';
 import { getComparisonBadge, formatShortCommit } from '../../utils/version';
 import { format } from 'date-fns';
 
 export function SystemStatusCard() {
+  const { health: v2Health, connectionState: v2ConnectionState, refreshV2System } = useV2System();
+
   const { data: rawStatus, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['system-status'],
     queryFn: fetchSystemStatus,
@@ -18,6 +21,7 @@ export function SystemStatusCard() {
 
   const handleRefresh = () => {
     refetch();
+    refreshV2System();
   };
 
   if (isLoading && !rawStatus) {
@@ -263,6 +267,34 @@ export function SystemStatusCard() {
               Healthy ({live.backend?.api_version || 'v1'})
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* RetailCore V2 Step 1 Foundation */}
+      <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            <span className="text-xs font-extrabold text-indigo-950">RetailCore V2 Foundation</span>
+          </div>
+          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${
+            v2ConnectionState === 'online'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : v2ConnectionState === 'degraded'
+              ? 'bg-amber-50 text-amber-700 border-amber-200'
+              : 'bg-slate-100 text-slate-600 border-slate-200'
+          }`}>
+            Step 1 {v2ConnectionState === 'online' ? 'Active' : v2ConnectionState === 'loading' ? 'Checking...' : v2ConnectionState}
+          </span>
+        </div>
+        <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+          <span className="font-mono text-indigo-700 font-bold">{v2Health?.version || '2.0.0-step1'}</span>
+          <span className="text-slate-300">•</span>
+          <span>Tenant Isolation</span>
+          <span className="text-slate-300">•</span>
+          <span>Double-Entry Ledger</span>
+          <span className="text-slate-300">•</span>
+          <span>Immutable Inventory</span>
         </div>
       </div>
 

@@ -37,13 +37,22 @@ import {
   getNextPoNumber
 } from '../../api/purchaseOrders';
 import { getSuppliers } from '../../api/suppliers';
-import { getProducts, getCategories, getBrands } from '../../api/products';
+import {
+  getProducts,
+  getCategories,
+  getBrands,
+  getStoredProducts,
+  getStoredCategories,
+  getStoredBrands
+} from '../../api/products';
 import { getBranches, getWarehouses, getBusinessUnits } from '../../api/organization';
 import { getInventory } from '../../api/inventory';
 import { Supplier } from '../../types/supplier';
 import { Product, ProductVariant, Category, Brand } from '../../types/product';
 import { Branch, Warehouse, BusinessUnit } from '../../types/organization';
 import { PurchaseOrder } from '../../types/purchase';
+import { handleKeyDownEnterToNextField } from '../../utils/enterKeyNavigation';
+import { PurchaseOrderPrintModal } from '../../components/purchase/PurchaseOrderPrintModal';
 
 interface OrderGridItem {
   id: string; // client UUID or backend id
@@ -71,6 +80,9 @@ export const PurchaseOrderForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
+  const formRef = useRef<HTMLDivElement>(null);
+  const entryQtyInputRef = useRef<HTMLInputElement>(null);
+  const modalSearchInputRef = useRef<HTMLInputElement>(null);
 
   const { user, hasPermission } = useAuth();
   const { company: activeCompany } = useCompany();
@@ -131,6 +143,13 @@ export const PurchaseOrderForm: React.FC = () => {
   const [supplierSearchText, setSupplierSearchText] = useState<string>('');
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
 
+  // F3 Product Search & Lookup Modal State
+  const [showProductSearchModal, setShowProductSearchModal] = useState<boolean>(false);
+  const [modalSearchText, setModalSearchText] = useState<string>('');
+  const [modalCategory, setModalCategory] = useState<string>('ALL');
+  const [modalBrand, setModalBrand] = useState<string>('ALL');
+  const [modalSelectedIndex, setModalSelectedIndex] = useState<number>(0);
+
   // Load Master Data & Existing PO
   useEffect(() => {
     let isMounted = true;
@@ -178,26 +197,65 @@ export const PurchaseOrderForm: React.FC = () => {
         setBusinessUnits(buList);
         if (buList.length > 0) setBusinessUnitId(buList[0].id);
 
-        const prodList = prodRes.data || [];
-        setProducts(prodList);
+        const rawProd = prodRes.data || prodRes;
+        const prodList = Array.isArray(rawProd)
+          ? rawProd
+          : Array.isArray(rawProd?.data)
+          ? rawProd.data
+          : Array.isArray(rawProd?.items)
+          ? rawProd.items
+          : [];
+        const finalProds = prodList.length > 0 ? prodList : getStoredProducts();
+        setProducts(finalProds);
 
-        setCategories(catRes.data || []);
-        setBrands(brandRes.data || []);
-        setInventoryList(invRes.data || []);
+        const rawCat = catRes.data || catRes;
+        const catList = Array.isArray(rawCat)
+          ? rawCat
+          : Array.isArray(rawCat?.data)
+          ? rawCat.data
+          : [];
+        setCategories(catList.length > 0 ? catList : getStoredCategories());
+
+        const rawBrand = brandRes.data || brandRes;
+        const brandList = Array.isArray(rawBrand)
+          ? rawBrand
+          : Array.isArray(rawBrand?.data)
+          ? rawBrand.data
+          : [];
+        setBrands(brandList.length > 0 ? brandList : getStoredBrands());
+
+        const rawInv = invRes.data || invRes;
+        const invList = Array.isArray(rawInv)
+          ? rawInv
+          : Array.isArray(rawInv?.data)
+          ? rawInv.data
+          : [];
+        setInventoryList(invList);
 
         if (isEditMode && id) {
-          // Fetch existing Purchase Order
-          const poRes = await getPurchaseOrder(Number(id));
-          if (poRes.data && poRes.data.id) {
+          // Fetch existing Purchase Order by ID or PO Number
+          const poRes = await getPurchaseOrder(id);
+          if (poRes.data && (poRes.data.id || poRes.data.po_number)) {
             const po = poRes.data as PurchaseOrder;
-            setPoNumber(po.po_number || '');
+            setPoNumber(po.po_number || (String(id).startsWith('PO-') ? String(id) : ''));
             setOrderDate(po.order_date ? po.order_date.split('T')[0] : new Date().toISOString().split('T')[0]);
             setExpectedDate(po.expected_date ? po.expected_date.split('T')[0] : '');
-            setSupplierId(po.supplier_id || '');
-            if (po.supplier) {
-              setSupplierSearchText(po.supplier.name || '');
+
+            // Supplier resolution
+            const targetSupId = po.supplier_id || po.supplier?.id || '';
+            setSupplierId(targetSupId);
+            if (po.supplier?.name) {
+              setSupplierSearchText(po.supplier.name);
+            } else if (targetSupId) {
+              const matchedSup = supList.find((s: any) => String(s.id) === String(targetSupId));
+              if (matchedSup) {
+                setSupplierSearchText(matchedSup.name || '');
+              }
             }
-            setWarehouseId(po.warehouse_id || (whList[0]?.id || ''));
+
+            // Warehouse resolution
+            const targetWhId = po.warehouse_id || po.warehouse?.id || (whList[0]?.id || '');
+            setWarehouseId(targetWhId);
             setBranchId(po.branch_id || (branchList[0]?.id || ''));
             setBusinessUnitId(po.business_unit_id || (buList[0]?.id || ''));
             setPoStatus(po.status || 'DRAFT');
@@ -207,30 +265,37 @@ export const PurchaseOrderForm: React.FC = () => {
             setOtherCost(Number(po.other_cost || 0));
             setHeaderDiscount(Number(po.discount_total || 0));
 
-            if (po.items && Array.isArray(po.items)) {
+            if (po.items && Array.isArray(po.items) && po.items.length > 0) {
               const loadedItems: OrderGridItem[] = po.items.map((item: any, idx: number) => {
-                const pName = item.product?.name || item.product_name || 'Product Item';
-                const vName = item.variant?.variant_name || item.variant_name || 'Standard';
+                const matchedProd = finalProds.find((p: any) => String(p.id) === String(item.product_id));
+                const matchedVar = matchedProd?.variants?.find((v: any) => String(v.id) === String(item.product_variant_id));
+                const pName = item.product?.name || item.product_name || matchedProd?.name || 'Product Item';
+                const vName = item.variant?.variant_name || item.variant_name || matchedVar?.variant_name || 'Standard';
+                const sKu = item.variant?.sku || item.sku || matchedVar?.sku || 'SKU-001';
+                const bCode = item.variant?.barcode || item.barcode || matchedVar?.barcode || '8800000000';
+                const catName = item.product?.category?.name || item.category_name || (matchedProd?.category as any)?.name || 'General';
+                const brdName = item.product?.brand?.name || item.brand_name || (matchedProd?.brand as any)?.name || 'Generic';
+                const pUnit = item.purchase_unit || item.product?.unit?.code || matchedProd?.unit?.code || 'Pcs';
                 const cost = Number(item.unit_cost || item.unit_price || 0);
                 const qty = Number(item.quantity || 1);
                 const disc = Number(item.discount || 0);
                 const taxP = Number(item.tax_percent || 0);
-                const sellP = Number(item.unit_selling_price || item.variant?.selling_price || cost * 1.25);
+                const sellP = Number(item.unit_selling_price || item.variant?.selling_price || matchedVar?.selling_price || (cost > 0 ? cost * 1.25 : 0));
                 const gpP = sellP > 0 ? ((sellP - cost) / sellP) * 100 : 0;
                 const incSellP = sellP * (1 + taxP / 100);
-                const lineTot = Number(item.line_total || (qty * cost - disc) * (1 + taxP / 100));
+                const lineTot = Number(item.line_total || ((qty * cost - disc) * (1 + taxP / 100)));
 
                 return {
                   id: String(item.id || `item-${idx}-${Date.now()}`),
-                  product_id: item.product_id,
-                  product_variant_id: item.product_variant_id,
+                  product_id: item.product_id || matchedProd?.id || 1,
+                  product_variant_id: item.product_variant_id || matchedVar?.id || 1,
                   product_name: pName,
                   variant_name: vName,
-                  sku: item.variant?.sku || item.sku || 'SKU-001',
-                  barcode: item.variant?.barcode || item.barcode || '8800000000',
-                  category_name: item.product?.category?.name || 'General',
-                  brand_name: item.product?.brand?.name || 'Generic',
-                  purchase_unit: item.purchase_unit || item.product?.unit?.code || 'Pcs',
+                  sku: sKu,
+                  barcode: bCode,
+                  category_name: catName,
+                  brand_name: brdName,
+                  purchase_unit: pUnit,
                   quantity: qty,
                   unit_cost: cost,
                   discount: disc,
@@ -269,6 +334,222 @@ export const PurchaseOrderForm: React.FC = () => {
     };
   }, [id, isEditMode]);
 
+  // Global F3 Shortcut Listener for Product Master Screen
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setShowProductSearchModal((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
+
+  // Escape Key listener to close modal
+  useEffect(() => {
+    if (!showProductSearchModal) return;
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowProductSearchModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleModalKeyDown);
+    };
+  }, [showProductSearchModal]);
+
+  // Filtered Products List for F3 Lookup Modal Screen
+  const modalFilteredProducts = useMemo(() => {
+    const prodArray =
+      Array.isArray(products) && products.length > 0 ? products : getStoredProducts();
+    const invArray = Array.isArray(inventoryList) ? inventoryList : [];
+
+    return prodArray.flatMap((p: any) => {
+      if (!p) return [];
+
+      const pCategory =
+        typeof p.category === 'string'
+          ? p.category
+          : p.category?.name || 'General';
+
+      const pBrand =
+        typeof p.brand === 'string'
+          ? p.brand
+          : p.brand?.name || 'Generic';
+
+      const pUnit =
+        typeof p.unit === 'string'
+          ? p.unit
+          : p.unit?.code || p.unit?.short_code || p.unit?.name || 'Pcs';
+
+      if (modalCategory !== 'ALL' && String(p.category_id) !== String(modalCategory)) {
+        return [];
+      }
+      if (modalBrand !== 'ALL' && String(p.brand_id) !== String(modalBrand)) {
+        return [];
+      }
+
+      const term = modalSearchText.trim().toLowerCase();
+
+      const variants =
+        p.variants && Array.isArray(p.variants) && p.variants.length > 0
+          ? p.variants
+          : [
+              {
+                id: `std-${p.id}`,
+                variant_name: 'Standard',
+                sku: p.sku || p.product_code || 'SKU-001',
+                barcode:
+                  p.barcode ||
+                  (p.barcodes && p.barcodes[0]?.barcode) ||
+                  '8800000000',
+                cost_price: p.cost_price || p.price || 0,
+                selling_price: p.selling_price || p.price || 0
+              }
+            ];
+
+      return variants
+        .filter((v: any) => {
+          if (!v) return false;
+          if (!term) return true;
+          const vBarcode =
+            v.barcode ||
+            (Array.isArray(v.barcodes) && v.barcodes[0]?.barcode) ||
+            p.barcode ||
+            (Array.isArray(p.barcodes) && p.barcodes[0]?.barcode) ||
+            '';
+
+          const nameMatch = p?.name ? String(p.name).toLowerCase().includes(term) : false;
+          const skuMatch =
+            (v?.sku ? String(v.sku).toLowerCase().includes(term) : false) ||
+            (p?.sku ? String(p.sku).toLowerCase().includes(term) : false) ||
+            (p?.product_code ? String(p.product_code).toLowerCase().includes(term) : false);
+          const barcodeMatch = String(vBarcode).toLowerCase().includes(term);
+          const variantMatch = v?.variant_name
+            ? String(v.variant_name).toLowerCase().includes(term)
+            : false;
+          return nameMatch || skuMatch || barcodeMatch || variantMatch;
+        })
+        .map((v: any) => {
+          const invItem = invArray.find(
+            (inv: any) =>
+              String(inv.product_variant_id) === String(v.id) ||
+              String(inv.product_id) === String(p.id)
+          );
+          const currentStock = invItem
+            ? Number(invItem.quantity || invItem.available_quantity || 0)
+            : Number(v.available_quantity || p.available_quantity || 0);
+          const costPrice = Number(
+            v.cost_price || p.cost_price || p.price || 0
+          );
+          const sellingPrice = Number(
+            v.selling_price ||
+              p.selling_price ||
+              p.price ||
+              (costPrice > 0 ? costPrice * 1.25 : 0)
+          );
+
+          const vBarcode =
+            v.barcode ||
+            (v.barcodes && v.barcodes[0]?.barcode) ||
+            p.barcode ||
+            (p.barcodes && p.barcodes[0]?.barcode) ||
+            '8800000000';
+
+          return {
+            product: p,
+            variant: v,
+            productId: p.id,
+            variantId: v.id,
+            productName: p.name || 'Product Item',
+            variantName: v.variant_name || 'Standard',
+            sku: v.sku || p.sku || p.product_code || 'SKU-001',
+            barcode: vBarcode,
+            categoryName: pCategory,
+            brandName: pBrand,
+            unit: pUnit,
+            costPrice,
+            sellingPrice,
+            currentStock
+          };
+        });
+    });
+  }, [products, inventoryList, modalSearchText, modalCategory, modalBrand]);
+
+  const handleSelectProductFromModal = (item: any) => {
+    if (!item) return;
+    setSelectedProductId(item.productId);
+    setSelectedVariantId(item.variantId);
+    setEntryUnit(item.unit);
+    setEntryUnitCost(item.costPrice);
+    setEntryUnitSellingPrice(item.sellingPrice);
+    setShowProductSearchModal(false);
+    setProductSearch(`${item.productName} (${item.sku})`);
+
+    // Jump to the next screen / field (Buy Qty) immediately and select its value!
+    setTimeout(() => {
+      if (entryQtyInputRef.current) {
+        entryQtyInputRef.current.focus();
+        entryQtyInputRef.current.select();
+      }
+    }, 80);
+  };
+
+  // Keyboard Navigation: Arrow Down / Up to browse results, Enter to select & jump to next field
+  const handleModalSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (modalFilteredProducts.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setModalSelectedIndex((prev) => {
+        const next = prev < modalFilteredProducts.length - 1 ? prev + 1 : 0;
+        const targetRow = document.getElementById(`modal-product-row-${next}`);
+        if (targetRow) {
+          targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        return next;
+      });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setModalSelectedIndex((prev) => {
+        const next = prev > 0 ? prev - 1 : modalFilteredProducts.length - 1;
+        const targetRow = document.getElementById(`modal-product-row-${next}`);
+        if (targetRow) {
+          targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        return next;
+      });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const itemToSelect =
+        modalFilteredProducts[modalSelectedIndex] || modalFilteredProducts[0];
+      if (itemToSelect) {
+        handleSelectProductFromModal(itemToSelect);
+      }
+    }
+  };
+
+  // When F3 modal opens, reset selected index and focus search input
+  useEffect(() => {
+    if (showProductSearchModal) {
+      setModalSelectedIndex(0);
+      setTimeout(() => {
+        modalSearchInputRef.current?.focus();
+        modalSearchInputRef.current?.select();
+      }, 50);
+    }
+  }, [showProductSearchModal]);
+
+  // Reset selected index when search text or filters change
+  useEffect(() => {
+    setModalSelectedIndex(0);
+  }, [modalSearchText, modalCategory, modalBrand]);
+
   // Selected Supplier Object
   const selectedSupplier = useMemo(() => {
     return suppliers.find((s) => String(s.id) === String(supplierId));
@@ -276,19 +557,22 @@ export const PurchaseOrderForm: React.FC = () => {
 
   // Filtered Suppliers for Search
   const filteredSuppliers = useMemo(() => {
+    if (!Array.isArray(suppliers)) return [];
     if (!supplierSearchText.trim()) return suppliers.slice(0, 10);
     const term = supplierSearchText.toLowerCase();
     return suppliers.filter(
       (s) =>
-        s.name.toLowerCase().includes(term) ||
-        (s.supplier_code && s.supplier_code.toLowerCase().includes(term)) ||
-        (s.mobile && s.mobile.includes(term))
+        (s?.name ? String(s.name).toLowerCase().includes(term) : false) ||
+        (s?.supplier_code ? String(s.supplier_code).toLowerCase().includes(term) : false) ||
+        (s?.mobile ? String(s.mobile).includes(term) : false)
     );
   }, [suppliers, supplierSearchText]);
 
   // Product Options for Search Panel
   const filteredProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
     return products.filter((p) => {
+      if (!p) return false;
       if (selectedCategory !== 'ALL' && String(p.category_id) !== String(selectedCategory)) {
         return false;
       }
@@ -298,17 +582,30 @@ export const PurchaseOrderForm: React.FC = () => {
       if (!productSearch.trim()) return true;
       const term = productSearch.toLowerCase();
       const pAny = p as any;
-      const matchName = p.name.toLowerCase().includes(term);
-      const matchCode = pAny.code ? String(pAny.code).toLowerCase().includes(term) : false;
-      const matchSku = p.sku ? p.sku.toLowerCase().includes(term) : false;
-      const matchBarcode = pAny.barcode ? String(pAny.barcode).includes(term) : false;
-      const matchVar = p.variants?.some(
-        (v: any) =>
-          v.variant_name.toLowerCase().includes(term) ||
-          (v.sku && v.sku.toLowerCase().includes(term)) ||
-          (v.barcode && String(v.barcode).includes(term))
-      );
-      return matchName || matchCode || matchSku || matchBarcode || matchVar;
+      const matchName = p.name ? String(p.name).toLowerCase().includes(term) : false;
+      const matchCode = pAny.code
+        ? String(pAny.code).toLowerCase().includes(term)
+        : pAny.product_code
+        ? String(pAny.product_code).toLowerCase().includes(term)
+        : false;
+      const matchSku = p.sku ? String(p.sku).toLowerCase().includes(term) : false;
+      const matchBarcode = pAny.barcode
+        ? String(pAny.barcode).includes(term)
+        : Array.isArray(pAny.barcodes) && pAny.barcodes[0]?.barcode
+        ? String(pAny.barcodes[0].barcode).includes(term)
+        : false;
+      const matchVar =
+        Array.isArray(p.variants) &&
+        p.variants.some(
+          (v: any) =>
+            (v?.variant_name ? String(v.variant_name).toLowerCase().includes(term) : false) ||
+            (v?.sku ? String(v.sku).toLowerCase().includes(term) : false) ||
+            (v?.barcode ? String(v.barcode).includes(term) : false) ||
+            (Array.isArray(v?.barcodes) && v.barcodes[0]?.barcode
+              ? String(v.barcodes[0].barcode).includes(term)
+              : false)
+        );
+      return matchName || matchCode || matchSku || matchBarcode || Boolean(matchVar);
     });
   }, [products, selectedCategory, selectedBrand, productSearch]);
 
@@ -560,6 +857,72 @@ export const PurchaseOrderForm: React.FC = () => {
     };
   }, [items, shippingCost, otherCost, headerDiscount]);
 
+  // Order Print Payload for Dedicated Voucher Printing
+  const printOrderPayload = useMemo(() => {
+    const currentWh = warehouses.find((w) => String(w.id) === String(warehouseId));
+    return {
+      po_number: poNumber,
+      order_date: orderDate,
+      expected_date: expectedDate,
+      status: poStatus,
+      supplier: selectedSupplier
+        ? {
+            name: selectedSupplier.name,
+            supplier_code: selectedSupplier.supplier_code,
+            mobile: selectedSupplier.mobile,
+            email: selectedSupplier.email,
+            address: selectedSupplier.address,
+            tax_number: selectedSupplier.tax_number,
+          }
+        : undefined,
+      warehouse: currentWh
+        ? {
+            name: currentWh.name,
+            code: currentWh.code,
+            address: (currentWh as any).address || 'Central Warehouse Hub, Dhaka',
+          }
+        : undefined,
+      items: items.map((it) => ({
+        id: it.id,
+        product_name: it.product_name,
+        variant_name: it.variant_name,
+        sku: it.sku,
+        barcode: it.barcode,
+        purchase_unit: it.purchase_unit,
+        quantity: it.quantity,
+        unit_cost: it.unit_cost,
+        discount: it.discount,
+        tax_percent: it.tax_percent,
+        line_total: it.line_total,
+        item_note: it.item_note,
+      })),
+      subtotal: orderSummary.grossSubtotal,
+      discount_total: orderSummary.totalLineDiscount + Number(headerDiscount || 0),
+      tax_total: orderSummary.totalTax,
+      shipping_cost: Number(shippingCost || 0),
+      other_cost: Number(otherCost || 0),
+      grand_total: orderSummary.netAmount,
+      total_amount: orderSummary.netAmount,
+      notes: notes,
+      payment_terms: paymentTerms,
+    };
+  }, [
+    poNumber,
+    orderDate,
+    expectedDate,
+    poStatus,
+    selectedSupplier,
+    warehouses,
+    warehouseId,
+    items,
+    orderSummary,
+    headerDiscount,
+    shippingCost,
+    otherCost,
+    notes,
+    paymentTerms,
+  ]);
+
   // Handle Save / Submit Order
   const handleSaveOrder = async (targetStatus: 'DRAFT' | 'SUBMITTED' = 'DRAFT') => {
     if (!supplierId) {
@@ -581,7 +944,9 @@ export const PurchaseOrderForm: React.FC = () => {
 
     const payload = {
       supplier_id: supplierId,
+      supplier_name: selectedSupplier?.name,
       warehouse_id: warehouseId,
+      warehouse_name: warehouses.find(w => String(w.id) === String(warehouseId))?.name,
       business_unit_id: businessUnitId || undefined,
       branch_id: branchId || undefined,
       po_number: poNumber,
@@ -597,6 +962,12 @@ export const PurchaseOrderForm: React.FC = () => {
       items: items.map((it) => ({
         product_id: it.product_id,
         product_variant_id: it.product_variant_id,
+        product_name: it.product_name,
+        variant_name: it.variant_name,
+        sku: it.sku,
+        barcode: it.barcode,
+        category_name: it.category_name,
+        brand_name: it.brand_name,
         quantity: it.quantity,
         unit_cost: it.unit_cost,
         discount: it.discount,
@@ -605,6 +976,7 @@ export const PurchaseOrderForm: React.FC = () => {
         unit_selling_price: it.unit_selling_price,
         gp_percent: it.gp_percent,
         purchase_unit: it.purchase_unit,
+        line_total: it.line_total,
         item_note: it.item_note
       }))
     };
@@ -649,7 +1021,7 @@ export const PurchaseOrderForm: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await approvePurchaseOrder(Number(id));
+      const res = await approvePurchaseOrder(id);
       if (res.success) {
         setPoStatus('APPROVED');
         setSuccessMsg(`Purchase Order ${poNumber} approved successfully!`);
@@ -674,7 +1046,7 @@ export const PurchaseOrderForm: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await cancelPurchaseOrder(Number(id));
+      const res = await cancelPurchaseOrder(id);
       if (res.success) {
         setPoStatus('CANCELLED');
         setSuccessMsg(`Purchase Order ${poNumber} has been cancelled.`);
@@ -709,7 +1081,12 @@ export const PurchaseOrderForm: React.FC = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-5 bg-[#F8FAFC] min-h-screen text-[#0F172A] pb-24">
+    <div
+      ref={formRef}
+      onKeyDown={(e) => handleKeyDownEnterToNextField(e, formRef)}
+      data-enter-container
+      className="p-4 lg:p-6 space-y-5 bg-[#F8FAFC] min-h-screen text-[#0F172A] pb-24"
+    >
       {/* HEADER TOOLBAR */}
       <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-2xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -840,12 +1217,17 @@ export const PurchaseOrderForm: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           {/* PO Number */}
           <div>
-            <label className="block font-extrabold text-slate-800 mb-1">PO Number</label>
+            <label className="block font-extrabold text-slate-800 mb-1 flex items-center justify-between">
+              <span>PO Number</span>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">Auto-Generated</span>
+            </label>
             <input
               type="text"
-              value={poNumber}
-              onChange={(e) => setPoNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-indigo-800 bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+              value={poNumber || 'Auto-Generating...'}
+              readOnly
+              disabled
+              tabIndex={-1}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono font-extrabold text-indigo-900 bg-slate-100 cursor-not-allowed select-none shadow-2xs"
               placeholder="e.g. PO-2026-0001"
             />
           </div>
@@ -1042,14 +1424,30 @@ export const PurchaseOrderForm: React.FC = () => {
 
             {/* Product Search Bar */}
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Search Product / SKU / Barcode</label>
-              <input
-                type="text"
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                placeholder="Type name, SKU, or scan barcode..."
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-slate-900 bg-white font-bold focus:ring-2 focus:ring-indigo-500"
-              />
+              <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                <span>Search Product / SKU / Barcode</span>
+                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 font-mono">
+                  Press F3 key
+                </span>
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Type name, SKU, or scan barcode..."
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-slate-900 bg-white font-bold focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowProductSearchModal(true)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-black text-xs shadow-2xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  title="Open Product Master Lookup Screen (F3)"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>F3 Search Details</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1105,6 +1503,7 @@ export const PurchaseOrderForm: React.FC = () => {
             <div>
               <label className="block font-extrabold text-slate-800 mb-0.5 text-[11px]">Buy Qty *</label>
               <input
+                ref={entryQtyInputRef}
                 type="number"
                 min="0.0001"
                 step="any"
@@ -1162,7 +1561,13 @@ export const PurchaseOrderForm: React.FC = () => {
                 step="any"
                 value={entryUnitSellingPrice}
                 onChange={(e) => setEntryUnitSellingPrice(Number(e.target.value))}
-                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg font-black text-emerald-800 bg-white text-right"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddItem();
+                  }
+                }}
+                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg font-black text-emerald-800 bg-white text-right focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -1528,124 +1933,243 @@ export const PurchaseOrderForm: React.FC = () => {
         </div>
       </div>
 
-      {/* PRINT / PREVIEW PURCHASE ORDER MODAL */}
+      {/* PRINT / PREVIEW PURCHASE ORDER MODAL (A4) */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <PurchaseOrderPrintModal
+          order={printOrderPayload}
+          company={
+            activeCompany
+              ? {
+                  name: activeCompany.name,
+                  address: activeCompany.address,
+                  phone: activeCompany.phone,
+                  email: activeCompany.email,
+                  tax_number: activeCompany.tax_number,
+                }
+              : undefined
+          }
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
+
+      {/* PRODUCT MASTER LOOKUP SCREEN MODAL (F3) */}
+      {showProductSearchModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Printer className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-black text-sm uppercase tracking-wider">Purchase Order Print Preview</h3>
+            <div className="p-4 bg-indigo-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-800 rounded-lg border border-indigo-700">
+                  <Search className="w-5 h-5 text-indigo-200" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black tracking-tight flex items-center gap-2">
+                    Product Master Lookup & Search Screen
+                    <span className="px-2 py-0.5 bg-indigo-700 text-indigo-100 rounded text-xs font-mono font-bold border border-indigo-600">
+                      F3 Shortcut Active
+                    </span>
+                  </h2>
+                  <p className="text-xs text-indigo-200 font-medium">
+                    Search, filter, inspect stock & select products to add directly to Purchase Order
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+              <button
+                type="button"
+                onClick={() => setShowProductSearchModal(false)}
+                className="p-1.5 text-indigo-200 hover:text-white hover:bg-indigo-800 rounded-lg cursor-pointer transition-colors"
+                title="Close Screen (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Search Filters */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-extrabold text-slate-800 mb-1 flex items-center justify-between">
+                  <span>Search Keyword (Name / SKU / Barcode)</span>
+                  <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 font-mono">
+                    Press ↓ / ↑ to Select, Enter ↵ to Confirm
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    ref={modalSearchInputRef}
+                    type="text"
+                    autoFocus
+                    value={modalSearchText}
+                    onChange={(e) => setModalSearchText(e.target.value)}
+                    onKeyDown={handleModalSearchKeyDown}
+                    placeholder="Type name, code, SKU, or barcode... (Use ↓ / ↑ to highlight, Enter to select)"
+                    className="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 bg-white focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                  />
+                  {modalSearchText && (
+                    <button
+                      type="button"
+                      onClick={() => setModalSearchText('')}
+                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Category Filter</label>
+                <select
+                  value={modalCategory}
+                  onChange={(e) => setModalCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 bg-white"
                 >
-                  <Printer className="w-4 h-4" /> Print Document
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPrintModal(false)}
-                  className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                  <option value="ALL">All Categories ({categories.length})</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Brand Filter</label>
+                <select
+                  value={modalBrand}
+                  onChange={(e) => setModalBrand(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 bg-white"
                 >
-                  <X className="w-5 h-5" />
-                </button>
+                  <option value="ALL">All Brands ({brands.length})</option>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Printable Document Body */}
-            <div className="p-8 overflow-y-auto space-y-6 text-slate-900 text-xs font-medium" id="printable-po-document">
-              {/* Header Info */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-4">
-                <div>
-                  <h1 className="text-xl font-black text-indigo-900">{activeCompany?.name || 'RetailCore ERP'}</h1>
-                  <p className="text-slate-600 font-semibold">{activeCompany?.address || 'Dhaka, Bangladesh'}</p>
-                  <p className="text-slate-500">BIN / Tax Reg: {activeCompany?.tax_number || 'BIN-001928374-0101'}</p>
-                </div>
-                <div className="text-right">
-                  <h2 className="text-lg font-black uppercase text-slate-900 tracking-wider">PURCHASE ORDER</h2>
-                  <p className="font-mono font-bold text-indigo-700 text-sm">{poNumber}</p>
-                  <p className="text-slate-600 font-bold">Date: {orderDate}</p>
-                  <p className="text-slate-500">Status: <strong className="uppercase">{poStatus}</strong></p>
-                </div>
-              </div>
-
-              {/* Vendor & Warehouse Info */}
-              <div className="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div>
-                  <h3 className="font-black uppercase text-slate-500 text-[10px] tracking-wider mb-1">SUPPLIER VENDOR</h3>
-                  <p className="font-extrabold text-sm text-slate-900">{selectedSupplier?.name || 'Apex Wholesale Ltd'}</p>
-                  <p className="text-slate-600">{selectedSupplier?.address || 'Motijheel C/A, Dhaka'}</p>
-                  <p className="text-slate-600">Mobile: {selectedSupplier?.mobile || '01711000000'}</p>
-                  <p className="text-slate-600">BIN: {selectedSupplier?.tax_number || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="font-black uppercase text-slate-500 text-[10px] tracking-wider mb-1">SHIP TO WAREHOUSE</h3>
-                  <p className="font-extrabold text-sm text-slate-900">{warehouses.find((w) => String(w.id) === String(warehouseId))?.name || 'Central Warehouse'}</p>
-                  <p className="text-slate-600">Expected Delivery: {expectedDate || 'As per agreement'}</p>
-                  <p className="text-slate-600">Payment Terms: {paymentTerms}</p>
-                </div>
-              </div>
-
-              {/* Document Items Table */}
-              <table className="w-full text-left border-collapse border border-slate-300 text-xs">
+            {/* Modal Product Details Table */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-100 border-b border-slate-300 font-black text-slate-800 uppercase">
-                    <th className="p-2 border-r border-slate-300">#</th>
-                    <th className="p-2 border-r border-slate-300">SKU / Barcode</th>
-                    <th className="p-2 border-r border-slate-300">Item Description</th>
-                    <th className="p-2 border-r border-slate-300 text-center">Unit</th>
-                    <th className="p-2 border-r border-slate-300 text-center">Qty</th>
-                    <th className="p-2 border-r border-slate-300 text-right">Unit Cost (৳)</th>
-                    <th className="p-2 text-right">Line Total (৳)</th>
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider text-[11px] sticky top-0 bg-slate-100 shadow-2xs z-10">
+                    <th className="py-2.5 px-3">Barcode</th>
+                    <th className="py-2.5 px-3">Product Name</th>
+                    <th className="py-2.5 px-3">SKU / Variant</th>
+                    <th className="py-2.5 px-3">Category & Brand</th>
+                    <th className="py-2.5 px-3 text-center">Unit</th>
+                    <th className="py-2.5 px-3 text-center">Current Stock</th>
+                    <th className="py-2.5 px-3 text-right">Purchase Cost (৳)</th>
+                    <th className="py-2.5 px-3 text-right">Selling Price (৳)</th>
+                    <th className="py-2.5 px-3 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
-                  {items.map((it, idx) => (
-                    <tr key={it.id}>
-                      <td className="p-2 border-r border-slate-300 font-bold">{idx + 1}</td>
-                      <td className="p-2 border-r border-slate-300 font-mono text-[11px]">{it.sku}</td>
-                      <td className="p-2 border-r border-slate-300 font-extrabold">{it.product_name} - {it.variant_name}</td>
-                      <td className="p-2 border-r border-slate-300 text-center">{it.purchase_unit}</td>
-                      <td className="p-2 border-r border-slate-300 text-center font-bold">{it.quantity}</td>
-                      <td className="p-2 border-r border-slate-300 text-right font-mono">৳{it.unit_cost.toFixed(2)}</td>
-                      <td className="p-2 text-right font-mono font-bold">৳{it.line_total.toFixed(2)}</td>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {modalFilteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400 font-bold text-xs">
+                        No products match your search criteria.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    modalFilteredProducts.map((row, idx) => {
+                      const isSelected = idx === modalSelectedIndex;
+                      return (
+                        <tr
+                          id={`modal-product-row-${idx}`}
+                          key={`${row.variantId}-${idx}`}
+                          onMouseEnter={() => setModalSelectedIndex(idx)}
+                          onClick={() => handleSelectProductFromModal(row)}
+                          className={`transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-indigo-100 ring-2 ring-indigo-500 font-extrabold text-indigo-950 border-l-4 border-l-indigo-600 shadow-xs'
+                              : 'hover:bg-indigo-50/70 text-slate-800'
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-mono text-[11px] font-bold">
+                            {row.barcode}
+                          </td>
+                          <td className="py-2.5 px-3 font-extrabold">
+                            <div className="flex items-center gap-1.5">
+                              {isSelected && (
+                                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse shrink-0" />
+                              )}
+                              <span>{row.productName}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-bold text-indigo-700">
+                            {row.variantName}
+                            <span className="block text-[10px] font-mono text-slate-500">{row.sku}</span>
+                          </td>
+                          <td className="py-2.5 px-3 font-medium text-slate-600">
+                            {row.categoryName} / {row.brandName}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold">
+                            {row.unit}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded font-mono font-extrabold text-xs ${
+                                row.currentStock > 0
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {row.currentStock} {row.unit}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold">
+                            ৳{row.costPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                            ৳{row.sellingPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectProductFromModal(row);
+                              }}
+                              className={`px-3 py-1 rounded font-extrabold text-[11px] transition-all cursor-pointer shadow-2xs ${
+                                isSelected
+                                  ? 'bg-indigo-700 text-white ring-2 ring-indigo-300'
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                              }`}
+                            >
+                              {isSelected ? '↵ Select (Enter)' : 'Select'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
+            </div>
 
-              {/* Summary totals */}
-              <div className="flex justify-end pt-2">
-                <div className="w-64 space-y-1.5 text-xs font-bold border-t border-slate-300 pt-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-mono">৳{orderSummary.grossSubtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-rose-600">
-                    <span>Discount:</span>
-                    <span className="font-mono">-৳{(orderSummary.totalLineDiscount + headerDiscount).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>VAT Amount:</span>
-                    <span className="font-mono">৳{orderSummary.totalTax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-black border-t-2 border-slate-900 pt-2 text-indigo-900">
-                    <span>GRAND TOTAL:</span>
-                    <span className="font-mono">৳{orderSummary.netAmount.toFixed(2)}</span>
-                  </div>
+            {/* Modal Footer */}
+            <div className="p-3 bg-slate-100 border-t border-slate-200 flex flex-wrap justify-between items-center text-xs font-bold text-slate-600 gap-2">
+              <div className="flex items-center gap-3">
+                <span>Found <strong>{modalFilteredProducts.length}</strong> product items</span>
+                <span className="hidden sm:inline-block text-slate-300">|</span>
+                <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500">
+                  <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono text-slate-700 font-bold">↓ / ↑</span>
+                  <span>Navigate</span>
+                  <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono text-indigo-700 font-bold">Enter ↵</span>
+                  <span>Select & Jump to Buy Qty</span>
+                  <span className="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-mono text-slate-700 font-bold">Esc</span>
+                  <span>Close</span>
                 </div>
               </div>
-
-              {/* Signatures */}
-              <div className="grid grid-cols-3 gap-8 pt-16 text-center text-[11px] font-bold text-slate-600">
-                <div className="border-t border-slate-400 pt-1">Prepared By</div>
-                <div className="border-t border-slate-400 pt-1">Verified & Checked</div>
-                <div className="border-t border-slate-400 pt-1">Authorized Signature</div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowProductSearchModal(false)}
+                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold transition-all cursor-pointer"
+              >
+                Close (Esc)
+              </button>
             </div>
           </div>
         </div>

@@ -290,6 +290,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
       title: 'Organization Company',
       icon: Network,
       items: [
+        { id: 'company_profile', label: 'Company Profile', path: '/company' },
         { id: 'business_units', label: 'Business Units', path: '/business-units' },
         { id: 'branches', label: 'Branches', path: '/branches' },
         { id: 'warehouses', label: 'Warehouses', path: '/warehouses' },

@@ -28,9 +28,12 @@ import { getWarehouses } from '../../api/organization';
 import { PurchaseOrder } from '../../types/purchase';
 import { Supplier } from '../../types/supplier';
 import { Warehouse as WarehouseType } from '../../types/organization';
+import { useCompany } from '../../contexts/CompanyContext';
+import { PurchaseOrderPrintModal } from '../../components/purchase/PurchaseOrderPrintModal';
 
 export const PurchaseOrderList: React.FC = () => {
   const navigate = useNavigate();
+  const { company: activeCompany } = useCompany();
 
   // State
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -48,6 +51,7 @@ export const PurchaseOrderList: React.FC = () => {
 
   // Print Preview Modal State
   const [previewPo, setPreviewPo] = useState<PurchaseOrder | null>(null);
+  const [printModalOrder, setPrintModalOrder] = useState<any | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -63,13 +67,31 @@ export const PurchaseOrderList: React.FC = () => {
         getWarehouses()
       ]);
 
-      const poData = poRes.data || [];
-      setOrders(poData);
+      const poData = Array.isArray(poRes.data) ? poRes.data : [];
       const supList = Array.isArray(supRes.data)
         ? supRes.data
         : (supRes.data as any)?.data || [];
+      const whList = Array.isArray(whRes.data) ? whRes.data : [];
+
+      const enrichedOrders = poData.map((po: PurchaseOrder) => {
+        const sup =
+          po.supplier ||
+          supList.find((s: any) => String(s.id) === String(po.supplier_id)) ||
+          { name: `Supplier #${po.supplier_id}`, supplier_code: `SUP-${po.supplier_id}` };
+        const wh =
+          po.warehouse ||
+          whList.find((w: any) => String(w.id) === String(po.warehouse_id)) ||
+          { name: `Warehouse #${po.warehouse_id}`, code: `WH-${po.warehouse_id}` };
+        return {
+          ...po,
+          supplier: sup,
+          warehouse: wh
+        };
+      });
+
+      setOrders(enrichedOrders);
       setSuppliers(supList);
-      setWarehouses(whRes.data || []);
+      setWarehouses(whList);
     } catch (err: any) {
       console.error('Error loading purchase orders list:', err);
       setError('Failed to load purchase orders from backend.');
@@ -97,9 +119,9 @@ export const PurchaseOrderList: React.FC = () => {
       if (!searchTerm.trim()) return true;
 
       const term = searchTerm.toLowerCase();
-      const matchPo = po.po_number?.toLowerCase().includes(term);
-      const matchSup = po.supplier?.name?.toLowerCase().includes(term);
-      const matchWh = po.warehouse?.name?.toLowerCase().includes(term);
+      const matchPo = po.po_number ? String(po.po_number).toLowerCase().includes(term) : false;
+      const matchSup = po.supplier?.name ? String(po.supplier.name).toLowerCase().includes(term) : false;
+      const matchWh = po.warehouse?.name ? String(po.warehouse.name).toLowerCase().includes(term) : false;
 
       return matchPo || matchSup || matchWh;
     });
@@ -304,7 +326,7 @@ export const PurchaseOrderList: React.FC = () => {
                       <tr key={po.id} className="hover:bg-slate-50 transition-colors">
                         {/* PO Number */}
                         <td className="px-4 py-3.5 font-mono font-black text-indigo-700 text-xs">
-                          <Link to={`/purchases/orders/${po.id}/edit`} className="hover:underline">
+                          <Link to={`/purchases/orders/${po.id || po.po_number}/edit`} className="hover:underline">
                             {po.po_number}
                           </Link>
                         </td>
@@ -356,7 +378,7 @@ export const PurchaseOrderList: React.FC = () => {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
-                              onClick={() => navigate(`/purchases/orders/${po.id}/edit`)}
+                              onClick={() => navigate(`/purchases/orders/${po.id || po.po_number}/edit`)}
                               className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
                               title="Edit / View Purchase Order"
                             >
@@ -367,9 +389,18 @@ export const PurchaseOrderList: React.FC = () => {
                               type="button"
                               onClick={() => setPreviewPo(po)}
                               className="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md cursor-pointer transition-colors"
-                              title="Preview Document"
+                              title="Preview Document Summary"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setPrintModalOrder(po)}
+                              className="p-1 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md cursor-pointer transition-colors"
+                              title="Print Purchase Order Document (A4)"
+                            >
+                              <Printer className="w-4 h-4" />
                             </button>
 
                             {po.status === 'DRAFT' && (
@@ -478,17 +509,43 @@ export const PurchaseOrderList: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  const targetId = previewPo.id;
+                  const target = previewPo;
+                  setPreviewPo(null);
+                  setPrintModalOrder(target);
+                }}
+                className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-black cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Printer className="w-4 h-4 text-indigo-600" /> Print Document (A4)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetId = previewPo.id || previewPo.po_number;
                   setPreviewPo(null);
                   navigate(`/purchases/orders/${targetId}/edit`);
                 }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black cursor-pointer shadow-2xs transition-colors"
               >
                 Open Full Order Form
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* DEDICATED PURCHASE ORDER PRINT MODAL (A4) */}
+      {printModalOrder && (
+        <PurchaseOrderPrintModal
+          order={printModalOrder}
+          company={activeCompany ? {
+            name: activeCompany.name,
+            address: activeCompany.address,
+            phone: activeCompany.phone,
+            email: activeCompany.email,
+            tax_number: activeCompany.tax_number,
+          } : undefined}
+          onClose={() => setPrintModalOrder(null)}
+        />
       )}
     </div>
   );

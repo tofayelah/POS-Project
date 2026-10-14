@@ -16,6 +16,12 @@ export interface CreatePurchaseOrderPayload {
   items: Array<{
     product_id: number | string;
     product_variant_id: number | string;
+    product_name?: string;
+    variant_name?: string;
+    sku?: string;
+    barcode?: string;
+    category_name?: string;
+    brand_name?: string;
     quantity: number;
     unit_cost: number;
     unit_price?: number;
@@ -25,8 +31,11 @@ export interface CreatePurchaseOrderPayload {
     unit_selling_price?: number;
     gp_percent?: number;
     purchase_unit?: string;
+    line_total?: number;
     item_note?: string;
   }>;
+  supplier_name?: string;
+  warehouse_name?: string;
 }
 
 export interface PurchaseOrderFilterParams {
@@ -129,7 +138,7 @@ export interface PurchaseOrder {
   warehouse_id?: number | string;
   business_unit_id?: number | string;
   branch_id?: number | string;
-  total_amount: number;
+  total_amount?: number;
   subtotal?: number;
   grand_total?: number;
   shipping_cost?: number;
@@ -150,6 +159,12 @@ export interface PurchaseOrder {
     id?: number | string;
     product_id: number | string;
     product_variant_id: number | string;
+    product_name?: string;
+    variant_name?: string;
+    sku?: string;
+    barcode?: string;
+    category_name?: string;
+    brand_name?: string;
     quantity: number;
     unit_cost: number;
     discount?: number;
@@ -157,6 +172,7 @@ export interface PurchaseOrder {
     tax_percent?: number;
     unit_selling_price?: number;
     gp_percent?: number;
+    inclusive_selling_price?: number;
     line_total: number;
     product?: any;
     variant?: any;

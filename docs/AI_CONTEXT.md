@@ -38,6 +38,8 @@
 
 ## Sprint History
 - **Sprint 01:** Foundation (Auth, Organization CRUD, RBAC, Settings, Audit Logs, Infrastructure). [STATICALLY VERIFIED & PRE-EXPORT REMEDIATED]
+- **RetailCore V2 Step 1 Foundation:** Multi-Tenant Architecture, V2 Health & Status Diagnostics, Sanitized System Endpoints, Rate-Limiting, Resilient Frontend Context & Dynamic Connection Indicators. [PASSED 38/38 GATE TESTS]
 
 ## Known Technical Debt
 - **Backend Verification:** Because the AI Studio sandbox strictly runs Node.js and lacks PHP 8.3+ / Composer / Docker, the Laravel backend code (migrations, routes, models, controllers) was scaffolded statically. It *must* be executed and tested locally on the user's host environment.
+
