@@ -74,7 +74,7 @@ async function runTests() {
         product_name: 'Samsung Galaxy A54 5G',
         variant_name: 'Awesome Black (128GB/8GB)',
         sku: 'SAM-A54-128-BLK',
-        barcode: '8806090123456',
+        barcode: 'SBD-609012345',
         quantity: 5,
         unit_cost: 32000,
         discount: 0,

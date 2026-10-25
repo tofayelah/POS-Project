@@ -600,6 +600,9 @@ export const DEFAULT_PRODUCTS: Product[] = [
     unit: { id: 1, name: 'Piece', short_code: 'pcs' },
     category: { id: 2, name: 'Smart Devices & Gadgets' },
     brand: { id: 1, name: 'Samsung' },
+    supplier_id: 2,
+    supplier: { id: 2, name: 'Samsung Bangladesh Authorized Distribution', short_name: 'SBD' },
+    barcode: 'SBD-609012345',
     variants: [
       {
         id: 1,
@@ -609,7 +612,8 @@ export const DEFAULT_PRODUCTS: Product[] = [
         selling_price: 38500,
         available_quantity: 45,
         status: 'ACTIVE',
-        barcodes: [{ id: 1, barcode: '8806090123456', is_primary: true }],
+        barcode: 'SBD-609012345',
+        barcodes: [{ id: 1, barcode: 'SBD-609012345', is_primary: true }],
       },
     ],
   },
@@ -626,6 +630,9 @@ export const DEFAULT_PRODUCTS: Product[] = [
     unit: { id: 1, name: 'Piece', short_code: 'pcs' },
     category: { id: 2, name: 'Smart Devices & Gadgets' },
     brand: { id: 2, name: 'Apple' },
+    supplier_id: 5,
+    supplier: { id: 5, name: 'Apple Authorized BD Distributor', short_name: 'AAPL' },
+    barcode: 'AAPL-194253012',
     variants: [
       {
         id: 2,
@@ -635,7 +642,8 @@ export const DEFAULT_PRODUCTS: Product[] = [
         selling_price: 125000,
         available_quantity: 18,
         status: 'ACTIVE',
-        barcodes: [{ id: 2, barcode: '194253012345', is_primary: true }],
+        barcode: 'AAPL-194253012',
+        barcodes: [{ id: 2, barcode: 'AAPL-194253012', is_primary: true }],
       },
     ],
   },
@@ -652,6 +660,9 @@ export const DEFAULT_PRODUCTS: Product[] = [
     unit: { id: 1, name: 'Pair', short_code: 'prs' },
     category: { id: 4, name: 'Footwear & Shoes' },
     brand: { id: 4, name: 'Apex' },
+    supplier_id: 1,
+    supplier: { id: 1, name: 'Apex Wholesale Distributors Ltd', short_name: 'AWD' },
+    barcode: 'AWD-890123456',
     variants: [
       {
         id: 3,
@@ -661,11 +672,87 @@ export const DEFAULT_PRODUCTS: Product[] = [
         selling_price: 4500,
         available_quantity: 30,
         status: 'ACTIVE',
-        barcodes: [{ id: 3, barcode: '8901234567890', is_primary: true }],
+        barcode: 'AWD-890123456',
+        barcodes: [{ id: 3, barcode: 'AWD-890123456', is_primary: true }],
       },
     ],
   },
 ];
+
+export function normalizeProductRecord(p: any): Product {
+  let barcode = p.barcode || p.primary_barcode || p.variants?.[0]?.barcodes?.[0]?.barcode || p.variants?.[0]?.barcode || '';
+  
+  // Requirement: Omit legacy '880' prefix and add Supplier Short Name into barcode
+  if (barcode && barcode.startsWith('880')) {
+    const rawDigits = barcode.replace(/^880/, '');
+    const supShort = p.supplier?.short_name ||
+      p.supplier_short_name ||
+      (p.brand?.name ? p.brand.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() : '') ||
+      'SUP';
+    barcode = `${supShort}-${rawDigits}`;
+  }
+
+  const cost = Number(p.cost_price ?? p.cost ?? p.variants?.[0]?.cost_price ?? 0);
+  const retail = Number(p.retail_price ?? p.price ?? p.variants?.[0]?.selling_price ?? 0);
+  const mrp = Number(p.mrp ?? p.variants?.[0]?.mrp ?? retail);
+  const stock = Number(p.stock_quantity ?? p.stock ?? p.variants?.[0]?.available_quantity ?? 0);
+
+  const variants = (p.variants && p.variants.length > 0)
+    ? p.variants.map((v: any, idx: number) => {
+        let vBarcode = v.barcodes?.[0]?.barcode || v.barcode || (idx === 0 ? barcode : '');
+        if (vBarcode && vBarcode.startsWith('880')) {
+          const rawDigits = vBarcode.replace(/^880/, '');
+          const supShort = p.supplier?.short_name ||
+            p.supplier_short_name ||
+            (p.brand?.name ? p.brand.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() : '') ||
+            'SUP';
+          vBarcode = `${supShort}-${rawDigits}`;
+        }
+        return {
+          ...v,
+          barcode: vBarcode,
+          cost_price: Number(v.cost_price ?? cost),
+          selling_price: Number(v.selling_price ?? retail),
+          mrp: Number(v.mrp ?? mrp),
+          available_quantity: Number(v.available_quantity ?? stock),
+          barcodes: v.barcodes && v.barcodes.length > 0
+            ? v.barcodes.map((b: any) => ({
+                ...b,
+                barcode: String(b.barcode || '').startsWith('880')
+                  ? `${p.supplier?.short_name || 'SUP'}-${String(b.barcode).replace(/^880/, '')}`
+                  : b.barcode,
+              }))
+            : vBarcode
+              ? [{ id: v.id || idx + 1, barcode: vBarcode, is_primary: true }]
+              : [],
+        };
+      })
+    : [
+        {
+          id: p.id || 1,
+          product_id: p.id || 1,
+          sku: p.sku || p.product_code || `SKU-${p.id || 1}`,
+          variant_name: p.name,
+          cost_price: cost,
+          selling_price: retail,
+          mrp: mrp,
+          available_quantity: stock,
+          status: 'ACTIVE',
+          barcode,
+          barcodes: barcode ? [{ id: 1, barcode, is_primary: true }] : [],
+        },
+      ];
+
+  return {
+    ...p,
+    barcode,
+    cost_price: cost,
+    retail_price: retail,
+    price: retail,
+    stock_quantity: stock,
+    variants,
+  };
+}
 
 export function getStoredProducts(): Product[] {
   const storage = getStorage();
@@ -673,10 +760,12 @@ export function getStoredProducts(): Product[] {
     const raw = storage.getItem(PRODUCTS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(normalizeProductRecord);
+      }
     }
   } catch {}
-  return [...DEFAULT_PRODUCTS];
+  return DEFAULT_PRODUCTS.map(normalizeProductRecord);
 }
 
 export function saveStoredProducts(prods: Product[]): void {

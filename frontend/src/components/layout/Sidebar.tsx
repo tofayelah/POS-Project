@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -61,10 +61,12 @@ export interface SubMenuItem {
   path: string;
   permission?: string;
   exact?: boolean;
+  children?: SubMenuItem[];
 }
 
 export interface NavModule {
   id: string;
+  section?: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
@@ -82,6 +84,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
 
   // State to track open/collapsed state of each Main Head
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  // State to track open/collapsed state of nested submenus (e.g. Purchase Reports)
+  const [openSubSections, setOpenSubSections] = useState<Record<string, boolean>>({
+    purchase_reports: true,
+  });
 
   const handleLogout = async () => {
     await logout();
@@ -115,6 +121,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     // Standalone Overview
     {
       id: 'overview',
+      section: 'Overview',
       title: 'Overview',
       icon: LayoutDashboard,
       standalonePath: '/dashboard',
@@ -122,6 +129,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     // A. POS
     {
       id: 'pos',
+      section: 'Operations & Workflow',
       title: 'POS',
       icon: ShoppingCart,
       items: [
@@ -139,31 +147,42 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
       icon: Package,
       items: [
         { id: 'item_information', label: 'Item Information', path: '/products/item-information' },
-        { id: 'products_skus', label: 'Products & SKUs', path: '/products', exact: true },
+        { id: 'products_skus', label: 'Products & SKUS Entry', path: '/products', exact: true },
         { id: 'categories', label: 'Categories', path: '/categories' },
         { id: 'brands', label: 'Brands', path: '/brands' },
         { id: 'units', label: 'Units of Measure', path: '/units' },
         { id: 'attributes', label: 'Attributes & Values', path: '/attributes' },
       ],
     },
-    // C. Procurement
+    // C. Purchase (formerly Procurement)
     {
       id: 'procurement',
-      title: 'Procurement',
+      title: 'Purchase',
       icon: Truck,
       items: [
-        { id: 'procurement_intel', label: 'Procurement Intelligence', path: '/procurement/dashboard' },
-        { id: 'purchase_reqs', label: 'Purchase Requisitions', path: '/procurement/requisitions' },
-        { id: 'rfqs_tenders', label: 'RFQs & Tenders', path: '/procurement/rfqs' },
+        { id: 'procurement_intel', label: 'Purchase Intelligence', path: '/procurement/dashboard' },
         { id: 'procurement_suppliers', label: 'Suppliers', path: '/purchases/suppliers' },
-        { id: 'supplier_ratings', label: 'Supplier Ratings', path: '/procurement/supplier-performance' },
-        { id: 'contracts_pricing', label: 'Contracts & Pricing', path: '/procurement/contracts' },
         { id: 'purchase_orders', label: 'Purchase Orders', path: '/purchases/orders' },
-        { id: 'goods_receipts', label: 'Goods Receipts', path: '/purchases/goods-receipts' },
         { id: 'purchase_invoices', label: 'Purchase Invoices', path: '/purchases', exact: true },
-        { id: 'threeway_matching', label: '3-Way Match & PPV', path: '/procurement/matching' },
-        { id: 'replenishment', label: 'Replenishment Planning', path: '/procurement/planning' },
+        { id: 'supplier_returns', label: 'Supplier Returns', path: '/purchases/returns' },
         { id: 'supplier_payables', label: 'Supplier Payables', path: '/purchases/payables' },
+        {
+          id: 'purchase_reports',
+          label: 'Purchase Reports',
+          path: '/purchases/reports',
+          children: [
+            { id: 'report_date_wise', label: 'Date Wise Purchase', path: '/purchases/reports/date-wise' },
+            { id: 'report_date_wise_2', label: 'Date Wise Purchase-2', path: '/purchases/reports/date-wise-summary' },
+            { id: 'report_received_vouchers', label: 'Detail Voucher (Received)', path: '/purchases/reports/received-vouchers' },
+            { id: 'report_ordered_vouchers', label: 'Detail Buy Voucher (Ordered)', path: '/purchases/reports/ordered-vouchers' },
+            { id: 'report_booth_wise', label: 'Booth Wise Purchase', path: '/purchases/reports/booth-wise' },
+            { id: 'report_item_wise', label: 'Item Wise Purchase', path: '/purchases/reports/item-wise' },
+            { id: 'report_item_history', label: 'Item Wise Purchase History', path: '/purchases/reports/item-history' },
+            { id: 'report_supplier_wise', label: 'Supplier Wise Purchase', path: '/purchases/reports/supplier-wise' },
+            { id: 'report_cancelled_vouchers', label: 'Vouchers Cancelled', path: '/purchases/reports/cancelled-vouchers' },
+            { id: 'report_pending_approval', label: 'Vouchers Waiting for Approval', path: '/purchases/reports/pending-approval' },
+          ],
+        },
       ],
     },
     // D. Inventory Management
@@ -222,6 +241,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     // G. HRM & Workforce
     {
       id: 'hrm',
+      section: 'Enterprise & Finance',
       title: 'HRM & Workforce',
       icon: Building2,
       items: [
@@ -253,6 +273,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     // I. Tax & VAT Compliance
     {
       id: 'tax',
+      section: 'Compliance & Intelligence',
       title: 'Tax & VAT Compliance',
       icon: Receipt,
       items: [
@@ -287,6 +308,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     // K. Organization Company
     {
       id: 'organization',
+      section: 'Administration & System',
       title: 'Organization Company',
       icon: Network,
       items: [
@@ -328,7 +350,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   // Auto-expand section containing active route on load and route change
   useEffect(() => {
     modules.forEach((mod) => {
-      if (mod.items && mod.items.some((item) => isActive(item.path, item.exact))) {
+      const hasActiveChild = mod.items && mod.items.some((item) => 
+        isActive(item.path, item.exact) || item.children?.some((child) => isActive(child.path, child.exact))
+      );
+      if (hasActiveChild) {
         setOpenSections((prev) => ({ ...prev, [mod.id]: true }));
       }
     });
@@ -338,6 +363,14 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     setOpenSections((prev) => ({
       ...prev,
       [modId]: !prev[modId],
+    }));
+  };
+
+  const toggleSubSection = (subId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setOpenSubSections((prev) => ({
+      ...prev,
+      [subId]: !prev[subId],
     }));
   };
 
@@ -396,40 +429,51 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
 
         {/* Scrollable Navigation */}
         <nav className="mt-2 px-3 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300 py-2">
-          {modules.map((mod) => {
+          {modules.map((mod, idx) => {
             const ModIcon = mod.icon;
             const isOpen = Boolean(openSections[mod.id]);
             const hasChildren = Boolean(mod.items && mod.items.length > 0);
             const isChildActive = mod.items?.some((item) => isActive(item.path, item.exact));
+            const showSection = isExpanded && Boolean(mod.section) && (idx === 0 || modules[idx - 1]?.section !== mod.section);
+            const sectionHeading = showSection ? (
+              <div key={`section-${mod.section}`} className="px-3 py-1.5 rounded-lg bg-[#EEF2FF] text-[11px] font-extrabold text-[#475569] uppercase tracking-[0.05em] mt-3 mb-1">
+                {mod.section}
+              </div>
+            ) : null;
 
             // Standalone Link Entry
             if (!hasChildren && mod.standalonePath) {
               const active = isActive(mod.standalonePath, true);
               return (
-                <div key={mod.id} className="py-0.5">
-                  <Link
-                    to={mod.standalonePath}
-                    id={`nav-link-${mod.id}`}
-                    onClick={handleLinkClick}
-                    title={mod.title}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
-                      active
-                        ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
-                    }`}
-                  >
-                    <ModIcon className="w-5 h-5 shrink-0 text-slate-500" />
-                    <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
-                      {mod.title}
-                    </span>
-                  </Link>
-                </div>
+                <Fragment key={mod.id}>
+                  {sectionHeading}
+                  <div className="py-0.5">
+                    <Link
+                      to={mod.standalonePath}
+                      id={`nav-link-${mod.id}`}
+                      onClick={handleLinkClick}
+                      title={mod.title}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-[13px] ${
+                        active
+                          ? 'bg-indigo-600 text-white font-extrabold shadow-sm [&>svg]:text-white'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold'
+                      }`}
+                    >
+                      <ModIcon className="w-5 h-5 shrink-0 text-slate-500" />
+                      <span className={`truncate whitespace-nowrap ${isExpanded ? 'inline' : 'lg:hidden'}`}>
+                        {mod.title}
+                      </span>
+                    </Link>
+                  </div>
+                </Fragment>
               );
             }
 
             // Collapsible Navigation Group
             return (
-              <div key={mod.id} className="space-y-1 py-0.5">
+              <Fragment key={mod.id}>
+                {sectionHeading}
+                <div className="space-y-1 py-0.5">
                 {/* Main Head Button */}
                 <button
                   type="button"
@@ -466,7 +510,70 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                     isExpanded ? 'block' : 'lg:hidden'
                   }`}>
                     {mod.items?.map((sub) => {
+                      const hasSubChildren = Boolean(sub.children && sub.children.length > 0);
+                      const isSubChildActive = sub.children?.some((child) => isActive(child.path, child.exact));
+                      const isSubOpen = Boolean(openSubSections[sub.id]) || isSubChildActive;
                       const active = isActive(sub.path, sub.exact);
+
+                      if (hasSubChildren) {
+                        return (
+                          <div key={sub.id} className="space-y-0.5 pt-0.5">
+                            <div className="flex items-center justify-between rounded-lg">
+                              <Link
+                                to={sub.path}
+                                id={`nav-sublink-${sub.id}`}
+                                onClick={handleLinkClick}
+                                title={sub.label}
+                                className={`flex-1 flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer truncate ${
+                                  active || isSubChildActive
+                                    ? 'bg-indigo-50 text-indigo-900 font-extrabold'
+                                    : 'text-slate-700 hover:text-indigo-900 hover:bg-slate-200/60 font-bold'
+                                }`}
+                              >
+                                <span className="truncate">{sub.label}</span>
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={(e) => toggleSubSection(sub.id, e)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-md transition-colors cursor-pointer"
+                                aria-label={`Toggle ${sub.label} submenu`}
+                              >
+                                {isSubOpen ? (
+                                  <ChevronDown className="w-3.5 h-3.5 text-indigo-600" />
+                                ) : (
+                                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Submenu Children */}
+                            {isSubOpen && (
+                              <div className="ml-2 pl-2 border-l border-indigo-200/80 space-y-0.5 py-0.5">
+                                {sub.children?.map((child) => {
+                                  const childActive = isActive(child.path, child.exact);
+                                  return (
+                                    <Link
+                                      key={child.id}
+                                      to={child.path}
+                                      id={`nav-sublink-${child.id}`}
+                                      onClick={handleLinkClick}
+                                      title={child.label}
+                                      className={`flex items-center justify-between px-2 py-1 rounded-md text-[11px] transition-colors cursor-pointer block truncate ${
+                                        childActive
+                                          ? 'bg-indigo-600 text-white font-extrabold shadow-2xs'
+                                          : 'text-slate-600 hover:text-indigo-900 hover:bg-slate-200/50 font-bold'
+                                      }`}
+                                    >
+                                      <span className="truncate">{child.label}</span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
                       return (
                         <Link
                           key={sub.id}
@@ -487,8 +594,9 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                   </div>
                 )}
               </div>
-            );
-          })}
+            </Fragment>
+          );
+        })}
         </nav>
 
         {/* Footer Profile & Logout */}

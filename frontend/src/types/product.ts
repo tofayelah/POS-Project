@@ -39,6 +39,7 @@ export interface ProductVariant {
   status?: string;
   attribute_values?: AttributeValue[] | any[];
   barcodes?: Barcode[] | any[];
+  barcode?: string;
 }
 
 export interface Unit {
@@ -70,12 +71,20 @@ export interface Product {
   name: string;
   sku?: string;
   product_code?: string;
+  barcode?: string;
+  primary_barcode?: string;
+  cost_price?: number;
+  retail_price?: number;
+  stock_quantity?: number;
   unit_id?: number | string;
   unit?: Unit | any;
   category_id?: number | string;
   category?: Category | any;
   brand_id?: number | string;
   brand?: Brand | any;
+  supplier_id?: number | string;
+  supplier?: any;
+  supplier_short_name?: string;
   has_variants?: boolean;
   price?: number;
   status?: string;

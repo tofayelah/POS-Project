@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Package,
   Plus,
@@ -26,6 +26,12 @@ import {
   ShieldAlert,
   Boxes,
   HelpCircle,
+  Columns,
+  Maximize2,
+  SlidersHorizontal,
+  MoveHorizontal,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
@@ -42,8 +48,30 @@ import {
   getStoredProducts,
 } from '../../api/products';
 import { getSuppliers } from '../../api/suppliers';
+import { generateSupplierBarcode, generateSupplierShortName } from '../../utils/supplierUtils';
 import { Category, Brand, Unit, Product, ProductPayload } from '../../types/product';
 import { Supplier } from '../../types/supplier';
+
+export interface ColumnDef {
+  id: string;
+  label: string;
+  minWidth: number;
+  defaultWidth: number;
+  align?: 'left' | 'center' | 'right';
+  canHide?: boolean;
+}
+
+export const DEFAULT_CATALOG_COLUMNS: ColumnDef[] = [
+  { id: 'item', label: 'Item / SKU', minWidth: 160, defaultWidth: 260, align: 'left', canHide: false },
+  { id: 'barcode', label: 'Barcode', minWidth: 120, defaultWidth: 170, align: 'left', canHide: true },
+  { id: 'category_brand', label: 'Category & Brand', minWidth: 120, defaultWidth: 170, align: 'left', canHide: true },
+  { id: 'cost', label: 'Cost (৳)', minWidth: 80, defaultWidth: 105, align: 'right', canHide: true },
+  { id: 'retail', label: 'Retail (৳)', minWidth: 80, defaultWidth: 110, align: 'right', canHide: true },
+  { id: 'gp', label: 'GP %', minWidth: 65, defaultWidth: 85, align: 'center', canHide: true },
+  { id: 'stock', label: 'Stock', minWidth: 70, defaultWidth: 90, align: 'right', canHide: true },
+  { id: 'status', label: 'Status', minWidth: 75, defaultWidth: 95, align: 'center', canHide: true },
+  { id: 'action', label: 'Action', minWidth: 90, defaultWidth: 105, align: 'right', canHide: false },
+];
 
 export const ItemInformation: React.FC = () => {
   const navigate = useNavigate();
@@ -103,6 +131,189 @@ export const ItemInformation: React.FC = () => {
 
   const [viewProductDetail, setViewProductDetail] = useState<Product | null>(null);
 
+  // Dynamic Column Resizing & Customization State
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('retailcore_item_info_col_widths_v2');
+      if (saved) {
+        return {
+          ...Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, c.defaultWidth])),
+          ...JSON.parse(saved),
+        };
+      }
+    } catch {
+      // fallback
+    }
+    return Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, c.defaultWidth]));
+  });
+
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('retailcore_item_info_col_visibility_v2');
+      if (saved) {
+        return {
+          ...Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, true])),
+          ...JSON.parse(saved),
+        };
+      }
+    } catch {
+      // fallback
+    }
+    return Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, true]));
+  });
+
+  const [isWrapText, setIsWrapText] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('retailcore_item_info_wrap_mode_v2');
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // fallback
+    }
+    return false;
+  });
+
+  const [showColumnMenu, setShowColumnMenu] = useState<boolean>(false);
+  const [activeResizingCol, setActiveResizingCol] = useState<string | null>(null);
+  const columnMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close column dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(e.target as Node)) {
+        setShowColumnMenu(false);
+      }
+    };
+    if (showColumnMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showColumnMenu]);
+
+  // Resizing mouse drag handlers
+  const handleResizeStart = (colId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const colDef = DEFAULT_CATALOG_COLUMNS.find((c) => c.id === colId);
+    const minWidth = colDef?.minWidth || 60;
+    const maxWidth = 800;
+    const startWidth = columnWidths[colId] || colDef?.defaultWidth || 120;
+
+    setActiveResizingCol(colId);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    let currentWidth = startWidth;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      currentWidth = Math.max(minWidth, Math.min(maxWidth, startWidth + delta));
+      setColumnWidths((prev) => ({
+        ...prev,
+        [colId]: currentWidth,
+      }));
+    };
+
+    const onMouseUp = () => {
+      setActiveResizingCol(null);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+
+      setColumnWidths((latest) => {
+        try {
+          localStorage.setItem('retailcore_item_info_col_widths_v2', JSON.stringify(latest));
+        } catch {
+          // ignore
+        }
+        return latest;
+      });
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const resetColumnWidth = (colId: string) => {
+    const colDef = DEFAULT_CATALOG_COLUMNS.find((c) => c.id === colId);
+    if (!colDef) return;
+    setColumnWidths((prev) => {
+      const updated = { ...prev, [colId]: colDef.defaultWidth };
+      try {
+        localStorage.setItem('retailcore_item_info_col_widths_v2', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const resetAllColumnWidths = () => {
+    const defaults = Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, c.defaultWidth]));
+    setColumnWidths(defaults);
+    try {
+      localStorage.setItem('retailcore_item_info_col_widths_v2', JSON.stringify(defaults));
+    } catch {
+      // ignore
+    }
+  };
+
+  const autoFitAllColumns = () => {
+    const expanded: Record<string, number> = {
+      item: 380,
+      barcode: 200,
+      category_brand: 220,
+      cost: 120,
+      retail: 120,
+      gp: 90,
+      stock: 95,
+      status: 100,
+      action: 110,
+    };
+    setColumnWidths(expanded);
+    try {
+      localStorage.setItem('retailcore_item_info_col_widths_v2', JSON.stringify(expanded));
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleColumnVisibility = (colId: string) => {
+    setColumnVisibility((prev) => {
+      const updated = { ...prev, [colId]: !prev[colId] };
+      try {
+        localStorage.setItem('retailcore_item_info_col_visibility_v2', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const toggleWrapText = () => {
+    setIsWrapText((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('retailcore_item_info_wrap_mode_v2', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const activeColumns = useMemo(() => {
+    return DEFAULT_CATALOG_COLUMNS.filter((col) => columnVisibility[col.id] !== false);
+  }, [columnVisibility]);
+
+  const totalTableWidth = useMemo(() => {
+    return activeColumns.reduce((sum, col) => sum + (columnWidths[col.id] || col.defaultWidth), 0);
+  }, [activeColumns, columnWidths]);
+
   // Initial Load
   useEffect(() => {
     loadAllMasterData();
@@ -149,12 +360,41 @@ export const ItemInformation: React.FC = () => {
       const storedLocal = getStoredProducts();
       const mergedProds = [...loadedProds];
       storedLocal.forEach((sp) => {
-        if (!mergedProds.some((p) => Number(p.id) === Number(sp.id))) {
+        const existingIdx = mergedProds.findIndex((p) => Number(p.id) === Number(sp.id));
+        if (existingIdx >= 0) {
+          mergedProds[existingIdx] = {
+            ...sp,
+            ...mergedProds[existingIdx],
+            supplier_id: (mergedProds[existingIdx] as any).supplier_id ?? (sp as any).supplier_id,
+            supplier_short_name: (mergedProds[existingIdx] as any).supplier_short_name ?? (sp as any).supplier_short_name,
+            barcode: (mergedProds[existingIdx] as any).barcode || (sp as any).barcode || sp.variants?.[0]?.barcodes?.[0]?.barcode,
+            cost_price: (mergedProds[existingIdx] as any).cost_price ?? (sp as any).cost_price ?? sp.variants?.[0]?.cost_price,
+            retail_price: (mergedProds[existingIdx] as any).retail_price ?? (sp as any).retail_price ?? sp.variants?.[0]?.selling_price,
+            stock_quantity: (mergedProds[existingIdx] as any).stock_quantity ?? (sp as any).stock_quantity,
+            variants: (mergedProds[existingIdx].variants && mergedProds[existingIdx].variants.length > 0)
+              ? mergedProds[existingIdx].variants
+              : sp.variants,
+          };
+        } else {
           mergedProds.unshift(sp);
         }
       });
 
-      setProducts(mergedProds);
+      // Eradicate any legacy '880' barcode prefix and format with Supplier Short Name
+      const sanitizedProds = mergedProds.map((prod) => {
+        let b = (prod as any).barcode || prod.variants?.[0]?.barcodes?.[0]?.barcode || '';
+        if (b && b.startsWith('880')) {
+          const sup = loadedSupps.find((s) => Number(s.id) === Number(prod.supplier_id || prod.supplier?.id));
+          const supShort = prod.supplier_short_name || prod.supplier?.short_name || sup?.short_name || (sup?.name ? generateSupplierShortName(sup.name) : 'SUP');
+          b = `${supShort}-${b.replace(/^880/, '').padStart(8, '0').slice(-8)}`;
+        }
+        return {
+          ...prod,
+          barcode: b,
+        };
+      });
+
+      setProducts(sanitizedProds);
       setCategories(loadedCats);
       setBrands(loadedBrands);
       setUnits(loadedUnits);
@@ -165,14 +405,16 @@ export const ItemInformation: React.FC = () => {
         const catIdToUse = loadedCats.length > 0 ? Number(loadedCats[0].id) : '';
         const brandIdToUse = loadedBrands.length > 0 ? Number(loadedBrands[0].id) : '';
         const unitIdToUse = loadedUnits.length > 0 ? Number(loadedUnits[0].id) : '';
+        const suppIdToUse = loadedSupps.length > 0 ? Number(loadedSupps[0].id) : '';
 
         if (!categoryId && catIdToUse) setCategoryId(catIdToUse);
         if (!brandId && brandIdToUse) setBrandId(brandIdToUse);
         if (!unitId && unitIdToUse) setUnitId(unitIdToUse);
+        if (!supplierId && suppIdToUse) setSupplierId(suppIdToUse);
 
         // Auto Generate Item Code, SKU, and Barcode automatically on load if empty
         if (!productCode || !sku || !barcode) {
-          const auto = generateAutoCodes(catIdToUse, brandIdToUse, name, loadedCats, loadedBrands);
+          const auto = generateAutoCodes(catIdToUse, brandIdToUse, name, suppIdToUse, loadedCats, loadedBrands, loadedSupps);
           if (!productCode) setProductCode(auto.code);
           if (!sku) setSku(auto.sku);
           if (!barcode) setBarcode(auto.barcode);
@@ -247,26 +489,22 @@ export const ItemInformation: React.FC = () => {
     return remainder === 0 ? 0 : 10 - remainder;
   };
 
-  const generateValidEAN13 = (prefix = '880'): string => {
-    const randomDigits = Math.floor(10000008 + Math.random() * 89999991).toString();
-    const first12 = (prefix + randomDigits).substring(0, 12);
-    const checkDigit = calculateEAN13CheckDigit(first12);
-    return `${first12}${checkDigit}`;
-  };
-
-  // Auto Code / SKU / Barcode Generators
+  // Auto Code / SKU / Barcode Generators (Omit 880, prefix with Supplier Short Name)
   const generateAutoCodes = (
     targetCatId?: number | '',
     targetBrandId?: number | '',
     targetName?: string,
+    targetSupplierId?: number | '',
     catList = categories,
-    brandList = brands
+    brandList = brands,
+    suppList = suppliers
   ) => {
     const nextNum = Math.floor(1000 + Math.random() * 9000);
     const code = `PRD-${nextNum}`;
 
     const cId = targetCatId ?? categoryId;
     const bId = targetBrandId ?? brandId;
+    const sId = targetSupplierId ?? supplierId;
     const iName = targetName ?? name;
 
     const selectedCat = catList.find((c) => Number(c.id) === Number(cId));
@@ -278,7 +516,7 @@ export const ItemInformation: React.FC = () => {
     const randDigits = Math.floor(100 + Math.random() * 900);
 
     const generatedSku = `${brandPrefix}-${catPrefix}-${namePart}${randDigits}`;
-    const generatedBarcode = generateValidEAN13('880');
+    const generatedBarcode = generateSupplierBarcode(sId, brandPrefix, suppList);
 
     return { code, sku: generatedSku, barcode: generatedBarcode };
   };
@@ -297,13 +535,25 @@ export const ItemInformation: React.FC = () => {
   };
 
   const handleAutoGenerateBarcode = () => {
-    setBarcode(generateValidEAN13('880'));
+    setBarcode(generateSupplierBarcode(supplierId, undefined, suppliers));
+  };
+
+  const handleSupplierChange = (val: number | '') => {
+    setSupplierId(val);
+    if (!editingId) {
+      const newBarcode = generateSupplierBarcode(val, undefined, suppliers);
+      setBarcode(newBarcode);
+    } else {
+      if (!barcode || barcode.startsWith('880')) {
+        setBarcode(generateSupplierBarcode(val, undefined, suppliers));
+      }
+    }
   };
 
   const handleCategoryChange = (val: number | '') => {
     setCategoryId(val);
     if (!editingId) {
-      const auto = generateAutoCodes(val, brandId, name);
+      const auto = generateAutoCodes(val, brandId, name, supplierId);
       setSku(auto.sku);
       if (!barcode) setBarcode(auto.barcode);
       if (!productCode) setProductCode(auto.code);
@@ -313,7 +563,7 @@ export const ItemInformation: React.FC = () => {
   const handleBrandChange = (val: number | '') => {
     setBrandId(val);
     if (!editingId) {
-      const auto = generateAutoCodes(categoryId, val, name);
+      const auto = generateAutoCodes(categoryId, val, name, supplierId);
       setSku(auto.sku);
       if (!barcode) setBarcode(auto.barcode);
       if (!productCode) setProductCode(auto.code);
@@ -348,7 +598,7 @@ export const ItemInformation: React.FC = () => {
     if (suppIdToUse !== '') setSupplierId(suppIdToUse);
 
     // Auto-generate fresh Item Code, SKU, and Barcode on form reset
-    const auto = generateAutoCodes(catIdToUse, brandIdToUse, '');
+    const auto = generateAutoCodes(catIdToUse, brandIdToUse, '', suppIdToUse);
     setProductCode(auto.code);
     setSku(auto.sku);
     setBarcode(auto.barcode);
@@ -392,6 +642,8 @@ export const ItemInformation: React.FC = () => {
     setCategoryId(prod.category_id ? Number(prod.category_id) : '');
     setBrandId(prod.brand_id ? Number(prod.brand_id) : '');
     setUnitId(prod.unit_id ? Number(prod.unit_id) : '');
+    const foundSupplierId = prod.supplier_id ? Number(prod.supplier_id) : (prod.supplier?.id ? Number(prod.supplier.id) : '');
+    setSupplierId(foundSupplierId);
     setProductType((prod.product_type as any) || 'simple');
     setStatus((prod.status?.toUpperCase() as any) || 'ACTIVE');
     setReorderLevel(prod.reorder_level || 10);
@@ -400,30 +652,27 @@ export const ItemInformation: React.FC = () => {
     setDescription(prod.description || '');
 
     const variants = prod.variants || [];
-    if (variants.length > 0) {
-      const v0 = variants[0];
-      setCostPrice(Number(v0.cost_price) || 0);
-      const retail = Number(v0.selling_price || v0.price) || 0;
-      setRetailPrice(retail);
-      setMrp(Number(v0.mrp) || retail);
-      const cPrice = Number(v0.cost_price) || 0;
-      if (cPrice > 0 && retail > 0) {
-        setGpPercent(Number((((retail - cPrice) / cPrice) * 100).toFixed(2)));
-      } else {
-        setGpPercent(20);
-      }
-      if (v0.barcodes && v0.barcodes.length > 0) {
-        setBarcode(v0.barcodes[0].barcode || '');
-      } else {
-        setBarcode('');
-      }
-    } else {
-      setCostPrice(0);
-      setRetailPrice(Number(prod.price) || 0);
-      setMrp(Number(prod.price) || 0);
-      setGpPercent(20);
-      setBarcode('');
+    const v0 = variants[0];
+    const cPrice = Number(v0?.cost_price ?? (prod as any).cost_price ?? (prod as any).cost ?? 0);
+    const rPrice = Number(v0?.selling_price ?? v0?.price ?? (prod as any).retail_price ?? prod.price ?? (prod as any).selling_price ?? 0);
+    const mrpPrice = Number(v0?.mrp ?? (prod as any).mrp ?? rPrice);
+    let bCode = (prod as any).barcode || v0?.barcodes?.[0]?.barcode || v0?.barcode || (prod as any).primary_barcode || '';
+
+    // Strip legacy 880 prefix and assign supplier short name barcode
+    if (bCode.startsWith('880')) {
+      const sShort = prod.supplier_short_name || prod.supplier?.short_name;
+      bCode = generateSupplierBarcode(sShort || foundSupplierId, undefined, suppliers);
     }
+
+    setCostPrice(cPrice);
+    setRetailPrice(rPrice);
+    setMrp(mrpPrice);
+    if (cPrice > 0 && rPrice > 0) {
+      setGpPercent(Number((((rPrice - cPrice) / cPrice) * 100).toFixed(2)));
+    } else {
+      setGpPercent(20);
+    }
+    setBarcode(bCode);
   };
 
   // Submit Handler
@@ -458,12 +707,17 @@ export const ItemInformation: React.FC = () => {
 
     setIsSaving(true);
 
+    const selectedSupplier = suppliers.find((s) => Number(s.id) === Number(supplierId));
+    const calculatedSupplierShortName = selectedSupplier?.short_name || (selectedSupplier?.name ? generateSupplierShortName(selectedSupplier.name) : undefined);
+
     const payload: ProductPayload = {
       name: name.trim(),
       product_code: finalCode,
       sku: finalSku,
       category_id: Number(categoryId),
       brand_id: brandId ? Number(brandId) : undefined,
+      supplier_id: supplierId ? Number(supplierId) : undefined,
+      supplier_short_name: calculatedSupplierShortName,
       unit_id: Number(unitId),
       product_type: productType,
       has_variants: productType === 'variable',
@@ -482,7 +736,7 @@ export const ItemInformation: React.FC = () => {
           mrp: Number(mrp) || Number(retailPrice),
           status: (status.toLowerCase() as any) || 'active',
           barcodes: barcode.trim()
-            ? [{ barcode: barcode.trim(), barcode_type: 'EAN', is_primary: true }]
+            ? [{ barcode: barcode.trim(), barcode_type: 'CODE-128', is_primary: true }]
             : [],
         },
       ],
@@ -613,11 +867,16 @@ export const ItemInformation: React.FC = () => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesName = p.name?.toLowerCase().includes(q);
-        const matchesCode = p.product_code?.toLowerCase().includes(q);
-        const matchesSku = p.sku?.toLowerCase().includes(q);
-        const matchesBarcode = p.variants?.some((v) =>
-          v.barcodes?.some((b: any) => String(b.barcode).toLowerCase().includes(q))
-        );
+        const matchesCode = Boolean(p.product_code?.toLowerCase().includes(q));
+        const matchesSku =
+          Boolean(p.sku?.toLowerCase().includes(q)) ||
+          Boolean(p.variants?.some((v) => v.sku?.toLowerCase().includes(q)));
+        const matchesBarcode =
+          String(p.barcode || (p as any).primary_barcode || '').toLowerCase().includes(q) ||
+          Boolean(p.variants?.some((v) =>
+            v.barcodes?.some((b: any) => String(b.barcode).toLowerCase().includes(q)) ||
+            String(v.barcode || '').toLowerCase().includes(q)
+          ));
         if (!matchesName && !matchesCode && !matchesSku && !matchesBarcode) return false;
       }
 
@@ -876,18 +1135,28 @@ export const ItemInformation: React.FC = () => {
 
               {/* Preferred Supplier */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Preferred Supplier</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-700">Preferred Supplier</label>
+                  {supplierId && (
+                    <span className="text-[10px] font-extrabold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
+                      Prefix: {suppliers.find((s) => Number(s.id) === Number(supplierId))?.short_name || generateSupplierShortName(suppliers.find((s) => Number(s.id) === Number(supplierId))?.name || '') || 'SUP'}
+                    </span>
+                  )}
+                </div>
                 <select
                   value={supplierId}
-                  onChange={(e) => setSupplierId(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => handleSupplierChange(e.target.value ? Number(e.target.value) : '')}
                   className="w-full p-2 bg-white border border-slate-200 rounded-lg font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                 >
                   <option value="">Select Supplier...</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.supplier_code})
-                    </option>
-                  ))}
+                  {suppliers.map((s) => {
+                    const shortName = s.short_name || generateSupplierShortName(s.name || '');
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({shortName ? `${shortName} • ` : ''}{s.supplier_code})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -933,14 +1202,27 @@ export const ItemInformation: React.FC = () => {
 
               {/* Barcode */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Primary Barcode (EAN-13)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>Primary Barcode</span>
+                    <span className="text-[10px] font-semibold text-slate-500">(Supplier Short Name + Digits)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAutoGenerateBarcode}
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Regenerate Barcode using Supplier Short Name"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Regenerate
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type="text"
                     value={barcode}
                     readOnly
                     tabIndex={-1}
-                    placeholder="EAN-AUTO"
+                    placeholder="SUP-AUTO"
                     className="w-full p-2 pl-8 bg-slate-100/90 border border-slate-200 rounded-lg font-mono font-bold text-slate-800 cursor-not-allowed select-all focus:outline-hidden"
                   />
                   <BarcodeIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
@@ -1225,92 +1507,259 @@ export const ItemInformation: React.FC = () => {
                 </div>
               </div>
 
-              {/* Dropdown Filters */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                <span className="font-bold text-slate-400 flex items-center gap-1 shrink-0">
-                  <Filter className="w-3.5 h-3.5" /> Filters:
-                </span>
+              {/* Controls Row: Filters on Left, Dynamic Column Controls on Right */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+                {/* Left: Dropdown Filters */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                  <span className="font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                    <Filter className="w-3.5 h-3.5" /> Filters:
+                  </span>
 
-                {/* Category Filter */}
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
-                >
-                  <option value="ALL">All Categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Brand Filter */}
-                <select
-                  value={filterBrand}
-                  onChange={(e) => setFilterBrand(e.target.value)}
-                  className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
-                >
-                  <option value="ALL">All Brands</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Status Filter */}
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
-                >
-                  <option value="ALL">All Status</option>
-                  <option value="ACTIVE">Active Only</option>
-                  <option value="INACTIVE">Inactive Only</option>
-                </select>
-
-                {(filterCategory !== 'ALL' || filterBrand !== 'ALL' || filterStatus !== 'ALL') && (
-                  <button
-                    onClick={() => {
-                      setFilterCategory('ALL');
-                      setFilterBrand('ALL');
-                      setFilterStatus('ALL');
-                    }}
-                    className="text-[11px] font-bold text-rose-600 hover:underline shrink-0"
+                  {/* Category Filter */}
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                   >
-                    Reset Filters
+                    <option value="ALL">All Categories</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Brand Filter */}
+                  <select
+                    value={filterBrand}
+                    onChange={(e) => setFilterBrand(e.target.value)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="ALL">All Brands</option>
+                    {brands.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Status Filter */}
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="ALL">All Status</option>
+                    <option value="ACTIVE">Active Only</option>
+                    <option value="INACTIVE">Inactive Only</option>
+                  </select>
+
+                  {(filterCategory !== 'ALL' || filterBrand !== 'ALL' || filterStatus !== 'ALL') && (
+                    <button
+                      onClick={() => {
+                        setFilterCategory('ALL');
+                        setFilterBrand('ALL');
+                        setFilterStatus('ALL');
+                      }}
+                      className="text-[11px] font-bold text-rose-600 hover:underline shrink-0 cursor-pointer"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
+                </div>
+
+                {/* Right: Dynamic Column Resizing & Customization Controls */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Column Visibility Selector Dropdown */}
+                  <div className="relative" ref={columnMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowColumnMenu(!showColumnMenu)}
+                      className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                        showColumnMenu
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                      title="Customize visible columns (hide/show)"
+                    >
+                      <Columns className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Columns</span>
+                      <span className="px-1.5 py-0.2 rounded-md bg-indigo-100 text-indigo-700 font-extrabold text-[10px]">
+                        {activeColumns.length}/{DEFAULT_CATALOG_COLUMNS.length}
+                      </span>
+                      <ChevronDown className="w-3 h-3 text-slate-400" />
+                    </button>
+
+                    {showColumnMenu && (
+                      <div
+                        className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                          <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                            <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
+                            Column Visibility
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const allVisible = Object.fromEntries(DEFAULT_CATALOG_COLUMNS.map((c) => [c.id, true]));
+                              setColumnVisibility(allVisible);
+                              try {
+                                localStorage.setItem('retailcore_item_info_col_visibility_v2', JSON.stringify(allVisible));
+                              } catch {}
+                            }}
+                            className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                          >
+                            Show All
+                          </button>
+                        </div>
+
+                        <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                          {DEFAULT_CATALOG_COLUMNS.map((col) => {
+                            const isChecked = columnVisibility[col.id] !== false;
+                            return (
+                              <label
+                                key={col.id}
+                                className={`flex items-center justify-between p-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                                  isChecked ? 'hover:bg-slate-50 text-slate-800' : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    disabled={col.canHide === false}
+                                    onChange={() => toggleColumnVisibility(col.id)}
+                                    className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
+                                  />
+                                  <span className="font-semibold">{col.label}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {columnWidths[col.id] || col.defaultWidth}px
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                          <button
+                            type="button"
+                            onClick={resetAllColumnWidths}
+                            className="text-slate-600 hover:text-indigo-600 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Reset Sizes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowColumnMenu(false)}
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] cursor-pointer"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Wrap Text / Full Details Toggle */}
+                  <button
+                    type="button"
+                    onClick={toggleWrapText}
+                    className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      isWrapText
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                    title={isWrapText ? 'Wrap text is ON (all hidden text is visible)' : 'Click to wrap text and see all hidden details'}
+                  >
+                    <MoveHorizontal className="w-3.5 h-3.5" />
+                    <span>{isWrapText ? 'Full Text (Wrap)' : 'Single Line'}</span>
                   </button>
-                )}
+
+                  {/* Auto-Expand / Fit All Content */}
+                  <button
+                    type="button"
+                    onClick={autoFitAllColumns}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer transition-colors"
+                    title="Auto-expand columns to wide view"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Reset Column Sizes */}
+                  <button
+                    type="button"
+                    onClick={resetAllColumnWidths}
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer transition-colors"
+                    title="Reset column widths to default"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Catalog Table */}
             <div className="overflow-x-auto max-h-[680px]">
-              <table className="w-full text-left border-collapse text-xs">
+              <table
+                className="w-full text-left border-collapse text-xs table-fixed"
+                style={{ minWidth: `${Math.max(totalTableWidth, 850)}px` }}
+              >
+                <colgroup>
+                  {activeColumns.map((col) => (
+                    <col
+                      key={col.id}
+                      style={{ width: `${columnWidths[col.id] || col.defaultWidth}px` }}
+                    />
+                  ))}
+                </colgroup>
                 <thead>
-                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider sticky top-0 z-10">
-                    <th className="py-3 px-3">Item / SKU</th>
-                    <th className="py-3 px-3">Barcode</th>
-                    <th className="py-3 px-3">Category & Brand</th>
-                    <th className="py-3 px-2 text-right">Cost (৳)</th>
-                    <th className="py-3 px-2 text-right">Retail (৳)</th>
-                    <th className="py-3 px-2 text-center">GP %</th>
-                    <th className="py-3 px-2 text-right">Stock</th>
-                    <th className="py-3 px-2 text-center">Status</th>
-                    <th className="py-3 px-3 text-right">Action</th>
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-extrabold uppercase tracking-wider sticky top-0 z-10 shadow-2xs">
+                    {activeColumns.map((col) => (
+                      <th
+                        key={col.id}
+                        style={{ width: `${columnWidths[col.id] || col.defaultWidth}px` }}
+                        className={`relative py-3 px-3 select-none group/th transition-colors ${
+                          activeResizingCol === col.id ? 'bg-indigo-50 text-indigo-900' : ''
+                        } ${
+                          col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1 overflow-hidden pr-2">
+                          <span className="truncate">{col.label}</span>
+                        </div>
+
+                        {/* Draggable Resizer Handle */}
+                        <div
+                          className={`absolute right-0 top-0 bottom-0 w-3 cursor-col-resize select-none touch-none flex items-center justify-center transition-colors group-hover/th:bg-indigo-500/20 ${
+                            activeResizingCol === col.id ? 'bg-indigo-600 opacity-100' : ''
+                          }`}
+                          onMouseDown={(e) => handleResizeStart(col.id, e)}
+                          onDoubleClick={() => resetColumnWidth(col.id)}
+                          title={`Drag to resize "${col.label}" (Double-click to reset)`}
+                        >
+                          <div
+                            className={`w-[2px] h-4 rounded-full transition-colors ${
+                              activeResizingCol === col.id ? 'bg-white' : 'bg-slate-300 group-hover/th:bg-indigo-600'
+                            }`}
+                          />
+                        </div>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
+                      <td colSpan={activeColumns.length} className="py-12 text-center text-slate-400 font-medium">
                         Loading catalog master list...
                       </td>
                     </tr>
                   ) : filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <td colSpan={activeColumns.length} className="py-12 text-center text-slate-400">
                         <Package className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         <p className="font-bold text-slate-600">No items match your criteria.</p>
                         <p className="text-xs text-slate-400">Try adjusting your search or filters.</p>
@@ -1320,11 +1769,26 @@ export const ItemInformation: React.FC = () => {
                     filteredProducts.map((p) => {
                       const isEditingThis = editingId === Number(p.id);
                       const v0 = p.variants?.[0];
-                      const cost = Number(v0?.cost_price || 0);
-                      const retail = Number(v0?.selling_price || p.price || 0);
+                      const cost = Number(v0?.cost_price ?? (p as any).cost_price ?? (p as any).cost ?? 0);
+                      const retail = Number(v0?.selling_price ?? (p as any).retail_price ?? (p as any).price ?? p.price ?? (p as any).selling_price ?? 0);
                       const gp = cost > 0 ? (((retail - cost) / cost) * 100).toFixed(1) : '0.0';
-                      const stockQty = p.variants?.reduce((s, v) => s + (v.available_quantity || 0), 0) || 0;
-                      const primaryBarcode = v0?.barcodes?.[0]?.barcode;
+                      const stockQty = (p.variants && p.variants.length > 0)
+                        ? p.variants.reduce((s, v) => s + (v.available_quantity || 0), 0)
+                        : Number((p as any).stock_quantity ?? (p as any).stock ?? 0);
+                      let primaryBarcode =
+                        (p as any).barcode ||
+                        (p as any).primary_barcode ||
+                        v0?.barcodes?.[0]?.barcode ||
+                        v0?.barcode ||
+                        (p as any).barcodes?.[0]?.barcode ||
+                        (p as any).barcodes?.[0] ||
+                        (p.variants && p.variants.flatMap((v) => v.barcodes || []).find((b: any) => b?.barcode)?.barcode) ||
+                        '';
+
+                      if (primaryBarcode && primaryBarcode.startsWith('880')) {
+                        const supShort = p.supplier_short_name || p.supplier?.short_name || (p.supplier?.name ? generateSupplierShortName(p.supplier.name) : 'SUP');
+                        primaryBarcode = `${supShort}-${primaryBarcode.replace(/^880/, '').padStart(8, '0').slice(-8)}`;
+                      }
 
                       return (
                         <tr
@@ -1334,108 +1798,155 @@ export const ItemInformation: React.FC = () => {
                           }`}
                           onDoubleClick={() => populateFormForEdit(p)}
                         >
-                          {/* Item Identity */}
-                          <td className="p-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-9 h-9 rounded-xl bg-slate-100 font-black text-indigo-700 flex items-center justify-center shrink-0 border border-slate-200/80">
-                                {p.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-slate-900 truncate max-w-[180px]">{p.name}</div>
-                                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
-                                  <span className="text-indigo-700 font-semibold">{p.sku || p.product_code || 'NO-SKU'}</span>
+                          {/* Item Identity Column */}
+                          {columnVisibility.item !== false && (
+                            <td className="p-3 align-top overflow-hidden">
+                              <div className="flex items-start gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-slate-100 font-black text-indigo-700 flex items-center justify-center shrink-0 border border-slate-200/80 mt-0.5">
+                                  {p.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div
+                                    className={`font-bold text-slate-900 ${
+                                      isWrapText ? 'break-words leading-snug' : 'truncate'
+                                    }`}
+                                    title={p.name}
+                                  >
+                                    {p.name}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
+                                    <span className="text-indigo-700 font-semibold">{p.sku || p.product_code || 'NO-SKU'}</span>
+                                    {p.unit?.short_code && (
+                                      <span className="text-slate-400">({p.unit.short_code})</span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
+                          )}
 
                           {/* Barcode Column */}
-                          <td className="p-3 font-mono text-xs">
-                            {primaryBarcode ? (
-                              <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100/90 rounded-lg text-slate-800 font-bold border border-slate-200/80 shadow-2xs">
-                                <BarcodeIcon className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                <span className="tracking-wider text-[11px] font-mono">{primaryBarcode}</span>
+                          {columnVisibility.barcode !== false && (
+                            <td className="p-3 font-mono text-xs align-top overflow-hidden">
+                              {primaryBarcode ? (
+                                <div className="flex flex-col gap-1 items-start">
+                                  <div
+                                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100/90 rounded-lg text-slate-800 font-bold border border-slate-200/80 shadow-2xs max-w-full"
+                                    title={`Barcode: ${primaryBarcode}`}
+                                  >
+                                    <BarcodeIcon className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                    <span className="tracking-wider text-[11px] font-mono truncate">{primaryBarcode}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-[11px] italic font-normal">No Barcode</span>
+                              )}
+                            </td>
+                          )}
+
+                          {/* Category & Brand Column */}
+                          {columnVisibility.category_brand !== false && (
+                            <td className="p-3 align-top overflow-hidden">
+                              <div
+                                className={`font-semibold text-slate-800 ${
+                                  isWrapText ? 'break-words' : 'truncate'
+                                }`}
+                                title={p.category?.name || 'Unassigned'}
+                              >
+                                {p.category?.name || 'Unassigned'}
                               </div>
-                            ) : (
-                              <span className="text-slate-400 text-[11px] italic font-normal">No Barcode</span>
-                            )}
-                          </td>
-
-                          {/* Category & Brand */}
-                          <td className="p-3">
-                            <div className="font-semibold text-slate-800">{p.category?.name || 'Unassigned'}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">{p.brand?.name || 'Generic'}</div>
-                          </td>
-
-                          {/* Cost */}
-                          <td className="p-2 text-right font-mono font-medium text-slate-700">
-                            ৳{cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-
-                          {/* Retail */}
-                          <td className="p-2 text-right font-mono font-extrabold text-slate-900">
-                            ৳{retail.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-
-                          {/* GP % Badge */}
-                          <td className="p-2 text-center">
-                            <span className="inline-block px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              {gp}%
-                            </span>
-                          </td>
-
-                          {/* Stock */}
-                          <td className="p-2 text-right">
-                            <span
-                              className={`font-mono font-extrabold ${
-                                stockQty <= (p.reorder_level || 10)
-                                  ? 'text-amber-600'
-                                  : 'text-slate-800'
-                              }`}
-                            >
-                              {stockQty}
-                            </span>
-                          </td>
-
-                          {/* Status */}
-                          <td className="p-2 text-center">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                                (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              {p.status || 'ACTIVE'}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="p-3 text-right">
-                            <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => setViewProductDetail(p)}
-                                title="Quick View"
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                              <div
+                                className={`text-[10px] text-slate-500 font-medium ${
+                                  isWrapText ? 'break-words' : 'truncate'
+                                }`}
+                                title={p.brand?.name || 'Generic'}
                               >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => populateFormForEdit(p)}
-                                title="Edit Item"
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                                {p.brand?.name || 'Generic'}
+                              </div>
+                            </td>
+                          )}
+
+                          {/* Cost Column */}
+                          {columnVisibility.cost !== false && (
+                            <td className="p-2 text-right font-mono font-medium text-slate-700 align-top">
+                              ৳{cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          )}
+
+                          {/* Retail Column */}
+                          {columnVisibility.retail !== false && (
+                            <td className="p-2 text-right font-mono font-extrabold text-slate-900 align-top">
+                              ৳{retail.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          )}
+
+                          {/* GP % Badge Column */}
+                          {columnVisibility.gp !== false && (
+                            <td className="p-2 text-center align-top">
+                              <span className="inline-block px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {gp}%
+                              </span>
+                            </td>
+                          )}
+
+                          {/* Stock Column */}
+                          {columnVisibility.stock !== false && (
+                            <td className="p-2 text-right align-top">
+                              <span
+                                className={`font-mono font-extrabold ${
+                                  stockQty <= (p.reorder_level || 10)
+                                    ? 'text-amber-600'
+                                    : 'text-slate-800'
+                                }`}
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(Number(p.id), p.name)}
-                                title="Delete Item"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                {stockQty}
+                              </span>
+                            </td>
+                          )}
+
+                          {/* Status Column */}
+                          {columnVisibility.status !== false && (
+                            <td className="p-2 text-center align-top">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                                  (p.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-slate-100 text-slate-600'
+                                }`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
+                                {p.status || 'ACTIVE'}
+                              </span>
+                            </td>
+                          )}
+
+                          {/* Actions Column */}
+                          {columnVisibility.action !== false && (
+                            <td className="p-3 text-right align-top">
+                              <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => setViewProductDetail(p)}
+                                  title="Quick View"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => populateFormForEdit(p)}
+                                  title="Edit Item"
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(Number(p.id), p.name)}
+                                  title="Delete Item"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })
@@ -1613,7 +2124,7 @@ export const ItemInformation: React.FC = () => {
                 </h4>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 font-bold text-slate-700">
+                    <thead className="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold">
                       <tr>
                         <th className="p-2">Variant</th>
                         <th className="p-2 text-right">Cost</th>

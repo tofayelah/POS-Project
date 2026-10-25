@@ -19,6 +19,7 @@ export interface V2SystemContextType {
   isLive: boolean;
   error: string | null;
   lastChecked: Date | null;
+  isCapabilitiesConfirmedByServer: boolean;
   refreshV2System: () => Promise<void>;
   isFeatureEnabled: (featureKey: string) => boolean;
 }
@@ -50,6 +51,8 @@ export const V2SystemProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const isMountedRef = useRef(true);
 
   const refreshV2System = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -64,10 +67,10 @@ export const V2SystemProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       setLastChecked(new Date());
 
-      // Evaluate Health
-      if (hRes.data) {
+      // Evaluate Health: strictly require verified live response from server
+      if (hRes.data && hRes.isLive) {
         setHealth(hRes.data);
-        setIsLive(hRes.isLive);
+        setIsLive(true);
         if (hRes.data.status === 'degraded' || hRes.data.database === 'disconnected') {
           setConnectionState('degraded');
           setError('Database connectivity degraded');
@@ -82,14 +85,14 @@ export const V2SystemProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       // Evaluate Status
-      if (sRes.data) {
+      if (sRes.data && sRes.isLive) {
         setStatus(sRes.data);
       } else {
         setStatus(null);
       }
 
-      // Evaluate Capabilities
-      if (cRes.data) {
+      // Evaluate Capabilities: baseline capabilities are NOT presented as server-confirmed capabilities
+      if (cRes.data && cRes.isLive) {
         setCapabilities(cRes.data);
       } else {
         setCapabilities(null);
@@ -123,6 +126,8 @@ export const V2SystemProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return BASELINE_CAPABILITIES[featureKey] ?? true;
   }, [capabilities]);
 
+  const isCapabilitiesConfirmedByServer = Boolean(capabilities && isLive);
+
   return (
     <V2SystemContext.Provider
       value={{
@@ -134,6 +139,7 @@ export const V2SystemProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLive,
         error,
         lastChecked,
+        isCapabilitiesConfirmedByServer,
         refreshV2System,
         isFeatureEnabled,
       }}

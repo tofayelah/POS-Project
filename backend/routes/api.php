@@ -383,6 +383,33 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('reports/sales-returns', [\App\Http\Controllers\Api\V1\Reports\SalesReportController::class, 'salesReturns'])->middleware('permission:reports.sales_return.view');
         
         Route::get('reports/purchases', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'purchases'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/dashboard', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'dashboard'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/date-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'dateWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/date-wise-detail', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'dateWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/date-wise-summary', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'dateWiseSummary'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/received-vouchers', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'receivedVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/goods-receipts', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'receivedVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/ordered-vouchers', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'orderedVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/order-register', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'orderedVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/order-outstanding', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'orderOutstanding'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/invoices', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'invoiceRegister'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/booth-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'boothWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/branch-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'boothWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/warehouse-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'warehouseWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/category-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'categoryWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/brand-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'brandWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/item-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'itemWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/item-history', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'itemWiseHistory'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/price-history', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'priceHistory'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/discount-analysis', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'discountAnalysis'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/tax-vat', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'taxVat'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/supplier-wise', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'supplierWisePurchase'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/supplier-detail', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'supplierWiseDetail'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/cancelled-vouchers', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'cancelledVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/cancelled', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'cancelledVouchers'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/pending-approval', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'pendingApproval'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/returns', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'returnsReport'])->middleware('permission:reports.purchase.view');
+        Route::get('reports/purchases/reconciliation', [\App\Http\Controllers\Api\V1\Reports\PurchaseReportController::class, 'reconciliation'])->middleware('permission:reports.purchase.view');
         
         Route::get('reports/expenses', [\App\Http\Controllers\Api\V1\Reports\ExpenseReportController::class, 'expenses'])->middleware('permission:reports.expense.view');
         

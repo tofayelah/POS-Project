@@ -23,7 +23,8 @@ import {
   Check,
   Ban,
   PackageCheck,
-  Eye
+  Eye,
+  FilePlus
 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -272,7 +273,7 @@ export const PurchaseOrderForm: React.FC = () => {
                 const pName = item.product?.name || item.product_name || matchedProd?.name || 'Product Item';
                 const vName = item.variant?.variant_name || item.variant_name || matchedVar?.variant_name || 'Standard';
                 const sKu = item.variant?.sku || item.sku || matchedVar?.sku || 'SKU-001';
-                const bCode = item.variant?.barcode || item.barcode || matchedVar?.barcode || '8800000000';
+                const bCode = item.variant?.barcode || item.barcode || matchedVar?.barcode || 'SUP-00000000';
                 const catName = item.product?.category?.name || item.category_name || (matchedProd?.category as any)?.name || 'General';
                 const brdName = item.product?.brand?.name || item.brand_name || (matchedProd?.brand as any)?.name || 'Generic';
                 const pUnit = item.purchase_unit || item.product?.unit?.code || matchedProd?.unit?.code || 'Pcs';
@@ -407,7 +408,7 @@ export const PurchaseOrderForm: React.FC = () => {
                 barcode:
                   p.barcode ||
                   (p.barcodes && p.barcodes[0]?.barcode) ||
-                  '8800000000',
+                  'SUP-00000000',
                 cost_price: p.cost_price || p.price || 0,
                 selling_price: p.selling_price || p.price || 0
               }
@@ -459,7 +460,7 @@ export const PurchaseOrderForm: React.FC = () => {
             (v.barcodes && v.barcodes[0]?.barcode) ||
             p.barcode ||
             (p.barcodes && p.barcodes[0]?.barcode) ||
-            '8800000000';
+            'SUP-00000000';
 
           return {
             product: p,
@@ -756,7 +757,7 @@ export const PurchaseOrderForm: React.FC = () => {
         product_name: selectedProduct.name,
         variant_name: selectedVariant.variant_name || 'Standard',
         sku: selectedVariant.sku || selectedProduct.sku || 'SKU-001',
-        barcode: (selectedVariant as any)?.barcode || (selectedProduct as any)?.barcode || '8800000000',
+        barcode: (selectedVariant as any)?.barcode || (selectedProduct as any)?.barcode || 'SUP-00000000',
         category_name: selectedProduct.category?.name || 'General',
         brand_name: selectedProduct.brand?.name || 'Generic',
         purchase_unit: entryUnit,
@@ -1118,7 +1119,7 @@ export const PurchaseOrderForm: React.FC = () => {
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-500">
-              RetailCore ERP Procurement & Supplier Order Management
+              RetailCore ERP Purchase & Supplier Order Management
             </p>
           </div>
         </div>
@@ -1161,6 +1162,17 @@ export const PurchaseOrderForm: React.FC = () => {
           >
             <Printer className="w-4 h-4 text-indigo-600" /> Print / Preview
           </button>
+
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={() => navigate(`/purchases/invoices/create?po=${poNumber || id}`)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Open New Purchase Entry and import all items from this PO"
+            >
+              <FilePlus className="w-4 h-4 text-emerald-700" /> Create Purchase Entry
+            </button>
+          )}
 
           <button
             type="button"
@@ -1587,7 +1599,7 @@ export const PurchaseOrderForm: React.FC = () => {
           {selectedProduct && (
             <div className="flex flex-wrap items-center justify-between text-[11px] font-bold bg-indigo-50/70 p-2 rounded-lg text-indigo-900 border border-indigo-100">
               <span>SKU: <strong>{selectedVariant?.sku || 'SKU-001'}</strong></span>
-              <span>Barcode: <strong>{(selectedVariant as any)?.barcode || '8800000000'}</strong></span>
+              <span>Barcode: <strong>{(selectedVariant as any)?.barcode || 'SUP-00000000'}</strong></span>
               <span>Margin / GP%: <strong className="text-emerald-700 font-mono">{entryCalculations.gpPercent}%</strong></span>
               <span>Incl. Selling Price: <strong className="font-mono">৳{entryCalculations.inclusiveSellingPrice}</strong></span>
               <span>Line Est. Total: <strong className="text-indigo-800 font-mono">৳{entryCalculations.lineTotal}</strong></span>

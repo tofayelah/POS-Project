@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Search, RefreshCw, Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { FileText, Plus, Search, RefreshCw, Eye, AlertCircle, CheckCircle, Clock, RotateCcw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { getPurchases } from '../../api/purchases';
 import { PurchaseInvoice } from '../../types/purchase';
@@ -90,6 +90,13 @@ export const PurchaseList: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link
+            to="/purchases/returns"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4 text-rose-600" />
+            Supplier Returns
+          </Link>
           <Link
             to="/purchases/invoices/create"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-sm font-bold transition-colors shadow-xs cursor-pointer"
@@ -200,13 +207,22 @@ export const PurchaseList: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <button
-                        onClick={() => navigate(`/purchases/invoices/${inv.id}`)}
-                        className="p-1.5 text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-200 cursor-pointer"
-                        title="View Invoice Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => navigate(`/purchases/returns/create?invoice_id=${inv.id}`)}
+                          className="p-1.5 text-slate-700 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 cursor-pointer"
+                          title="Return Items from this Bill to Supplier"
+                        >
+                          <RotateCcw className="w-4 h-4 text-rose-600" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/purchases/invoices/${inv.id}`)}
+                          className="p-1.5 text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-200 cursor-pointer"
+                          title="View Invoice Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

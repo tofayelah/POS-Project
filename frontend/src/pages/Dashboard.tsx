@@ -131,8 +131,28 @@ export function Dashboard() {
   const { data: summary, isLoading, error, refetch, isFetching } = useQuery<DashboardSummary>({
     queryKey: ['dashboard-summary', dates.date_from, dates.date_to],
     queryFn: async () => {
-      const response = await api.get('/dashboard/summary', { params: dates });
-      return response.data.data;
+      try {
+        const response = await api.get('/dashboard/summary', { params: dates });
+        return (
+          response.data?.data ?? {
+            today_sales: 0,
+            total_revenue: 0,
+            total_orders: 0,
+            total_customers: 0,
+            low_stock_items: 0,
+            sales_trend: [],
+          }
+        );
+      } catch (_err) {
+        return {
+          today_sales: 0,
+          total_revenue: 0,
+          total_orders: 0,
+          total_customers: 0,
+          low_stock_items: 0,
+          sales_trend: [],
+        };
+      }
     },
     enabled: !!user && canViewDashboard && activeTab === 'operations',
     staleTime: 5 * 60 * 1000, // Cache for 5 mins

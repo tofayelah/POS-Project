@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ArrowLeft, Save, Plus, Trash2, FileText, CheckCircle, AlertCircle, 
   Search, Barcode, ShoppingCart, RefreshCw, Printer, X, Eye, ShieldCheck, 
-  CreditCard, Wallet, Building2, Smartphone, DollarSign, Calculator, Layers, Sparkles, Database
+  CreditCard, Wallet, Building2, Smartphone, DollarSign, Calculator, Layers, Sparkles, Database,
+  DownloadCloud, FileCheck, Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { getSuppliers } from '../../api/suppliers';
@@ -12,11 +13,13 @@ import {
   postPurchaseInvoice, 
   generateNextPurchaseVoucher 
 } from '../../api/purchases';
-import { getPurchaseOrders } from '../../api/purchaseOrders';
+import { getPurchaseOrders, getPurchaseOrder } from '../../api/purchaseOrders';
 import { getGoodsReceipts } from '../../api/goodsReceipts';
 import { Supplier } from '../../types/supplier';
 import { Product, Category, Brand } from '../../types/product';
 import { PurchaseOrder, GoodsReceipt } from '../../types/purchase';
+import { useCompany } from '../../contexts/CompanyContext';
+import { PurchaseVoucherPrintModal, PurchaseVoucherData } from '../../components/purchase/PurchaseVoucherPrintModal';
 
 interface PurchaseLineItem {
   id: string;
@@ -37,6 +40,7 @@ interface PurchaseLineItem {
 
 export const PurchaseInvoiceForm: React.FC = () => {
   const navigate = useNavigate();
+  const { company: activeCompany } = useCompany();
 
   // Master Data
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -58,6 +62,12 @@ export const PurchaseInvoiceForm: React.FC = () => {
   const [selectedGrnId, setSelectedGrnId] = useState<number | ''>('');
   const [warehouseId, setWarehouseId] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
+
+  // Purchase Type: Direct Purchase (Default) vs Against Purchase Order (PO Order Purchase)
+  const [purchaseType, setPurchaseType] = useState<'DIRECT' | 'AGAINST_PO'>('DIRECT');
+  const [poSearchInput, setPoSearchInput] = useState<string>('');
+  const [isLoadingPo, setIsLoadingPo] = useState<boolean>(false);
+  const [loadedPoNumber, setLoadedPoNumber] = useState<string | null>(null);
 
   // Selected Supplier Context
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | ''>('');
@@ -101,6 +111,21 @@ export const PurchaseInvoiceForm: React.FC = () => {
   useEffect(() => {
     loadMasterData();
     setVoucherNo(generateNextPurchaseVoucher());
+
+    // Auto-detect PO parameter from URL: e.g. /purchases/invoices/create?po=PO-2026-5934 or ?po_id=103
+    try {
+      if (typeof window !== 'undefined' && window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const poParam = params.get('po') || params.get('po_id') || params.get('po_number');
+        if (poParam) {
+          setPurchaseType('AGAINST_PO');
+          setPoSearchInput(poParam);
+          setTimeout(() => {
+            handleLoadPurchaseOrder(poParam);
+          }, 350);
+        }
+      }
+    } catch (_e) {}
   }, []);
 
   const loadMasterData = async () => {
@@ -144,6 +169,88 @@ export const PurchaseInvoiceForm: React.FC = () => {
     const found = supplierList.find((s) => Number(s.id) === Number(id)) || null;
     setSelectedSupplier(found);
     setIsDirty(true);
+  };
+
+  // Load PO details and insert items into purchase form
+  const handleLoadPurchaseOrder = async (poIdentifier: string | number) => {
+    if (!poIdentifier) return;
+    setIsLoadingPo(true);
+    setErrorMessage(null);
+    try {
+      const res = await getPurchaseOrder(poIdentifier);
+      const po = res.data;
+      if (po && (po.id || po.po_number)) {
+        const poIdNum = Number(po.id) || 0;
+        setSelectedPoId(poIdNum > 0 ? poIdNum : '');
+        const targetPoNum = po.po_number || String(poIdentifier);
+        setPoSearchInput(targetPoNum);
+        setLoadedPoNumber(targetPoNum);
+
+        // Auto-populate supplier
+        const targetSupId = Number(po.supplier_id || po.supplier?.id);
+        if (targetSupId) {
+          handleSupplierSelect(targetSupId);
+        }
+
+        // Auto-populate warehouse
+        if (po.warehouse_id) {
+          setWarehouseId(Number(po.warehouse_id));
+        }
+
+        // Auto-populate notes
+        if (po.notes) {
+          setNotes((prev) => prev ? `${prev} | PO Ref: ${targetPoNum}` : `PO Ref: ${targetPoNum}. ${po.notes}`);
+        }
+
+        // Insert items from PO into line items matrix
+        if (Array.isArray(po.items) && po.items.length > 0) {
+          const imported: PurchaseLineItem[] = po.items.map((it: any, idx: number) => {
+            const qty = Math.max(1, Number(it.quantity) || 1);
+            const unitCost = Number(it.unit_cost) || 0;
+            const discount = Number(it.discount) || 0;
+            const tax = Number(it.tax) || Number(((qty * unitCost) * ((Number(it.tax_percent) || 0) / 100)).toFixed(2));
+            const sellingPrice = Number(it.unit_selling_price) || (unitCost > 0 ? unitCost * 1.25 : 0);
+            const lineTotal = Number(it.line_total) || (qty * unitCost - discount + tax);
+            const variantId = Number(it.product_variant_id || it.product_id || (idx + 1000));
+
+            return {
+              id: `po_item_${po.id || 'order'}_${variantId}_${idx}_${Date.now()}`,
+              product_id: Number(it.product_id || 1),
+              product_variant_id: variantId,
+              product_name: it.product_name || it.product?.name || `Item ${idx + 1}`,
+              sku: it.sku || it.product?.sku || `SKU-${it.product_id || idx + 1}`,
+              barcode: it.barcode || it.product?.barcode || it.sku || `BC-${it.product_id || idx + 1}`,
+              unit_name: it.purchase_unit || it.product?.unit?.short_code || 'pcs',
+              current_stock: Number(it.product?.available_quantity ?? 25),
+              quantity: qty,
+              unit_cost: unitCost,
+              selling_price: sellingPrice,
+              discount: discount,
+              tax: tax,
+              line_total: lineTotal,
+            };
+          });
+
+          setLineItems(imported);
+          setIsDirty(true);
+          setSuccessMessage(
+            `Purchase Order ${targetPoNum} loaded! Supplier, warehouse, and ${imported.length} item(s) inserted into form. You can adjust quantities, purchase rates, or delete rows as needed.`
+          );
+          setTimeout(() => setSuccessMessage(null), 6000);
+        } else {
+          setSuccessMessage(`Purchase Order ${targetPoNum} loaded (No line items found in order).`);
+          setTimeout(() => setSuccessMessage(null), 4000);
+        }
+      } else {
+        setErrorMessage(`Purchase Order '${poIdentifier}' could not be located.`);
+        setTimeout(() => setErrorMessage(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('Error loading PO:', err);
+      setErrorMessage(`Failed to load Purchase Order: ${err.message || 'Not found'}`);
+    } finally {
+      setIsLoadingPo(false);
+    }
   };
 
   // Barcode Scanner & Search Adding
@@ -524,6 +631,61 @@ export const PurchaseInvoiceForm: React.FC = () => {
     navigate('/purchases/invoices');
   };
 
+  const effectivePrintVoucher: PurchaseVoucherData = useMemo(() => {
+    if (savedPurchaseData) {
+      return {
+        ...savedPurchaseData,
+        supplier_phone: selectedSupplier?.mobile || selectedSupplier?.contact_phone,
+        supplier_address: selectedSupplier?.address,
+        supplier_bin: selectedSupplier?.tax_number,
+        warehouse_name: 'Main Central Warehouse',
+        po_reference: loadedPoNumber || (selectedPoId ? `PO-${selectedPoId}` : 'Direct Purchase'),
+      };
+    }
+    return {
+      voucher_no: voucherNo || 'PV-2026-0001',
+      supplier_name: selectedSupplier?.name || 'Selected Supplier',
+      supplier_code: selectedSupplier?.supplier_code || 'SUP-0001',
+      supplier_phone: selectedSupplier?.mobile || selectedSupplier?.contact_phone || '',
+      supplier_email: selectedSupplier?.email || '',
+      supplier_address: selectedSupplier?.address || '',
+      supplier_bin: selectedSupplier?.tax_number || '',
+      challan_no: supplierChallanNo || 'CHALLAN-901',
+      invoice_date: purchaseDate,
+      due_date: dueDate,
+      po_reference: loadedPoNumber || (selectedPoId ? `PO-${selectedPoId}` : 'Direct Purchase'),
+      warehouse_name: 'Main Central Warehouse',
+      items: lineItems,
+      subtotal: calculateGrossSubtotal(),
+      discount: calculateTotalDiscount(),
+      tax: calculateTotalTax(),
+      shipping: Number(shippingCost) || 0,
+      other_cost: Number(otherCost) || 0,
+      grand_total: calculateGrandTotal(),
+      amount_paid: Number(amountPaid) || 0,
+      due_payable: calculateOutstandingPayable(),
+      payment_method: paymentMethod,
+      status: purchaseStatus,
+      notes: notes,
+    };
+  }, [
+    savedPurchaseData,
+    voucherNo,
+    selectedSupplier,
+    supplierChallanNo,
+    purchaseDate,
+    dueDate,
+    loadedPoNumber,
+    selectedPoId,
+    lineItems,
+    shippingCost,
+    otherCost,
+    amountPaid,
+    paymentMethod,
+    purchaseStatus,
+    notes,
+  ]);
+
   // Filtered Products Catalog
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
@@ -543,10 +705,10 @@ export const PurchaseInvoiceForm: React.FC = () => {
       {/* A. Page Header & Action Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
         <div>
-          {/* Breadcrumb */}
+          {/* Breadcrumb (Procurement -> Purchase) */}
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
-            <span className="hover:text-slate-800 cursor-pointer" onClick={() => navigate('/procurement/dashboard')}>
-              Procurement
+            <span className="hover:text-slate-800 cursor-pointer" onClick={() => navigate('/purchases')}>
+              Purchase
             </span>
             <span>/</span>
             <span className="hover:text-slate-800 cursor-pointer" onClick={() => navigate('/purchases/invoices')}>
@@ -613,16 +775,16 @@ export const PurchaseInvoiceForm: React.FC = () => {
             Browse
           </button>
 
-          {savedPurchaseData && (
-            <button
-              type="button"
-              onClick={() => setIsPrintModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
-            >
-              <Printer className="w-4 h-4 text-emerald-700" />
-              Print Voucher
-            </button>
-          )}
+          <button
+            type="button"
+            id="btn_header_print_voucher"
+            onClick={() => setIsPrintModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+            title="Open Modern A4 Print Preview with your installed printer"
+          >
+            <Printer className="w-4 h-4 text-emerald-700" />
+            Print Voucher (A4)
+          </button>
 
           <button
             type="button"
@@ -646,6 +808,150 @@ export const PurchaseInvoiceForm: React.FC = () => {
         <div className="p-4 bg-rose-50 border border-rose-300 rounded-xl text-rose-900 text-sm font-medium flex items-center gap-2 shadow-2xs">
           <AlertCircle className="w-5 h-5 text-rose-700 shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Purchase Entry Mode Switch (Direct Purchase [Default] vs Against Purchase Order) */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Purchase Type
+            </span>
+            <span className="text-xs font-bold text-slate-700">
+              {purchaseType === 'DIRECT' ? 'Direct Purchase (Default)' : 'Against Purchase Order (PO)'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {purchaseType === 'DIRECT'
+              ? 'By default, Direct Purchase is active. Scan or search items to enter purchase lines directly.'
+              : 'Enter or select a PO number (e.g. PO-2026-5934) to auto-fill supplier, warehouse, and import all line items.'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+          <button
+            type="button"
+            id="btn_type_direct_purchase"
+            onClick={() => {
+              setPurchaseType('DIRECT');
+              setIsDirty(true);
+            }}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              purchaseType === 'DIRECT'
+                ? 'bg-white text-indigo-700 shadow-2xs font-black border border-slate-200'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+            Direct Purchase (Default)
+          </button>
+          <button
+            type="button"
+            id="btn_type_against_po"
+            onClick={() => {
+              setPurchaseType('AGAINST_PO');
+              setIsDirty(true);
+            }}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              purchaseType === 'AGAINST_PO'
+                ? 'bg-indigo-600 text-white shadow-2xs font-black'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Against Purchase Order (PO)
+          </button>
+        </div>
+      </div>
+
+      {/* PO Quick Loader Panel when Against Purchase Order is active */}
+      {purchaseType === 'AGAINST_PO' && (
+        <div className="bg-indigo-50/80 rounded-xl border border-indigo-200 p-4 shadow-2xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FileCheck className="w-5 h-5 text-indigo-700 shrink-0" />
+              <div>
+                <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                  Import Purchase Order Details & Line Items
+                </h3>
+                <p className="text-[11px] text-indigo-800">
+                  Enter PO Number (like <span className="font-mono font-bold">PO-2026-5934</span>) or click a quick order below. All items, quantities, and rates will be inserted into the form.
+                </p>
+              </div>
+            </div>
+            {loadedPoNumber && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-300">
+                <Check className="w-3.5 h-3.5" /> {loadedPoNumber} Loaded
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="relative flex-1 w-full">
+              <input
+                id="po_number_quick_input"
+                type="text"
+                value={poSearchInput}
+                onChange={(e) => setPoSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLoadPurchaseOrder(poSearchInput);
+                  }
+                }}
+                placeholder="Enter PO Number (e.g. PO-2026-5934, PO-2026-5933)..."
+                className="w-full pl-9 pr-3 py-2 bg-white border border-indigo-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder:font-sans placeholder:text-slate-400"
+              />
+              <Search className="w-4 h-4 text-indigo-500 absolute left-3 top-2.5" />
+            </div>
+
+            <button
+              type="button"
+              id="btn_load_po_data"
+              disabled={isLoadingPo || !poSearchInput.trim()}
+              onClick={() => handleLoadPurchaseOrder(poSearchInput)}
+              className="w-full sm:w-auto px-4 py-2 bg-indigo-700 hover:bg-indigo-800 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
+            >
+              {isLoadingPo ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Loading PO...
+                </>
+              ) : (
+                <>
+                  <DownloadCloud className="w-3.5 h-3.5" />
+                  Load PO Data & Insert Items
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Quick PO Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+            <span className="text-indigo-900 font-semibold">Available Approved POs:</span>
+            {purchaseOrders.length === 0 ? (
+              <span className="text-slate-500 italic">No POs cached yet</span>
+            ) : (
+              purchaseOrders.slice(0, 6).map((po) => (
+                <button
+                  key={po.id}
+                  type="button"
+                  onClick={() => {
+                    setPoSearchInput(po.po_number);
+                    handleLoadPurchaseOrder(po.po_number || po.id);
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-mono font-bold text-[11px] border transition-colors cursor-pointer ${
+                    loadedPoNumber === po.po_number || String(selectedPoId) === String(po.id)
+                      ? 'bg-indigo-700 text-white border-indigo-800 shadow-2xs'
+                      : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                  }`}
+                >
+                  {po.po_number}
+                </button>
+              ))
+            )}
+          </div>
         </div>
       )}
 
@@ -785,8 +1091,12 @@ export const PurchaseInvoiceForm: React.FC = () => {
                 id="po_ref_select_input"
                 value={selectedPoId}
                 onChange={(e) => {
-                  setSelectedPoId(e.target.value ? Number(e.target.value) : '');
+                  const val = e.target.value;
+                  setSelectedPoId(val ? Number(val) : '');
                   setIsDirty(true);
+                  if (val) {
+                    handleLoadPurchaseOrder(Number(val));
+                  }
                 }}
                 onKeyDown={(e) => handleFieldKeyDown(e, 'grn_ref_select_input')}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -968,6 +1278,22 @@ export const PurchaseInvoiceForm: React.FC = () => {
           </span>
         </div>
 
+        {loadedPoNumber && (
+          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="text-slate-800">
+                <strong>Items loaded from PO ({loadedPoNumber}):</strong> You can manually delete any unwanted items using the delete button (
+                <Trash2 className="w-3.5 h-3.5 inline text-rose-500 mx-0.5" />
+                ), or freely modify <strong>Quantity</strong> and <strong>Purchase Rate (Unit Cost)</strong>.
+              </span>
+            </div>
+            <span className="text-[11px] font-mono font-bold bg-white px-2.5 py-1 rounded-md border border-indigo-200 text-indigo-700 shrink-0">
+              {lineItems.length} items loaded
+            </span>
+          </div>
+        )}
+
         <div className="overflow-x-auto border border-slate-200 rounded-xl">
           <table className="w-full text-left text-xs text-slate-800">
             <thead className="bg-slate-100 text-slate-800 uppercase font-bold tracking-wider border-b border-slate-200">
@@ -1137,9 +1463,10 @@ export const PurchaseInvoiceForm: React.FC = () => {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={shippingCost}
+                  value={shippingCost !== undefined && !Number.isNaN(shippingCost) ? shippingCost : 0}
                   onChange={(e) => {
-                    setShippingCost(parseFloat(e.target.value) || 0);
+                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    setShippingCost(Number.isNaN(val) ? 0 : val);
                     setIsDirty(true);
                   }}
                   onKeyDown={(e) => handleFieldKeyDown(e, 'other_cost_input')}
@@ -1157,9 +1484,10 @@ export const PurchaseInvoiceForm: React.FC = () => {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={otherCost}
+                  value={otherCost !== undefined && !Number.isNaN(otherCost) ? otherCost : 0}
                   onChange={(e) => {
-                    setOtherCost(parseFloat(e.target.value) || 0);
+                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    setOtherCost(Number.isNaN(val) ? 0 : val);
                     setIsDirty(true);
                   }}
                   onKeyDown={(e) => handleFieldKeyDown(e, 'amount_paid_input')}
@@ -1209,8 +1537,11 @@ export const PurchaseInvoiceForm: React.FC = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                value={amountPaid}
-                onChange={(e) => handleAmountPaidChange(parseFloat(e.target.value) || 0)}
+                value={amountPaid !== undefined && !Number.isNaN(amountPaid) ? amountPaid : 0}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                  handleAmountPaidChange(Number.isNaN(val) ? 0 : val);
+                }}
                 onKeyDown={(e) => handleFieldKeyDown(e, 'btn_direct_save')}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
@@ -1395,18 +1726,17 @@ export const PurchaseInvoiceForm: React.FC = () => {
             Browse
           </button>
 
-          {/* Print Voucher Button (if saved) */}
-          {savedPurchaseData && (
-            <button
-              id="btn_print_voucher"
-              type="button"
-              onClick={() => setIsPrintModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              Print Voucher
-            </button>
-          )}
+          {/* Print Voucher Button */}
+          <button
+            id="btn_print_voucher"
+            type="button"
+            onClick={() => setIsPrintModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            title="Open Modern ERP A4 Purchase Voucher Print Preview"
+          >
+            <Printer className="w-4 h-4" />
+            Print Voucher (A4)
+          </button>
 
           {/* Close Button */}
           <button
@@ -1421,102 +1751,24 @@ export const PurchaseInvoiceForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Printable Purchase Voucher Modal */}
-      {isPrintModalOpen && savedPurchaseData && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-200 pb-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <FileText className="w-6 h-6 text-indigo-700" />
-                  RETAILCORE POS_ERP — PURCHASE VOUCHER
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">Authoritative Inventory Intake & Accounts Payable Receipt</p>
-              </div>
-              <button
-                onClick={() => setIsPrintModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-                <p className="text-slate-500 font-medium">Supplier Details:</p>
-                <p className="font-bold text-slate-900 text-sm">{savedPurchaseData.supplier_name}</p>
-                <p className="font-mono text-indigo-700 font-bold">{savedPurchaseData.supplier_code}</p>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-right">
-                <p className="text-slate-500 font-medium">Voucher Details:</p>
-                <p className="font-bold font-mono text-indigo-700 text-sm">{savedPurchaseData.voucher_no}</p>
-                <p className="font-semibold text-slate-800">Challan #: {savedPurchaseData.challan_no}</p>
-                <p className="text-slate-500 font-medium">Date: {savedPurchaseData.invoice_date}</p>
-              </div>
-            </div>
-
-            {/* Itemized Table */}
-            <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-              <table className="w-full text-left">
-                <thead className="bg-slate-100 font-bold text-slate-800 border-b border-slate-200">
-                  <tr>
-                    <th className="p-2">Item Name</th>
-                    <th className="p-2 text-center">Qty</th>
-                    <th className="p-2 text-right">Unit Cost (৳)</th>
-                    <th className="p-2 text-right">Line Total (৳)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 font-medium">
-                  {savedPurchaseData.items.map((item: any) => (
-                    <tr key={item.id}>
-                      <td className="p-2 font-semibold text-slate-900">{item.product_name}</td>
-                      <td className="p-2 text-center font-bold">{item.quantity}</td>
-                      <td className="p-2 text-right font-mono">৳{Number(item.unit_cost).toFixed(2)}</td>
-                      <td className="p-2 text-right font-mono font-bold">৳{Number(item.line_total).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex justify-between items-end border-t border-slate-200 pt-4 text-xs font-bold text-slate-900">
-              <div className="space-y-1 text-slate-600 font-medium">
-                <p>Status: <span className="font-bold text-indigo-700">{savedPurchaseData.status}</span></p>
-                <p>Payment Method: <span className="font-bold text-slate-800">{savedPurchaseData.payment_method}</span></p>
-              </div>
-
-              <div className="text-right space-y-1">
-                <p className="text-slate-600">Grand Total: <span className="font-mono text-slate-900 font-bold">৳{savedPurchaseData.grand_total.toFixed(2)}</span></p>
-                <p className="text-slate-600">Paid: <span className="font-mono text-emerald-700 font-bold">৳{savedPurchaseData.amount_paid.toFixed(2)}</span></p>
-                <p className="text-sm font-bold text-indigo-700">Outstanding Payable: <span className="font-mono">৳{savedPurchaseData.due_payable.toFixed(2)}</span></p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 pt-8 text-center text-xs text-slate-500 font-medium">
-              <div className="border-t border-slate-300 pt-1">Prepared By</div>
-              <div className="border-t border-slate-300 pt-1">Verified By</div>
-              <div className="border-t border-slate-300 pt-1">Approved By</div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setIsPrintModalOpen(false)}
-                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer"
-              >
-                Close Preview
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-              >
-                Print Voucher
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Printable Modern ERP Purchase Voucher Modal (A4 Paper Format) */}
+      {/* RETAILCORE POS_ERP — PURCHASE VOUCHER A4 Modern ERP Print Modal - window.print() */}
+      {isPrintModalOpen && (
+        <PurchaseVoucherPrintModal
+          voucher={effectivePrintVoucher}
+          company={
+            activeCompany
+              ? {
+                  name: activeCompany.name,
+                  address: activeCompany.address,
+                  phone: activeCompany.phone,
+                  email: activeCompany.email,
+                  tax_number: activeCompany.vat_registration || activeCompany.tax_number,
+                }
+              : undefined
+          }
+          onClose={() => setIsPrintModalOpen(false)}
+        />
       )}
     </div>
   );

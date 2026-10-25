@@ -30,11 +30,33 @@ import { PurchaseOrderForm } from './pages/purchase/PurchaseOrderForm';
 import { PurchaseList } from './pages/purchase/PurchaseList';
 import { PurchaseInvoiceForm } from './pages/purchase/PurchaseInvoiceForm';
 import { PurchaseInvoiceDetail } from './pages/purchase/PurchaseInvoiceDetail';
+import { SupplierReturnList } from './pages/purchase/SupplierReturnList';
+import { SupplierReturnForm } from './pages/purchase/SupplierReturnForm';
 import { GoodsReceiptList } from './pages/purchase/GoodsReceiptList';
 import { GoodsReceiptForm } from './pages/purchase/GoodsReceiptForm';
 import { GoodsReceiptDetail } from './pages/purchase/GoodsReceiptDetail';
 import { SupplierPayables } from './pages/purchase/SupplierPayables';
 import { SupplierLedgerView } from './pages/purchase/SupplierLedgerView';
+import { PurchaseReportsHub } from './pages/purchase/reports/PurchaseReportsHub';
+import { DateWisePurchaseReport } from './pages/purchase/reports/DateWisePurchaseReport';
+import { DateWiseSummaryReport } from './pages/purchase/reports/DateWiseSummaryReport';
+import { DetailReceivedVouchersReport } from './pages/purchase/reports/DetailReceivedVouchersReport';
+import { DetailOrderedVouchersReport } from './pages/purchase/reports/DetailOrderedVouchersReport';
+import { BoothWisePurchaseReport } from './pages/purchase/reports/BoothWisePurchaseReport';
+import { ItemWisePurchaseReport } from './pages/purchase/reports/ItemWisePurchaseReport';
+import { ItemWiseHistoryReport } from './pages/purchase/reports/ItemWiseHistoryReport';
+import { SupplierWisePurchaseReport } from './pages/purchase/reports/SupplierWisePurchaseReport';
+import { CancelledVouchersReport } from './pages/purchase/reports/CancelledVouchersReport';
+import { PendingApprovalReport } from './pages/purchase/reports/PendingApprovalReport';
+import { PurchaseAnalyticsDashboard } from './pages/purchase/reports/PurchaseAnalyticsDashboard';
+import { PurchaseOrderOutstandingReport } from './pages/purchase/reports/PurchaseOrderOutstandingReport';
+import { WarehouseWisePurchaseReport } from './pages/purchase/reports/WarehouseWisePurchaseReport';
+import { CategoryWisePurchaseReport } from './pages/purchase/reports/CategoryWisePurchaseReport';
+import { BrandWisePurchaseReport } from './pages/purchase/reports/BrandWisePurchaseReport';
+import { PurchaseDiscountAnalysisReport } from './pages/purchase/reports/PurchaseDiscountAnalysisReport';
+import { PurchaseTaxVatReport } from './pages/purchase/reports/PurchaseTaxVatReport';
+import { PurchaseReturnsReport } from './pages/purchase/reports/PurchaseReturnsReport';
+import { PurchaseReconciliationReport } from './pages/purchase/reports/PurchaseReconciliationReport';
 import { CustomerList } from './pages/customers/CustomerList';
 import { CustomerGroupList } from './pages/customers/CustomerGroupList';
 import ExpenseIndex from "./pages/expenses/ExpenseIndex";
@@ -411,6 +433,46 @@ export default function App() {
                 </AdminLayout>
               </ProtectedRoute>
             } />
+            <Route path="/purchases/returns" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierReturnList />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/returns/create" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierReturnForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/returns/new" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierReturnForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/returns/:id/edit" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierReturnForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/returns/:id" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierReturnForm />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchase/returns" element={<Navigate to="/purchases/returns" replace />} />
+            <Route path="/purchase/returns/create" element={<Navigate to="/purchases/returns/create" replace />} />
+            <Route path="/purchase/returns/new" element={<Navigate to="/purchases/returns/create" replace />} />
+            <Route path="/supplier-returns" element={<Navigate to="/purchases/returns" replace />} />
+            <Route path="/supplier-returns/new" element={<Navigate to="/purchases/returns/create" replace />} />
             <Route path="/purchases/payables" element={
               <ProtectedRoute>
                 <AdminLayout>
@@ -426,6 +488,86 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="/suppliers/:id/ledger" element={<Navigate to="/purchases/suppliers/:id/ledger" replace />} />
+            {/* Purchase Reports System (10 Authoritative Procurement Reports) */}
+            <Route path="/purchases/reports" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PurchaseReportsHub />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/date-wise" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <DateWisePurchaseReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/date-wise-summary" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <DateWiseSummaryReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/received-vouchers" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <DetailReceivedVouchersReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/ordered-vouchers" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <DetailOrderedVouchersReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/booth-wise" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <BoothWisePurchaseReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/item-wise" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ItemWisePurchaseReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/item-history" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <ItemWiseHistoryReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/supplier-wise" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <SupplierWisePurchaseReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/cancelled-vouchers" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <CancelledVouchersReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/reports/pending-approval" element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <PendingApprovalReport />
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/purchases/report" element={<Navigate to="/purchases/reports" replace />} />
+            <Route path="/purchases/reports/datewise" element={<Navigate to="/purchases/reports/date-wise" replace />} />
             {/* Procurement Intelligence (Phase 7) */}
             <Route path="/procurement" element={<Navigate to="/procurement/dashboard" replace />} />
             <Route path="/procurement/dashboard" element={

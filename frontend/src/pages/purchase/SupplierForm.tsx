@@ -344,8 +344,9 @@ export const SupplierForm: React.FC = () => {
       {/* Page Header & Breadcrumb */}
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          {/* Procurement -> Purchase */}
           <Link to="/purchases/suppliers" className="hover:text-indigo-600 transition-colors">
-            Procurement
+            Purchase
           </Link>
           <span>/</span>
           <Link to="/purchases/suppliers" className="hover:text-indigo-600 transition-colors">

@@ -259,12 +259,32 @@ export function SystemStatusCard() {
           <div className="p-3 rounded-xl bg-slate-50/60 border border-slate-100">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-slate-500 font-medium">API</span>
-              <span className="text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
-                Online
+              <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${
+                v2ConnectionState === 'online'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : v2ConnectionState === 'degraded'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : v2ConnectionState === 'loading'
+                  ? 'bg-slate-100 text-slate-600 border-slate-200'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                {v2ConnectionState === 'online'
+                  ? 'Online'
+                  : v2ConnectionState === 'degraded'
+                  ? 'Degraded'
+                  : v2ConnectionState === 'loading'
+                  ? 'Checking...'
+                  : 'Offline'}
               </span>
             </div>
             <div className="text-xs font-extrabold text-slate-800">
-              Healthy ({live.backend?.api_version || 'v1'})
+              {v2ConnectionState === 'online'
+                ? `Healthy (${v2Health?.api_version || 'v2'})`
+                : v2ConnectionState === 'degraded'
+                ? `Degraded (${v2Health?.database || 'disconnected'})`
+                : v2ConnectionState === 'loading'
+                ? 'Checking API...'
+                : 'Offline (unreachable)'}
             </div>
           </div>
         </div>

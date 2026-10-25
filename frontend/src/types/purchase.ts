@@ -152,9 +152,14 @@ export interface PurchaseOrder {
   notes?: string;
   payment_terms?: string;
   supplier?: any;
+  supplier_name?: string;
   warehouse?: any;
+  warehouse_name?: string;
   branch?: any;
+  branch_name?: string;
+  created_by?: string;
   created_by_user?: any;
+  [key: string]: any;
   items?: Array<{
     id?: number | string;
     product_id: number | string;
@@ -175,8 +180,71 @@ export interface PurchaseOrder {
     inclusive_selling_price?: number;
     line_total: number;
     product?: any;
-    variant?: any;
-    purchase_unit?: string;
-    item_note?: string;
+    unit?: string;
+    unit_price?: number;
+    received_quantity?: number;
+    [key: string]: any;
   }>;
 }
+
+export interface SupplierReturnItem {
+  id?: string | number;
+  product_id: number;
+  product_variant_id?: number;
+  product_name: string;
+  sku: string;
+  barcode?: string;
+  unit_name?: string;
+  original_quantity?: number;
+  original_unit_cost?: number;
+  return_rate: number;
+  return_qty: number;
+  reason: 'DEFECTIVE' | 'EXPIRED' | 'DAMAGED' | 'WRONG_ITEM' | 'OVER_DELIVERY' | 'QUALITY_MISMATCH' | 'OTHER';
+  reason_detail?: string;
+  line_total: number;
+}
+
+export interface SupplierReturn {
+  id: number | string;
+  return_number: string;
+  return_date: string;
+  supplier_id: number | string;
+  supplier_name: string;
+  supplier?: any;
+  purchase_invoice_id?: number | string | null;
+  purchase_invoice_number?: string | null;
+  supplier_invoice_number?: string | null;
+  warehouse_id?: number | string;
+  warehouse_name?: string;
+  status: 'DRAFT' | 'POSTED' | 'COMPLETED' | 'CANCELLED';
+  settlement_type: 'PAYABLE_ADJUSTMENT' | 'CASH_REFUND' | 'BANK_REFUND' | 'STORE_CREDIT';
+  return_reason_general?: string;
+  subtotal: number;
+  tax_amount?: number;
+  discount_deducted?: number;
+  grand_total: number;
+  amount_settled?: number;
+  notes?: string;
+  created_at?: string;
+  items: SupplierReturnItem[];
+}
+
+export interface CreateSupplierReturnPayload {
+  supplier_id: number | string;
+  return_date: string;
+  purchase_invoice_id?: number | string | null;
+  purchase_invoice_number?: string | null;
+  supplier_invoice_number?: string | null;
+  warehouse_id?: number | string;
+  warehouse_name?: string;
+  settlement_type: 'PAYABLE_ADJUSTMENT' | 'CASH_REFUND' | 'BANK_REFUND' | 'STORE_CREDIT';
+  status: 'DRAFT' | 'POSTED';
+  return_reason_general?: string;
+  notes?: string;
+  subtotal: number;
+  tax_amount?: number;
+  discount_deducted?: number;
+  grand_total: number;
+  items: SupplierReturnItem[];
+}
+

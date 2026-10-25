@@ -174,7 +174,7 @@ export const SupplierList: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            <span>Procurement</span>
+            <span>Purchase</span>
             <span>/</span>
             <span className="text-slate-800 font-bold">Suppliers & Vendors</span>
           </div>

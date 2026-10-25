@@ -40,7 +40,7 @@ const mainHeads = [
   'Overview',
   'POS',
   'Product Master',
-  'Procurement',
+  'Purchase',
   'Inventory Management',
   'CRM & Sales',
   'E-Commerce',
@@ -66,21 +66,15 @@ const requiredSubHeads = [
   'Payment Methods',
   'Loyalty Settings',
   'Item Information',
-  'Products & SKUs',
+  'Products & SKUS Entry',
   'Categories',
   'Brands',
   'Units of Measure',
   'Attributes & Values',
-  'Procurement Intelligence',
-  'Purchase Requisitions',
-  'RFQs & Tenders',
-  'Supplier Ratings',
-  'Contracts & Pricing',
+  'Purchase Intelligence',
   'Purchase Orders',
-  'Goods Receipts',
   'Purchase Invoices',
-  '3-Way Match & PPV',
-  'Replenishment Planning',
+  'Supplier Returns',
   'Supplier Payables',
   'Stock Levels',
   'Stock Movements',
@@ -157,11 +151,45 @@ requiredSubHeads.forEach((sub) => {
 // 3. Verify Both Suppliers Entries
 assert(
   sidebarContent.includes("id: 'procurement_suppliers', label: 'Suppliers'"),
-  'Procurement -> Suppliers entry configured'
+  'Purchase -> Suppliers entry configured'
 );
 assert(
   sidebarContent.includes("id: 'finance_suppliers', label: 'Suppliers'"),
   'Finance Accounting -> Suppliers entry configured'
+);
+assert(
+  sidebarContent.includes("id: 'supplier_returns', label: 'Supplier Returns'"),
+  'Purchase -> Supplier Returns entry configured'
+);
+
+// 3b. Verify Removed Items are not in Purchase Menu
+assert(
+  !sidebarContent.includes("id: 'rfqs_tenders'"),
+  'RFQs & Tenders deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'supplier_ratings'"),
+  'Supplier Ratings deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'goods_receipts'"),
+  'Goods Receipts deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'threeway_matching'"),
+  '3-Way Match & PPV deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'contracts_pricing'"),
+  'Contracts & Pricing deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'purchase_reqs'"),
+  'Purchase Requisitions deleted from Purchase menu'
+);
+assert(
+  !sidebarContent.includes("id: 'replenishment'"),
+  'Replenishment Planning deleted from Purchase menu'
 );
 
 // 4. Verify Collapsible Architecture & Mechanics

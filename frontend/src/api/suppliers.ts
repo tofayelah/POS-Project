@@ -385,7 +385,57 @@ export const getSupplierBalance = async (
       opening_balance: 0,
       total_purchases: 0,
       total_paid: 0,
-      balance: s?.current_balance ?? 0,
+    balance: s?.current_balance ?? 0,
     },
   };
 };
+
+/**
+ * Deducts a supplier return amount from the supplier's accounts payable ledger.
+ * This directly implements the user rule:
+ * "Settlement & Debit Terms a Supplier Lezer theke Supplier return amount bad jabe"
+ */
+export const deductSupplierBalance = (
+  id: number,
+  returnAmount: number
+): { success: boolean; newBalance: number } => {
+  const currentList = getStoredSuppliers();
+  let newBalance = 0;
+  const updatedList = currentList.map((s) => {
+    if (s.id === id) {
+      const current = Number(s.current_balance || 0);
+      newBalance = current - returnAmount;
+      return {
+        ...s,
+        current_balance: newBalance,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return s;
+  });
+  saveStoredSuppliers(updatedList);
+  return { success: true, newBalance };
+};
+
+export const adjustSupplierBalance = (
+  id: number,
+  delta: number
+): { success: boolean; newBalance: number } => {
+  const currentList = getStoredSuppliers();
+  let newBalance = 0;
+  const updatedList = currentList.map((s) => {
+    if (s.id === id) {
+      const current = Number(s.current_balance || 0);
+      newBalance = current + delta;
+      return {
+        ...s,
+        current_balance: newBalance,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return s;
+  });
+  saveStoredSuppliers(updatedList);
+  return { success: true, newBalance };
+};
+

@@ -6,7 +6,7 @@ export const en: Translations = {
   'nav.dashboard': 'Dashboard',
   'nav.productMaster': 'Product Master',
   'nav.itemInformation': 'Item Information',
-  'nav.products': 'Products & SKUs',
+  'nav.products': 'Products & SKUS Entry',
   'nav.categories': 'Categories',
   'nav.brands': 'Brands',
   'nav.units': 'Units of Measure',
@@ -27,8 +27,8 @@ export const en: Translations = {
   'nav.crmActivityCenter': 'CRM & Activities',
   'nav.customerIntelligence': 'Customer Intelligence',
   'nav.salesIntelligence': 'Sales & Demand Intelligence',
-  'nav.procurement': 'Procurement',
-  'nav.procurementDashboard': 'Procurement Intelligence',
+  'nav.procurement': 'Purchase',
+  'nav.procurementDashboard': 'Purchase Intelligence',
   'nav.purchaseRequisitions': 'Purchase Requisitions',
   'nav.rfqManagement': 'RFQs & Tenders',
   'nav.supplierPerformance': 'Supplier Ratings',
@@ -1041,8 +1041,8 @@ export const en: Translations = {
   'receipt.warrantyPolicy': 'Warranty claims subject to manufacturer terms.',
   'receipt.computerGenerated': 'COMPUTER GENERATED INVOICE',
 
-  // Procurement Intelligence (Phase 7)
-  'procurement.dashboard.title': 'Procurement Intelligence Dashboard',
+  // Purchase Intelligence (Phase 7)
+  'procurement.dashboard.title': 'Purchase Intelligence Dashboard',
   'procurement.dashboard.subtitle': 'Automated replenishment, supplier scorecards, 3-way matching, and spend controls.',
   'procurement.dashboard.recommendationsAlert': 'items recommended for replenishment based on safety stock, sales velocity, and lead time.',
   'procurement.dashboard.viewRecommendations': 'Review Recommendations',
@@ -1059,7 +1059,7 @@ export const en: Translations = {
   'procurement.dashboard.viewAllSuppliers': 'View All Suppliers',
   'procurement.dashboard.recentRequisitions': 'Recent Purchase Requisitions',
   'procurement.dashboard.viewAllRequisitions': 'View All',
-  'procurement.dashboard.quickActions': 'Procurement Workflows',
+  'procurement.dashboard.quickActions': 'Purchase Workflows',
 
   'procurement.requisitions.title': 'Purchase Requisitions',
   'procurement.requisitions.subtitle': 'Create, review, approve, and convert departmental purchase requisitions.',

@@ -15,7 +15,8 @@ import {
   Ban,
   X,
   FileText,
-  AlertCircle
+  AlertCircle,
+  FilePlus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import {
@@ -383,6 +384,15 @@ export const PurchaseOrderList: React.FC = () => {
                               title="Edit / View Purchase Order"
                             >
                               <Edit className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/purchases/invoices/create?po=${po.po_number || po.id}`)}
+                              className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50 rounded-md cursor-pointer transition-colors"
+                              title="Create Purchase Entry from PO (Auto-insert items)"
+                            >
+                              <FilePlus className="w-4 h-4" />
                             </button>
 
                             <button

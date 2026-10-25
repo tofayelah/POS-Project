@@ -141,7 +141,7 @@ export function generatePoDocumentHtml(
         const pName = it.product_name || 'Product Item';
         const vName = it.variant_name && it.variant_name !== 'Standard' ? `<div style="font-size: 11px; color: #4338ca; font-weight: 600; margin-top: 2px;">${it.variant_name}</div>` : '';
         const itemNote = it.item_note ? `<div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 2px;">Note: ${it.item_note}</div>` : '';
-        const barcode = it.barcode || '8800000000';
+        const barcode = it.barcode || 'SUP-00000000';
         const sku = it.sku || 'SKU-001';
         const unit = it.purchase_unit || 'Pcs';
         const qty = Number(it.quantity);
@@ -183,7 +183,7 @@ export function generatePoDocumentHtml(
               <div style="display: inline-block; background: #1e1b4b; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-weight: 900; font-size: 14px; letter-spacing: 0.5px;">RC</div>
               <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; display: inline-block;">${compName}</h1>
             </div>
-            <div style="font-size: 11px; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Enterprise Procurement & Supply Chain Division</div>
+            <div style="font-size: 11px; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Enterprise Purchase & Supply Chain Division</div>
             <div style="font-size: 11px; color: #475569; margin-bottom: 4px; line-height: 1.4;">${compAddr}</div>
             <div style="font-size: 11px; color: #475569;">
               <span style="margin-right: 12px;"><strong>Tel:</strong> ${compPhone}</span>
@@ -320,7 +320,7 @@ export function generatePoDocumentHtml(
 
             <!-- Commercial Terms & Conditions -->
             <div style="border-left: 3px solid #6366f1; padding-left: 10px; font-size: 10px; color: #475569; line-height: 1.5;">
-              <div style="font-weight: 800; text-transform: uppercase; color: #334155; margin-bottom: 3px;">Procurement Terms & Conditions:</div>
+              <div style="font-weight: 800; text-transform: uppercase; color: #334155; margin-bottom: 3px;">Purchase Terms & Conditions:</div>
               <div>1. Products must be delivered accompanied by official delivery challan referencing <strong>${order.po_number}</strong>.</div>
               <div>2. Mushak 6.3 / VAT tax challan is mandatory upon delivery in compliance with NBR regulations.</div>
               <div>3. Delivery is subject to strict count & QA inspection at destination receiving counter prior to GRN entry.</div>
@@ -379,7 +379,7 @@ export function generatePoDocumentHtml(
           <td style="width: 32%; text-align: center; vertical-align: top;">
             <div style="border-top: 2px solid #94a3b8; width: 85%; margin: 0 auto; padding-top: 8px;">
               <div style="font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Prepared By</div>
-              <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Procurement Officer</div>
+              <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Purchase Officer</div>
               <div style="font-size: 9px; color: #94a3b8; margin-top: 4px;">Sign & Date: _________________</div>
             </div>
           </td>

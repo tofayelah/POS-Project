@@ -1,0 +1,283 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  ShoppingBag, Clock, Download, Printer, Search, AlertCircle, 
+  CheckCircle2, ArrowRight, RefreshCw, FileSpreadsheet, ArrowUpDown
+} from 'lucide-react';
+import { Link } from 'react-router';
+import { 
+  getPurchaseOrderOutstandingReport, 
+  PurchaseOrderOutstandingRecord, 
+  PurchaseReportFilters,
+  exportReportToCsv,
+  exportReportToExcel
+} from '../../../api/purchaseReports';
+import { PurchaseReportFilterBar } from '../../../components/purchase/reports/PurchaseReportFilterBar';
+import { PurchaseReportPrintModal } from '../../../components/purchase/reports/PurchaseReportPrintModal';
+
+export const PurchaseOrderOutstandingReport: React.FC = () => {
+  const [filters, setFilters] = useState<PurchaseReportFilters>({});
+  const [data, setData] = useState<PurchaseOrderOutstandingRecord[]>([]);
+  const [summary, setSummary] = useState<any>({});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isPrintOpen, setIsPrintOpen] = useState<boolean>(false);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await getPurchaseOrderOutstandingReport(filters);
+      setData(res.data);
+      setSummary(res.summary);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load outstanding purchase orders.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleExportCsv = () => {
+    const headers = [
+      'PO Number',
+      'PO Date',
+      'Supplier',
+      'Product Name',
+      'SKU',
+      'Ordered Qty',
+      'Received Qty',
+      'Outstanding Qty',
+      'Unit Cost (BDT)',
+      'Outstanding Value (BDT)',
+      'Expected Delivery Date',
+      'Days Overdue',
+    ];
+    const rows = data.map((r) => [
+      r.po_number,
+      r.po_date,
+      r.supplier_name,
+      r.product_name,
+      `'${r.sku}`,
+      r.ordered_quantity,
+      r.received_quantity,
+      r.outstanding_quantity,
+      r.unit_cost,
+      r.outstanding_value,
+      r.expected_delivery_date,
+      r.days_overdue,
+    ]);
+    exportReportToCsv('purchase_order_outstanding_report', headers, rows);
+  };
+
+  const handleExportExcel = () => {
+    const headers = [
+      'PO Number',
+      'PO Date',
+      'Supplier',
+      'Product Name',
+      'SKU',
+      'Ordered Qty',
+      'Received Qty',
+      'Outstanding Qty',
+      'Unit Cost (BDT)',
+      'Outstanding Value (BDT)',
+      'Expected Delivery Date',
+      'Days Overdue',
+    ];
+    const rows = data.map((r) => [
+      r.po_number,
+      r.po_date,
+      r.supplier_name,
+      r.product_name,
+      r.sku,
+      r.ordered_quantity,
+      r.received_quantity,
+      r.outstanding_quantity,
+      `৳${r.unit_cost.toLocaleString()}`,
+      `৳${r.outstanding_value.toLocaleString()}`,
+      r.expected_delivery_date,
+      r.days_overdue > 0 ? `${r.days_overdue} days` : 'On Schedule',
+    ]);
+    exportReportToExcel('purchase_order_outstanding', 'Purchase Order Outstanding Report', headers, rows);
+  };
+
+  return (
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">
+            <Link to="/purchases/reports" className="hover:underline">Purchase Reports</Link>
+            <span>/</span>
+            <span>Purchase Order Outstanding</span>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <ShoppingBag className="w-7 h-7 text-indigo-600 shrink-0" />
+            Purchase Order Outstanding Report
+          </h1>
+          <p className="text-xs font-medium text-slate-600 mt-1">
+            Authoritative tracking of unfulfilled order lines, delayed supplier deliveries, and open commitment values
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsPrintOpen(true)}
+            disabled={data.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-2xs transition cursor-pointer"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Print Preview
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={data.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 shadow-2xs transition cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            Excel Export
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <PurchaseReportFilterBar
+        filters={filters}
+        onFilterChange={setFilters}
+        onSearch={loadData}
+        onReset={() => {
+          setFilters({});
+          getPurchaseOrderOutstandingReport({}).then((res) => {
+            setData(res.data);
+            setSummary(res.summary);
+          });
+        }}
+        onExportExcel={handleExportExcel}
+        isLoading={isLoading}
+        showSupplierFilter={true}
+      />
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Open PO Lines</span>
+          <div className="text-xl font-black text-slate-900 mt-1">{summary.total_lines || 0}</div>
+        </div>
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ordered Quantity</span>
+          <div className="text-xl font-black text-slate-900 mt-1">{summary.total_ordered_qty || 0}</div>
+        </div>
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Outstanding Quantity</span>
+          <div className="text-xl font-black text-amber-600 mt-1">{summary.total_outstanding_qty || 0}</div>
+        </div>
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Outstanding Commitment</span>
+          <div className="text-xl font-black text-indigo-600 mt-1">৳{(summary.total_outstanding_value || 0).toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                <th className="p-3.5">PO Number</th>
+                <th className="p-3.5">Date</th>
+                <th className="p-3.5">Supplier</th>
+                <th className="p-3.5">Product & SKU</th>
+                <th className="p-3.5 text-right">Ordered</th>
+                <th className="p-3.5 text-right">Received</th>
+                <th className="p-3.5 text-right text-amber-700">Outstanding</th>
+                <th className="p-3.5 text-right">Unit Cost</th>
+                <th className="p-3.5 text-right text-indigo-700">Outstanding Value</th>
+                <th className="p-3.5">Expected Delivery</th>
+                <th className="p-3.5 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={11} className="p-8 text-center text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-600" />
+                    Calculating outstanding purchase orders...
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="p-8 text-center text-slate-400">
+                    No outstanding purchase orders found for the active filters.
+                  </td>
+                </tr>
+              ) : (
+                data.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50/70 transition">
+                    <td className="p-3.5 font-bold font-mono text-indigo-600">
+                      <Link to="/purchases/orders" className="hover:underline">{r.po_number}</Link>
+                    </td>
+                    <td className="p-3.5 text-slate-600">{r.po_date}</td>
+                    <td className="p-3.5 font-bold text-slate-800">{r.supplier_name}</td>
+                    <td className="p-3.5">
+                      <div className="font-bold text-slate-800">{r.product_name}</div>
+                      <div className="font-mono text-[10px] text-slate-400">{r.sku}</div>
+                    </td>
+                    <td className="p-3.5 text-right font-medium">{r.ordered_quantity}</td>
+                    <td className="p-3.5 text-right font-medium text-emerald-600">{r.received_quantity}</td>
+                    <td className="p-3.5 text-right font-black text-amber-700">{r.outstanding_quantity}</td>
+                    <td className="p-3.5 text-right font-mono">৳{r.unit_cost.toLocaleString()}</td>
+                    <td className="p-3.5 text-right font-bold text-indigo-700 font-mono">৳{r.outstanding_value.toLocaleString()}</td>
+                    <td className="p-3.5 text-slate-600 font-medium">{r.expected_delivery_date}</td>
+                    <td className="p-3.5 text-center">
+                      {r.days_overdue > 0 ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                          {r.days_overdue}d Overdue
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          On Track
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Print Modal */}
+      <PurchaseReportPrintModal
+        isOpen={isPrintOpen}
+        onClose={() => setIsPrintOpen(false)}
+        title="Purchase Order Outstanding Report"
+        dateRange="Open Purchase Orders Status"
+        headers={['PO Number', 'Date', 'Supplier', 'Product / SKU', 'Ordered', 'Rcvd', 'Outstanding', 'Unit Cost', 'Value (BDT)', 'Delivery', 'Status']}
+        rows={data.map((r) => [
+          r.po_number,
+          r.po_date,
+          r.supplier_name,
+          `${r.product_name} (${r.sku})`,
+          r.ordered_quantity,
+          r.received_quantity,
+          r.outstanding_quantity,
+          `৳${r.unit_cost.toLocaleString()}`,
+          `৳${r.outstanding_value.toLocaleString()}`,
+          r.expected_delivery_date,
+          r.days_overdue > 0 ? `${r.days_overdue}d Overdue` : 'On Track',
+        ])}
+        summaryCards={[
+          { label: 'Open PO Lines', value: summary.total_lines || 0 },
+          { label: 'Outstanding Qty', value: summary.total_outstanding_qty || 0 },
+          { label: 'Outstanding Value', value: `৳${(summary.total_outstanding_value || 0).toLocaleString()}` },
+        ]}
+      />
+    </div>
+  );
+};

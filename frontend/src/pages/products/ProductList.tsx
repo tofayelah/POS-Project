@@ -118,10 +118,10 @@ export const ProductList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5">
             <Package className="w-7 h-7 text-indigo-700 shrink-0" />
-            Product Catalog Master
+            Products & SKUS Entry
           </h1>
           <p className="text-sm font-medium text-slate-600 mt-1">
-            Central Product Information Management (PIM), SKUs, barcodes, pricing, and variants
+            Central Product Information Management (PIM), SKUs, barcodes, pricing, and variants catalog master
           </p>
         </div>
         <div className="flex gap-2">
@@ -333,11 +333,13 @@ export const ProductList: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-xs font-mono">
-                        {primaryVariant ? (
+                        {primaryVariant || p.sku || (p as any).barcode ? (
                           <div>
-                            <div className="font-bold text-slate-900">{primaryVariant.sku}</div>
-                            {primaryVariant.barcodes && primaryVariant.barcodes.length > 0 && (
-                              <div className="text-slate-600 text-[11px] font-medium">BC: {primaryVariant.barcodes[0].barcode}</div>
+                            <div className="font-bold text-slate-900">{primaryVariant?.sku || p.sku || (p as any).product_code}</div>
+                            {(primaryVariant?.barcodes?.[0]?.barcode || (p as any).barcode) && (
+                              <div className="text-slate-600 text-[11px] font-medium">
+                                BC: {primaryVariant?.barcodes?.[0]?.barcode || (p as any).barcode}
+                              </div>
                             )}
                           </div>
                         ) : (
